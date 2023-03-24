@@ -15,6 +15,7 @@ class Player(pygame.sprite.Sprite):
         self.surf = pygame.Surface((25, 25))
         self.surf.fill((255, 255, 255))
         self.rect = self.surf.get_rect()
+        self.rect.move_ip((SCREEN_WIDTH-self.surf.get_width())/2,(SCREEN_HEIGHT-self.surf.get_width())/2)
 
 def update(self, pressed_keys):
     if pressed_keys[K_UP]:
@@ -54,6 +55,7 @@ SCREEN_HEIGHT = 600
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 
 player = Player()
+player.__init__()
 
 running = True
 
