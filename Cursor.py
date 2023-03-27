@@ -107,7 +107,7 @@ for i in range(8):
     enemies.add(new_enemy)
     all_sprites.add(new_enemy)
     
-#pygame.key.set_repeat(1,0)
+pygame.key.set_repeat(50,0)
 
 running = True
 
@@ -140,7 +140,7 @@ while running:
             player.kill()
             running = False
         pygame.display.flip()
-        clock.tick(30)
+        #clock.tick(60)
 
 
         
