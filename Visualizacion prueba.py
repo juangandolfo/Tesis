@@ -1,102 +1,79 @@
-import socket
-import time
-import threading
-import tkinter as tk
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from matplotlib.figure import Figure
+import matplotlib.pyplot as plt
+import numpy as np
 import random
 
-global bar_values, bar_values_history, bar_values_history, bar_values, bar_checkboxes
+# Creamos la figura y los ejes
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10,5))
 
-def generate_example_data():
-    data = []
-    for i in range(2000 * 10):
-        value = random.randint(0, 100)
-        data.append(value)
-    return data
+# Creamos los datos iniciales
+datos = [random.random() for _ in range(8)]
 
-# Función para obtener los datos de la API y actualizar la gráfica de barras
-def update_bar_chart():
-    # Hacer una solicitud a la API TCP/IP para obtener los datos de las barras
-    # Aquí debes agregar el código para conectarte al servidor API y enviar solicitudes.
-    # Los datos recibidos de la API deben ser almacenados en una lista o en una variable global.
-    # Generar datos de ejemplo
-    example_data = generate_example_data()
+# Creamos una matriz para cada barra que almacene los últimos 5 segundos de datos
+historial = [[] for _ in range(8)]
 
-    # Actualizar los valores de las barras con los nuevos datos
+dataStack = [[] for _ in range(8)]
+
+promedio = [[] for _ in range (8)]
+
+# Definimos la función para actualizar los datos
+def actualizar_datos():
+    global datos, historial, dataStack, promedio
     
-    bar_values = example_data[:8]
-    bar_values_history.append(bar_values)
-
-
-    # Actualizar la gráfica de barras con los nuevos valores
-    ax.clear()
-    ax.bar(range(len(bar_values)), bar_values)
-    canvas.draw()
-
-    # Programar la siguiente actualización de la gráfica después de 1 segundo
-    root.after(1000, update_bar_chart)
-
-# Función para obtener los datos de los últimos 10 segundos y actualizar la gráfica de puntos
-def update_point_chart():
-    # Obtener los datos de los últimos 10 segundos
-    # Obtener los datos de ejemplo de los últimos 10 segundos
-    example_data = generate_example_data()[-200:]
-
-    # Actualizar la lista de valores históricos para todas las barras
+    # Agregamos nuevos datos aleatorios a cada barra
+    nuevos_datos = [random.random() for _ in range(8)]
+    for i in range(8):
+        datos[i] = nuevos_datos[i]
+        dataStack[i].append(nuevos_datos[i])
+        if len(dataStack[i]) > 20:
+            promedio[i] = np.mean(dataStack[i])
+            dataStack[i] = []
+            historial[i].append(promedio[i])   
+        #historial[i].append(nuevos_datos[i])
+        
+        # Mantenemos el historial de los últimos 5 segundos
+        if len(historial[i]) > 5:
+            historial[i] = historial[i][-5:]
     
-    bar_values_history.append(example_data)
+    # Actualizamos las gráficas de barras
+    for i in range(8):
+        barra = ax1.patches[i]
+        barra.set_height(datos[i])
+        barra.set_facecolor(colores[i])
+    
+    # Actualizamos la gráfica de puntos
+    for i in range(8):
+        puntos = historial[i]
+        ax2.lines[i].set_ydata(puntos)
+        ax2.lines[i].set_xdata(np.arange(len(puntos)))
+        #ax2.lines[i].set_xdata(np.arange(0,len(puntos),0.1))
+        ax2.lines[i].set_color(colores[i])
+    
+    # Redibujamos la figura
+    fig.canvas.draw()
 
-    history_data = bar_values_history[-10:]
+# Creamos las gráficas de barras y de puntos
+colores = ['b', 'g', 'r', 'c', 'm', 'y', 'k', 'orange']
+#colores = [np.random.rand(3,) for _ in range(8)]
+ax1.bar(np.arange(8), datos, color=colores)
+#ax1.bar(np.arange(8), datos, color='blue')
+ax1.set_ylim([0, 1])
+ax1.set_xlabel('Barra')
+ax1.set_ylabel('Valor')
+ax1.set_title('Gráfica de barras')
 
-    # Calcular los cambios de valores para cada barra
-    diffs = []
-    for i in range(1, len(history_data)):
-        diff = history_data[i] - history_data[i-1]
-        diffs.append(diff)
+ax2.set_xlim([0, 5])
+ax2.set_ylim([0, 1])
+ax2.set_xlabel('Tiempo (segundos)')
+ax2.set_ylabel('Valor')
+ax2.set_title('Gráfica de puntos')
 
-    # Actualizar la gráfica de puntos con los cambios de valores
-    ax.clear()
-    ax.plot(diffs, 'o-')
-    ax.set_xlabel('Tiempo (segundos)')
-    ax.set_ylabel('Cambio en valores')
-    canvas.draw()
+for i in range(8):
+    puntos = historial[i]
+    ax2.plot(np.arange(len(puntos)), puntos, color=colores[i])
 
-    # Programar la siguiente actualización de la gráfica después de 1 segundo
-    root.after(1000, update_point_chart)
+# Actualizamos los datos cada 100 milisegundos
+timer = fig.canvas.new_timer(interval=1)
+timer.add_callback(actualizar_datos)
+timer.start()
 
-# Función para actualizar la selección de barras
-def update_bars_selection():
-
-
-    # Obtener la selección de barras del usuario
-    selected_bars = []
-    for i in range(len(bar_checkboxes)):
-        if bar_checkboxes[i].get() == 1:
-            selected_bars.append(i)
-
-    # Actualizar la gráfica de barras con las barras seleccionadas
-    selected_values = [bar_values[i] for i in selected_bars]
-    ax.clear()
-    ax.bar(range(len(selected_values)), selected_values)
-    canvas.draw()
-
-    # Actualizar la lista de valores históricos para las barras seleccionadas
-    selected_history_values = [[bar_values_history[i][j] for i in selected_bars] for j in range(len(bar_values_history))]
-    bar_values_history = selected_history_values
-
-# Crear la ventana principal de la aplicación
-root = tk.Tk()
-root.title('Visualización de datos')
-
-# Crear la gráfica de barras
-fig = Figure(figsize=(6, 3), dpi=100)
-ax = fig.add_subplot(111)
-bar_values = [0] * 8
-ax.bar(range(len(bar_values)), bar_values)
-canvas = FigureCanvasTkAgg(fig, master=root)
-canvas.get_tk_widget().grid(row=0, column=0)
-
-# Crear la gráfica de puntos para los cambios en los últimos 10 segundos
-fig2 = Figure(figsize=(6, 3), dpi=100)
-ax
+plt.show()
