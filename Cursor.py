@@ -1,6 +1,7 @@
 import pygame   
 import random   
 import numpy
+from tkinter import messagebox
 from pygame.locals import (K_UP,
                            K_DOWN,
                            K_LEFT,
@@ -15,6 +16,7 @@ class Player(pygame.sprite.Sprite):
         super(Player, self).__init__()
         self.surf = pygame.Surface((25, 25))
         self.surf.fill((255, 255, 255))
+        #self.surf=pygame.draw.circle(self.surf, (255,255,255), (400,400),5)
         self.rect = self.surf.get_rect()
         self.rect.move_ip((SCREEN_WIDTH-self.surf.get_width())/2,(SCREEN_HEIGHT-self.surf.get_width())/2)
 
@@ -63,6 +65,7 @@ class Enemy(pygame.sprite.Sprite):
         self.rect = self.surf.get_rect(
         center=(SCREEN_WIDTH - 100, SCREEN_HEIGHT - 100))
         self.speed = 0
+        self.name='Enemy'
 
     def update(self):
         self.rect.move_ip(-self.speed, 0)
@@ -88,6 +91,7 @@ clock = pygame.time.Clock()
 player = Player()
 
 enemies = pygame.sprite.Group()
+objectives = pygame.sprite.Group()
 all_sprites = pygame.sprite.Group()
 all_sprites.add(player)
 
@@ -100,18 +104,35 @@ position=[(180,180),
            (SCREEN_WIDTH-100,SCREEN_HEIGHT/2),
            (SCREEN_WIDTH-180,SCREEN_HEIGHT-180),
            ]
-
-for i in range(8):
-    new_enemy = Enemy()
-    new_enemy.moveEnemy(position[i])
-    enemies.add(new_enemy)
-    all_sprites.add(new_enemy)
+def GenerateEnemies():
+    objectiveEnemy=random.randint(0,7)
+    for i in range(8): 
+        if i == objectiveEnemy:
+            objective= Enemy()
+            objective.name='objective'
+            objective.surf.fill((0,255,0))
+            objective.moveEnemy(position[i])
+            objectives.add(objective)
+            all_sprites.add(objective)
+        else:
+            new_enemy = Enemy()
+            new_enemy.surf.fill((255,0,0))
+            new_enemy.moveEnemy(position[i])
+            enemies.add(new_enemy)
+            all_sprites.add(new_enemy) 
+        """new_enemy = Enemy()
+        if i == objectiveEnemy :
+            new_enemy.surf.fill((0,255,0))
+        new_enemy.moveEnemy(position[i])
+        enemies.add(new_enemy)
+        all_sprites.add(new_enemy)"""
     
 pygame.key.set_repeat(50,0)
 
 running = True
+GenerateEnemies()
 
-while running:
+while running:    
     for event in pygame.event.get():
         if event.type == KEYDOWN:
             if event.key == K_ESCAPE:
@@ -136,9 +157,19 @@ while running:
         screen.blit(player.surf, player.rect)
         for entity in all_sprites:
             screen.blit(entity.surf, entity.rect)
+        
+        if pygame.sprite.spritecollideany(player, objectives):
+            messagebox.showerror('You did it!!!!!!!!!!!!!!!','Lograste llegar al objetivo crackkk!!')
+            player.update((SCREEN_WIDTH/2-player.rect.center[0],SCREEN_HEIGHT/2-player.rect.center[1]))
+            enemies.empty()
+            GenerateEnemies()
+
         if pygame.sprite.spritecollideany(player, enemies):
-            player.kill()
-            running = False
+            print('perdiste')
+            player.update((SCREEN_WIDTH/2-player.rect.center[0],SCREEN_HEIGHT/2-player.rect.center[1]))
+            
+            #player.kill()
+            #running = False
         pygame.display.flip()
         #clock.tick(60)
 
