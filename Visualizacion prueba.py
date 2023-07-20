@@ -43,17 +43,17 @@ class GraphApp:
         self.root.title("Muscle and synergies activations visualization")
         self.fig = plt.figure()
         
-        gs = gridspec.GridSpec(nrows=1, ncols=2, width_ratios=[1, 6])
+        #divido el espacio y seteo el ratio
+        gs = gridspec.GridSpec(nrows=2, ncols=2, width_ratios=[3, 6])
         
         #agrego los subplots a la ventana
-        self.ax = self.fig.add_subplot(gs[:,0])  # Add first graph to the left column
+        self.ax = self.fig.add_subplot(gs[0,0])  # Add first graph to the left column
         self.ax2 = self.fig.add_subplot(gs[:,1])  # Add second graph to the right column
         
         # Code for the first Graph
         self.initVariables()
 
-        # Code for the second Graph
-
+        # labels for the second Graph
         self.ax2.set_title("Second Graph")
         self.ax2.set_xlabel("Tiempo")
         self.ax2.set_ylabel("Actividad Muscular")
@@ -66,6 +66,9 @@ class GraphApp:
         #Create the checkbutton and link it to variable
         Title1 = tk.Label(root, text="MUSCLES")
         Title1.pack()
+        '''self.musclesCheckboxes = [tk.Checkbutton(root, text='Show Muscle {}'.format(i+1), variable=self.show_muscle1, command=self.update_line_visibility) for i in range(8)]
+        for checkbox in self.musclesCheckboxes: 
+            checkbox.pack(anchor=tk.W)'''
         self.muscle1_checkbox = tk.Checkbutton(root, text='Show Muscle 1', variable=self.show_muscle1, command=self.update_line_visibility)
         self.muscle1_checkbox.pack(anchor=tk.W)
         self.muscle2_checkbox = tk.Checkbutton(root, text='Show Muscle 2', variable=self.show_muscle2, command=self.update_line_visibility)
@@ -116,20 +119,42 @@ class GraphApp:
     def collect_data(self):
         #collect the data from the server
                 # now is randomized for testing
-        y1 = random.gauss(0.8,0.1)
-        y2 = random.gauss(0.5,0.1)
-        y3 = random.gauss(0.1,0.1)
+        y1 = random.gauss(1/9,0.01)
+        y2 = random.gauss(2/9,0.01)
+        y3 = random.gauss(3/9,0.01)
+        y4 = random.gauss(4/9,0.01)
+        y5 = random.gauss(5/9,0.01)
+        y6 = random.gauss(6/9,0.01)
+        y7 = random.gauss(7/9,0.01)
+        y8 = random.gauss(8/9,0.01)
+
         point1 = (self.current_x, y1)
         point2 = (self.current_x, y2)
         point3 = (self.current_x, y3)
+        point4 = (self.current_x, y4)
+        point5 = (self.current_x, y5)
+        point6 = (self.current_x, y6)
+        point7 = (self.current_x, y7)
+        point8 = (self.current_x, y8)
         
         #append to active display list and history list
         self.Muscle1.append(point1)
         self.Muscle2.append(point2)
         self.Muscle3.append(point3)
+        self.Muscle4.append(point4)
+        self.Muscle5.append(point5)
+        self.Muscle6.append(point6)
+        self.Muscle7.append(point7)
+        self.Muscle8.append(point8)
+
         self.Muscle1History.append(point1)
         self.Muscle2History.append(point2)
         self.Muscle3History.append(point3)
+        self.Muscle4History.append(point4)
+        self.Muscle5History.append(point5)
+        self.Muscle6History.append(point6)
+        self.Muscle7History.append(point7)
+        self.Muscle8History.append(point8)
 
         #delete old data
         if len(self.Muscle1) > self.NumDataPts2Display:
@@ -138,6 +163,17 @@ class GraphApp:
             self.Muscle2 = self.Muscle2[1:]
         if len(self.Muscle3) > self.NumDataPts2Display:
             self.Muscle3 = self.Muscle3[1:]
+        if len(self.Muscle4) > self.NumDataPts2Display:
+            self.Muscle4 = self.Muscle4[1:]
+        if len(self.Muscle5) > self.NumDataPts2Display:
+            self.Muscle5 = self.Muscle5[1:]
+        if len(self.Muscle6) > self.NumDataPts2Display:
+            self.Muscle6 = self.Muscle6[1:]
+        if len(self.Muscle7) > self.NumDataPts2Display:
+            self.Muscle7 = self.Muscle7[1:]
+        if len(self.Muscle8) > self.NumDataPts2Display:
+            self.Muscle8 = self.Muscle8[1:]
+
 
         if len(self.Muscle1History) > self.NumDataPts2Save:
             self.Muscle1History = self.Muscle1History[1:]
@@ -145,6 +181,16 @@ class GraphApp:
             self.Muscle2History = self.Muscle2History[1:]
         if len(self.Muscle3History) > self.NumDataPts2Save:
             self.Muscle3History = self.Muscle3History[1:]
+        if len(self.Muscle4History) > self.NumDataPts2Save:
+            self.Muscle4History = self.Muscle4History[1:]
+        if len(self.Muscle5History) > self.NumDataPts2Save:
+            self.Muscle5History = self.Muscle5History[1:]
+        if len(self.Muscle6History) > self.NumDataPts2Save:
+            self.Muscle6History = self.Muscle6History[1:]
+        if len(self.Muscle7History) > self.NumDataPts2Save:
+            self.Muscle7History = self.Muscle7History[1:]
+        if len(self.Muscle8History) > self.NumDataPts2Save:
+            self.Muscle8History = self.Muscle8History[1:]
 
         self.current_x += 1
 
@@ -157,14 +203,35 @@ class GraphApp:
         y_values2 = [point[1] for point in self.Muscle2]
         x_values3 = [point[0] for point in self.Muscle3]
         y_values3 = [point[1] for point in self.Muscle3]
+        x_values4 = [point[0] for point in self.Muscle4]
+        y_values4 = [point[1] for point in self.Muscle4]
+        x_values5 = [point[0] for point in self.Muscle5]
+        y_values5 = [point[1] for point in self.Muscle5]
+        x_values6 = [point[0] for point in self.Muscle6]
+        y_values6 = [point[1] for point in self.Muscle6]
+        x_values7 = [point[0] for point in self.Muscle7]
+        y_values7 = [point[1] for point in self.Muscle7]
+        x_values8 = [point[0] for point in self.Muscle8]
+        y_values8 = [point[1] for point in self.Muscle8]
 
 
         if self.show_muscle1.get():
-            self.ax.plot(x_values1, y_values1, 'red', label='Red Graph')
+            self.ax.plot(x_values1, y_values1, 'red', label='Muscle 1')
         if self.show_muscle2.get():
-            self.ax.plot(x_values2, y_values2, 'blue', label='Blue Graph')
+            self.ax.plot(x_values2, y_values2, 'blue', label='Muscle 2')
         if self.show_muscle3.get():
-            self.ax.plot(x_values3, y_values3, 'green', label='Green Graph')
+            self.ax.plot(x_values3, y_values3, 'green', label='Muscle 3')
+        if self.show_muscle4.get():
+            self.ax.plot(x_values4, y_values4, 'yellow', label='Muscle 4')
+        if self.show_muscle5.get():
+            self.ax.plot(x_values5, y_values5, 'pink', label='Muscle 5')
+        if self.show_muscle6.get():
+            self.ax.plot(x_values6, y_values6, 'brown', label='Muscle 6')
+        if self.show_muscle7.get():
+            self.ax.plot(x_values7, y_values7, 'orange', label='Muscle 7')
+        if self.show_muscle8.get():
+            self.ax.plot(x_values8, y_values8, 'violet', label='Muscle 8')
+        
 
         self.ax.set_xlim(self.current_x - 1000, self.current_x)
         self.ax.set_ylim(0, 1)
@@ -179,7 +246,12 @@ class GraphApp:
         last_sample1 = self.Muscle1[-1][1] if self.Muscle1 else 0
         last_sample2 = self.Muscle2[-1][1] if self.Muscle2 else 0
         last_sample3 = self.Muscle3[-1][1] if self.Muscle3 else 0
-
+        last_sample4 = self.Muscle4[-1][1] if self.Muscle4 else 0
+        last_sample5 = self.Muscle5[-1][1] if self.Muscle5 else 0
+        last_sample6 = self.Muscle6[-1][1] if self.Muscle6 else 0
+        last_sample7 = self.Muscle7[-1][1] if self.Muscle7 else 0
+        last_sample8 = self.Muscle8[-1][1] if self.Muscle8 else 0
+        
         #tomando con LPF
         '''last_sample1 = self.apply_low_pass_filter(x_values1, y_values1, 50) if self.muscle1 else 0
         last_sample2 = self.apply_low_pass_filter(x_values2, y_values2, 50) if self.muscle2 else 0
@@ -221,6 +293,53 @@ class GraphApp:
             muscles.append('Muscle 3') 
             colorList.append('Green')
 
+        if self.show_muscle4.get():
+            if x_bar != []:
+                x_bar.append(x_bar[-1]+1)
+            else:  
+                x_bar.append(0.2) 
+            heights.append(last_sample4)
+            muscles.append('Muscle 4') 
+            colorList.append('yellow')
+
+        if self.show_muscle5.get():
+            if x_bar != []:
+                x_bar.append(x_bar[-1]+1)
+            else:  
+                x_bar.append(0.2) 
+            heights.append(last_sample5)
+            muscles.append('Muscle 5') 
+            colorList.append('pink')
+
+        if self.show_muscle6.get():
+            if x_bar != []:
+                x_bar.append(x_bar[-1]+1)
+            else:  
+                x_bar.append(0.2) 
+            heights.append(last_sample6)
+            muscles.append('Muscle 6') 
+            colorList.append('brown')
+
+        if self.show_muscle7.get():
+            if x_bar != []:
+                x_bar.append(x_bar[-1]+1)
+            else:  
+                x_bar.append(0.2) 
+            heights.append(last_sample7)
+            muscles.append('Muscle 7') 
+            colorList.append('orange')
+
+        if self.show_muscle8.get():
+            if x_bar != []:
+                x_bar.append(x_bar[-1]+1)
+            else:  
+                x_bar.append(0.2) 
+            heights.append(last_sample8)
+            muscles.append('Muscle 8') 
+            colorList.append('violet')
+
+            
+
         self.ax2.clear()
         self.ax2.bar(x_bar, heights, color = colorList, edgecolor = 'black')
         self.ax2.set_ylim(0, 1)
@@ -229,6 +348,8 @@ class GraphApp:
         self.ax2.set_xlabel('Muscles')
         self.ax2.set_ylabel('Activation')
         self.ax2.set_title('Muscle Activation')
+        for tick in self.ax2.get_xticklabels():
+            tick.set_rotation(45)
 
         self.canvas.draw()
         self.root.after(10, self.update_graph)
@@ -329,6 +450,7 @@ class GraphApp:
 
         #create and init variables for the checkboxes    
                 
+        Muscles = [tk.BooleanVar() for i in range(8)]
         self.show_muscle1 = tk.BooleanVar()
         self.show_muscle2 = tk.BooleanVar()
         self.show_muscle3 = tk.BooleanVar()
