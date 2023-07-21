@@ -27,6 +27,10 @@ class DataCollectionThread(threading.Thread):
 
 
 class GraphApp:
+    MusclesNumber = 8
+    SynergiesNumber = 5
+    MusclesColors = ['red','blue','green','yellow','pink','brown','orange','violet']
+    SynergiesColors = ['red','blue','green','yellow','pink']
     #parameters to modify graphs
     Sec2Display=5
     Sec2Save=50
@@ -47,16 +51,18 @@ class GraphApp:
         gs = gridspec.GridSpec(nrows=2, ncols=2, width_ratios=[3, 6])
         
         #agrego los subplots a la ventana
-        self.ax = self.fig.add_subplot(gs[0,0])  # Add first graph to the left column
-        self.ax2 = self.fig.add_subplot(gs[:,1])  # Add second graph to the right column
+        self.DotsMuscles = self.fig.add_subplot(gs[0,0])  # Add first graph to the left column
+        self.BarsMusculos = self.fig.add_subplot(gs[0,1])  # Add second graph to the right column
         
+        self.DotsSynergies = self.fig.add_subplot(gs[1,0])
+        self.barsSynergies = self.fig.add_subplot(gs[1,1])
         # Code for the first Graph
         self.initVariables()
 
         # labels for the second Graph
-        self.ax2.set_title("Second Graph")
-        self.ax2.set_xlabel("Tiempo")
-        self.ax2.set_ylabel("Actividad Muscular")
+        self.BarsMusculos.set_title("Second Graph")
+        self.BarsMusculos.set_xlabel("Tiempo")
+        self.BarsMusculos.set_ylabel("Actividad Muscular")
 
         # Code for the checkboxes
 
@@ -66,50 +72,27 @@ class GraphApp:
         #Create the checkbutton and link it to variable
         Title1 = tk.Label(root, text="MUSCLES")
         Title1.pack()
-        '''self.musclesCheckboxes = [tk.Checkbutton(root, text='Show Muscle {}'.format(i+1), variable=self.show_muscle1, command=self.update_line_visibility) for i in range(8)]
+        self.musclesCheckboxes = [tk.Checkbutton(root, text='Show Muscle {}'.format(i+1), variable=self.ShowMuscles[i], command=self.update_line_visibility) for i in range(8)]
         for checkbox in self.musclesCheckboxes: 
-            checkbox.pack(anchor=tk.W)'''
-        self.muscle1_checkbox = tk.Checkbutton(root, text='Show Muscle 1', variable=self.show_muscle1, command=self.update_line_visibility)
-        self.muscle1_checkbox.pack(anchor=tk.W)
-        self.muscle2_checkbox = tk.Checkbutton(root, text='Show Muscle 2', variable=self.show_muscle2, command=self.update_line_visibility)
-        self.muscle2_checkbox.pack(anchor=tk.W)
-        self.muscle3_checkbox = tk.Checkbutton(root, text='Show Muscle 3', variable=self.show_muscle3, command=self.update_line_visibility)
-        self.muscle3_checkbox.pack(anchor=tk.W)
-        self.muscle4_checkbox = tk.Checkbutton(root, text='Show Muscle 4', variable=self.show_muscle4, command=self.update_line_visibility)
-        self.muscle4_checkbox.pack(anchor=tk.W)
-        self.muscle5_checkbox = tk.Checkbutton(root, text='Show Muscle 5', variable=self.show_muscle5, command=self.update_line_visibility)
-        self.muscle5_checkbox.pack(anchor=tk.W)
-        self.muscle6_checkbox = tk.Checkbutton(root, text='Show Muscle 6', variable=self.show_muscle6, command=self.update_line_visibility)
-        self.muscle6_checkbox.pack(anchor=tk.W)
-        self.muscle7_checkbox = tk.Checkbutton(root, text='Show Muscle 7', variable=self.show_muscle7, command=self.update_line_visibility)
-        self.muscle7_checkbox.pack(anchor=tk.W)
-        self.muscle8_checkbox = tk.Checkbutton(root, text='Show Muscle 8', variable=self.show_muscle8, command=self.update_line_visibility)
-        self.muscle8_checkbox.pack(anchor=tk.W)
+            checkbox.pack(anchor=tk.W)
         space1 = tk.Label(root, text="\n")
         space1.pack()
         
         Title2 = tk.Label(root, text="SYNERGIES")
         Title2.pack()
-        self.synergy1_checkbox = tk.Checkbutton(root, text='Show Synergy 1', variable=self.show_synergy1, command=self.update_line_visibility)
-        self.synergy1_checkbox.pack(anchor=tk.W)
-        self.synergy2_checkbox = tk.Checkbutton(root, text='Show Synergy 2', variable=self.show_synergy2, command=self.update_line_visibility)
-        self.synergy2_checkbox.pack(anchor=tk.W)
-        self.synergy3_checkbox = tk.Checkbutton(root, text='Show Synergy 3', variable=self.show_synergy3, command=self.update_line_visibility)
-        self.synergy3_checkbox.pack(anchor=tk.W)
-        self.synergy4_checkbox = tk.Checkbutton(root, text='Show Synergy 4', variable=self.show_synergy4, command=self.update_line_visibility)
-        self.synergy4_checkbox.pack(anchor=tk.W)
-        self.synergy5_checkbox = tk.Checkbutton(root, text='Show Synergy 5', variable=self.show_synergy5, command=self.update_line_visibility)
-        self.synergy5_checkbox.pack(anchor=tk.W)
+        self.SynergiesCheckboxes =[tk.Checkbutton(root, text='Show Synergy {}'.format(i+1), variable=self.ShowSynergies[i], command=self.update_line_visibility) for i in range(self.SynergiesNumber)] 
+        for checkbox in self.SynergiesCheckboxes: 
+            checkbox.pack(anchor=tk.W)
         space2 = tk.Label(root, text="\n")
         space2.pack()
 
         Title3 = tk.Label(root, text="PRINT TO CONSOLE")
         Title3.pack()
+        
         self.printHistory1_button = tk.Button(root, text='M1H', command=self.print_Muscle1History)
         self.printHistory1_button.pack()
         self.printHistory2_button = tk.Button(root, text='M2H', command=self.print_Muscle2History)
         self.printHistory2_button.pack()
-        
         
         self.data_thread = DataCollectionThread(self)
         self.data_thread.start()
@@ -119,237 +102,135 @@ class GraphApp:
     def collect_data(self):
         #collect the data from the server
                 # now is randomized for testing
-        y1 = random.gauss(1/9,0.01)
-        y2 = random.gauss(2/9,0.01)
-        y3 = random.gauss(3/9,0.01)
-        y4 = random.gauss(4/9,0.01)
-        y5 = random.gauss(5/9,0.01)
-        y6 = random.gauss(6/9,0.01)
-        y7 = random.gauss(7/9,0.01)
-        y8 = random.gauss(8/9,0.01)
-
-        point1 = (self.current_x, y1)
-        point2 = (self.current_x, y2)
-        point3 = (self.current_x, y3)
-        point4 = (self.current_x, y4)
-        point5 = (self.current_x, y5)
-        point6 = (self.current_x, y6)
-        point7 = (self.current_x, y7)
-        point8 = (self.current_x, y8)
-        
+        MuscleActivations = [random.gauss((i+1)/9,0.01) for i in range(self.MusclesNumber)]
+        SynergiesActivations = [random.gauss((i+1)/6,0.01) for i in range(self.SynergiesNumber)]
+        Musclespoints = [(self.current_x, MuscleActivations[i]) for i in range(self.MusclesNumber)]
+        SynergiesPoints = [(self.current_x, SynergiesActivations[i]) for i in range(self.SynergiesNumber)]
         #append to active display list and history list
-        self.Muscle1.append(point1)
-        self.Muscle2.append(point2)
-        self.Muscle3.append(point3)
-        self.Muscle4.append(point4)
-        self.Muscle5.append(point5)
-        self.Muscle6.append(point6)
-        self.Muscle7.append(point7)
-        self.Muscle8.append(point8)
+        for i in range(len(self.Muscles)):
+            self.Muscles[i].append(Musclespoints[i])
+            self.MusclesHistory[i].append(Musclespoints[i])
 
-        self.Muscle1History.append(point1)
-        self.Muscle2History.append(point2)
-        self.Muscle3History.append(point3)
-        self.Muscle4History.append(point4)
-        self.Muscle5History.append(point5)
-        self.Muscle6History.append(point6)
-        self.Muscle7History.append(point7)
-        self.Muscle8History.append(point8)
-
+        for i in range(len(self.Synergies)):
+            self.Synergies[i].append(SynergiesPoints[i])
+            self.SynergiesHistory[i].append(SynergiesPoints[i])    
+        
         #delete old data
-        if len(self.Muscle1) > self.NumDataPts2Display:
-            self.Muscle1 = self.Muscle1[1:]
-        if len(self.Muscle2) > self.NumDataPts2Display:
-            self.Muscle2 = self.Muscle2[1:]
-        if len(self.Muscle3) > self.NumDataPts2Display:
-            self.Muscle3 = self.Muscle3[1:]
-        if len(self.Muscle4) > self.NumDataPts2Display:
-            self.Muscle4 = self.Muscle4[1:]
-        if len(self.Muscle5) > self.NumDataPts2Display:
-            self.Muscle5 = self.Muscle5[1:]
-        if len(self.Muscle6) > self.NumDataPts2Display:
-            self.Muscle6 = self.Muscle6[1:]
-        if len(self.Muscle7) > self.NumDataPts2Display:
-            self.Muscle7 = self.Muscle7[1:]
-        if len(self.Muscle8) > self.NumDataPts2Display:
-            self.Muscle8 = self.Muscle8[1:]
-
-
-        if len(self.Muscle1History) > self.NumDataPts2Save:
-            self.Muscle1History = self.Muscle1History[1:]
-        if len(self.Muscle2History) > self.NumDataPts2Save:
-            self.Muscle2History = self.Muscle2History[1:]
-        if len(self.Muscle3History) > self.NumDataPts2Save:
-            self.Muscle3History = self.Muscle3History[1:]
-        if len(self.Muscle4History) > self.NumDataPts2Save:
-            self.Muscle4History = self.Muscle4History[1:]
-        if len(self.Muscle5History) > self.NumDataPts2Save:
-            self.Muscle5History = self.Muscle5History[1:]
-        if len(self.Muscle6History) > self.NumDataPts2Save:
-            self.Muscle6History = self.Muscle6History[1:]
-        if len(self.Muscle7History) > self.NumDataPts2Save:
-            self.Muscle7History = self.Muscle7History[1:]
-        if len(self.Muscle8History) > self.NumDataPts2Save:
-            self.Muscle8History = self.Muscle8History[1:]
-
+        for i in range(len(self.Muscles)):
+            if len(self.Muscles[i]) > self.NumDataPts2Display:
+                self.Muscles[i] = self.Muscles[i][1:] 
+        for i in range(len(self.MusclesHistory)):
+            if (len(self.MusclesHistory)) > self.NumDataPts2Save:
+                self.MusclesHistory[i] = self.MusclesHistory[i][1:]     
+        
+        for i in range(len(self.Synergies)):
+            if len(self.Synergies[i]) > self.NumDataPts2Display:
+                self.Synergies[i] = self.Synergies[i][1:]
+        for i in range(len(self.SynergiesHistory)):
+            if len(self.SynergiesHistory[i]) > self.NumDataPts2Save:
+                self.SynergiesHistory[i] = self.SynergiesHistory[i][1:]
+        
         self.current_x += 1
 
     def update_graph(self):
-        self.ax.clear()
-
-        x_values1 = [point[0] for point in self.Muscle1] #cada punto trae [numMuestra,muestra]
-        y_values1 = [point[1] for point in self.Muscle1]
-        x_values2 = [point[0] for point in self.Muscle2]
-        y_values2 = [point[1] for point in self.Muscle2]
-        x_values3 = [point[0] for point in self.Muscle3]
-        y_values3 = [point[1] for point in self.Muscle3]
-        x_values4 = [point[0] for point in self.Muscle4]
-        y_values4 = [point[1] for point in self.Muscle4]
-        x_values5 = [point[0] for point in self.Muscle5]
-        y_values5 = [point[1] for point in self.Muscle5]
-        x_values6 = [point[0] for point in self.Muscle6]
-        y_values6 = [point[1] for point in self.Muscle6]
-        x_values7 = [point[0] for point in self.Muscle7]
-        y_values7 = [point[1] for point in self.Muscle7]
-        x_values8 = [point[0] for point in self.Muscle8]
-        y_values8 = [point[1] for point in self.Muscle8]
-
-
-        if self.show_muscle1.get():
-            self.ax.plot(x_values1, y_values1, 'red', label='Muscle 1')
-        if self.show_muscle2.get():
-            self.ax.plot(x_values2, y_values2, 'blue', label='Muscle 2')
-        if self.show_muscle3.get():
-            self.ax.plot(x_values3, y_values3, 'green', label='Muscle 3')
-        if self.show_muscle4.get():
-            self.ax.plot(x_values4, y_values4, 'yellow', label='Muscle 4')
-        if self.show_muscle5.get():
-            self.ax.plot(x_values5, y_values5, 'pink', label='Muscle 5')
-        if self.show_muscle6.get():
-            self.ax.plot(x_values6, y_values6, 'brown', label='Muscle 6')
-        if self.show_muscle7.get():
-            self.ax.plot(x_values7, y_values7, 'orange', label='Muscle 7')
-        if self.show_muscle8.get():
-            self.ax.plot(x_values8, y_values8, 'violet', label='Muscle 8')
+        self.DotsMuscles.clear()
+        self.DotsSynergies.clear()
         
+        Muscles_x_values = [[point[0] for point in self.Muscles[i]] for i in range(len(self.Muscles))] #cada punto trae [numMuestra,muestra]
+        Muscles_y_values = [[point[1] for point in self.Muscles[i]] for i in range(len(self.Muscles))]
+        
+        Synergies_x_values = [[point[0] for point in self.Synergies[i]] for i in range(len(self.Synergies))]
+        Synergies_y_values = [[point[1] for point in self.Synergies[i]] for i in range(len(self.Synergies))]
 
-        self.ax.set_xlim(self.current_x - 1000, self.current_x)
-        self.ax.set_ylim(0, 1)
-        self.ax.set_xlabel('Muscles')
-        self.ax.set_ylabel('Activation')
-        self.ax.set_title('Last 5 seconds of muscle activation')
-        self.ax.legend() 
+        for i in range(len(self.ShowMuscles)):
+            if self.ShowMuscles[i].get():
+                self.DotsMuscles.plot(Muscles_x_values[i], Muscles_y_values[i],self.MusclesColors[i], label='Muscle {}'.format(i+1))      
+        for i in range(len(self.ShowSynergies)):
+            if self.ShowSynergies[i].get():
+                self.DotsSynergies.plot(Synergies_x_values[i], Synergies_y_values[i],self.SynergiesColors[i], label='Synergy {}'.format(i+1))
+        
+        self.DotsMuscles.set_xlim(self.current_x - 1000, self.current_x)
+        self.DotsMuscles.set_ylim(0, 1)
+        self.DotsMuscles.set_xlabel('Muscles')
+        self.DotsMuscles.set_ylabel('Activation')
+        self.DotsMuscles.set_title('Last 5 seconds of muscle activation')
+        self.DotsMuscles.legend() 
+
+        self.DotsSynergies.set_xlim(self.current_x - 1000, self.current_x)
+        self.DotsSynergies.set_ylim(0, 1)
+        self.DotsSynergies.set_xlabel('synergies')
+        self.DotsSynergies.set_ylabel('Activation')
+        self.DotsSynergies.set_title('Last 5 seconds of synergies activation')
+        self.DotsSynergies.legend() 
 
         # Create the bar graph for the second graph
         #tomando la ultima muestra
-        
-        last_sample1 = self.Muscle1[-1][1] if self.Muscle1 else 0
-        last_sample2 = self.Muscle2[-1][1] if self.Muscle2 else 0
-        last_sample3 = self.Muscle3[-1][1] if self.Muscle3 else 0
-        last_sample4 = self.Muscle4[-1][1] if self.Muscle4 else 0
-        last_sample5 = self.Muscle5[-1][1] if self.Muscle5 else 0
-        last_sample6 = self.Muscle6[-1][1] if self.Muscle6 else 0
-        last_sample7 = self.Muscle7[-1][1] if self.Muscle7 else 0
-        last_sample8 = self.Muscle8[-1][1] if self.Muscle8 else 0
-        
+        last_samples_muscles = [(self.Muscles[i][-1][1] if self.Muscles[1] else 0) for i in range(len(self.Muscles))]
+        last_samples_synergies= [(self.Synergies[i][-1][1] if self.Synergies[1] else 0) for i in range(len(self.Synergies))]
+
         #tomando con LPF
         '''last_sample1 = self.apply_low_pass_filter(x_values1, y_values1, 50) if self.muscle1 else 0
         last_sample2 = self.apply_low_pass_filter(x_values2, y_values2, 50) if self.muscle2 else 0
         last_sample3 = self.apply_low_pass_filter(x_values3, y_values3, 50) if self.muscle3 else 0'''
 
         # Create x-coordinates for the bars with an offset of 0.2
-        x_bar = []
-        heights = []
-        muscles = []
-        colorList = []
-        if self.show_muscle1.get():
-            #Create the positions for the x axis
-            if x_bar != []:
-                x_bar.append(x_bar[-1]+1)  
-            else:  
-                x_bar.append(0.2)
-            #add the y value for it
-            heights.append(last_sample1)
-            # add label for the value added
-            muscles.append('Muscle 1') 
-            #add color, consistent with the previous graph
-            colorList.append('Red')
+        x_bar_muscles = []
+        heights_muscles = []
+        musclesList = []
+        colorListMuscle = []
+        for i in range(len(self.ShowMuscles)):
+            if self.ShowMuscles[i].get():
+                if x_bar_muscles != []:
+                    x_bar_muscles.append(x_bar_muscles[-1]+1)  
+                else:  
+                    x_bar_muscles.append(0.2)
+                #add the y value for it
+                heights_muscles.append(last_samples_muscles[i])
+                # add label for the value added
+                musclesList.append('Muscle {}'.format(i+1)) 
+                #add color, consistent with the previous graph
+                colorListMuscle.append(self.MusclesColors[i])
+    
+        self.BarsMusculos.clear()
+        self.BarsMusculos.bar(x_bar_muscles, heights_muscles, color = colorListMuscle, edgecolor = 'black')
+        self.BarsMusculos.set_ylim(0, 1)
+        self.BarsMusculos.set_xticks(x_bar_muscles)
+        self.BarsMusculos.set_xticklabels(musclesList)
+        self.BarsMusculos.set_xlabel('Muscles')
+        self.BarsMusculos.set_ylabel('Activation')
+        self.BarsMusculos.set_title('Muscle Activation')
+        for tick in self.BarsMusculos.get_xticklabels():
+            tick.set_rotation(30)
 
-        if self.show_muscle2.get(): 
-            if x_bar != []:
-                x_bar.append(x_bar[-1]+1)
-            else:  
-                x_bar.append(0.2) 
-            heights.append(last_sample2)
-            muscles.append('Muscle 2') 
-            colorList.append('Blue')
+        # Create x-coordinates for the bars with an offset of 0.2
+        x_bar_synergies = []
+        heights_synergies = []
+        synergiesList = []
+        colorListsynergies = []
+        for i in range(len(self.ShowSynergies)):
+            if self.ShowSynergies[i].get():
+                if x_bar_synergies != []:
+                    x_bar_synergies.append(x_bar_synergies[-1]+1)  
+                else:  
+                    x_bar_synergies.append(0.2)
+                #add the y value for it
+                heights_synergies.append(last_samples_synergies[i])
+                # add label for the value added
+                synergiesList.append('synergies {}'.format(i+1)) 
+                #add color, consistent with the previous graph
+                colorListsynergies.append(self.SynergiesColors[i])
+    
+        self.barsSynergies.clear()
+        self.barsSynergies.bar(x_bar_synergies, heights_synergies, color = colorListsynergies, edgecolor = 'black')
+        self.barsSynergies.set_ylim(0, 1)
+        self.barsSynergies.set_xticks(x_bar_synergies)
+        self.barsSynergies.set_xticklabels(synergiesList)
+        self.barsSynergies.set_xlabel('synergies')
+        self.barsSynergies.set_ylabel('Activation')
+        self.barsSynergies.set_title('synergy Activation')
+        for tick in self.barsSynergies.get_xticklabels():
+            tick.set_rotation(30)    
 
-        if self.show_muscle3.get():
-            if x_bar != []:
-                x_bar.append(x_bar[-1]+1)
-            else:  
-                x_bar.append(0.2) 
-            heights.append(last_sample3)
-            muscles.append('Muscle 3') 
-            colorList.append('Green')
-
-        if self.show_muscle4.get():
-            if x_bar != []:
-                x_bar.append(x_bar[-1]+1)
-            else:  
-                x_bar.append(0.2) 
-            heights.append(last_sample4)
-            muscles.append('Muscle 4') 
-            colorList.append('yellow')
-
-        if self.show_muscle5.get():
-            if x_bar != []:
-                x_bar.append(x_bar[-1]+1)
-            else:  
-                x_bar.append(0.2) 
-            heights.append(last_sample5)
-            muscles.append('Muscle 5') 
-            colorList.append('pink')
-
-        if self.show_muscle6.get():
-            if x_bar != []:
-                x_bar.append(x_bar[-1]+1)
-            else:  
-                x_bar.append(0.2) 
-            heights.append(last_sample6)
-            muscles.append('Muscle 6') 
-            colorList.append('brown')
-
-        if self.show_muscle7.get():
-            if x_bar != []:
-                x_bar.append(x_bar[-1]+1)
-            else:  
-                x_bar.append(0.2) 
-            heights.append(last_sample7)
-            muscles.append('Muscle 7') 
-            colorList.append('orange')
-
-        if self.show_muscle8.get():
-            if x_bar != []:
-                x_bar.append(x_bar[-1]+1)
-            else:  
-                x_bar.append(0.2) 
-            heights.append(last_sample8)
-            muscles.append('Muscle 8') 
-            colorList.append('violet')
-
-            
-
-        self.ax2.clear()
-        self.ax2.bar(x_bar, heights, color = colorList, edgecolor = 'black')
-        self.ax2.set_ylim(0, 1)
-        self.ax2.set_xticks(x_bar)
-        self.ax2.set_xticklabels(muscles)
-        self.ax2.set_xlabel('Muscles')
-        self.ax2.set_ylabel('Activation')
-        self.ax2.set_title('Muscle Activation')
-        for tick in self.ax2.get_xticklabels():
-            tick.set_rotation(45)
 
         self.canvas.draw()
         self.root.after(10, self.update_graph)
@@ -377,7 +258,7 @@ class GraphApp:
         return last_filtered_sample
 
     def print_Muscle1History(self):
-        formatted_list = '[{}]'.format('\n'.join('   '.join(map(str, item)) for item in self.Muscle1History))
+        formatted_list = '[{}]'.format('\n'.join('   '.join(map(str, item)) for item in self.MusclesHistory[1]))
         print(formatted_list)
     
     def print_Muscle2History(self):
@@ -420,65 +301,21 @@ class GraphApp:
         #create muscle and synergies lists
         self.current_x = 0
 
-        self.Muscle1 = []
-        self.Muscle2 = []
-        self.Muscle3 = []
-        self.Muscle4 = []
-        self.Muscle5 = []
-        self.Muscle6 = []
-        self.Muscle7 = []
-        self.Muscle8 = []
-        self.Synergy1 = []
-        self.Synergy2 = []
-        self.Synergy3 = []
-        self.Synergy4 = []
-        self.Synergy5 = []
+        self.Muscles = [[] for _ in range(self.MusclesNumber)]       
+        self.MusclesHistory = [[] for _ in range(self.MusclesNumber)]
+        self.Synergies = [[] for _ in range(self.SynergiesNumber)]
+        self.SynergiesHistory = [[] for _ in range(self.SynergiesNumber)]
 
-        self.Muscle1History = []
-        self.Muscle2History = []
-        self.Muscle3History = []
-        self.Muscle4History = []
-        self.Muscle5History = []
-        self.Muscle6History = []
-        self.Muscle7History = []
-        self.Muscle8History = []
-        self.Synergy1History = []
-        self.Synergy2History = []
-        self.Synergy3History = []
-        self.Synergy4History = []
-        self.Synergy5History = []
-
-        #create and init variables for the checkboxes    
-                
-        Muscles = [tk.BooleanVar() for i in range(8)]
-        self.show_muscle1 = tk.BooleanVar()
-        self.show_muscle2 = tk.BooleanVar()
-        self.show_muscle3 = tk.BooleanVar()
-        self.show_muscle4 = tk.BooleanVar()
-        self.show_muscle5 = tk.BooleanVar()
-        self.show_muscle6 = tk.BooleanVar()
-        self.show_muscle7 = tk.BooleanVar()
-        self.show_muscle8 = tk.BooleanVar()
-        self.show_synergy1 = tk.BooleanVar()
-        self.show_synergy2 = tk.BooleanVar()
-        self.show_synergy3 = tk.BooleanVar()
-        self.show_synergy4 = tk.BooleanVar()
-        self.show_synergy5 = tk.BooleanVar()
+        #create and init variables for the checkboxes           
+        self.ShowMuscles = [tk.BooleanVar() for _ in range(self.MusclesNumber)]
+        self.ShowSynergies = [tk.BooleanVar() for _ in range(self.SynergiesNumber)]
         
         #initialize the variables created
-        self.show_muscle1.set(True)
-        self.show_muscle2.set(True)
-        self.show_muscle3.set(True)
-        self.show_muscle4.set(True)
-        self.show_muscle5.set(True)
-        self.show_muscle6.set(True)
-        self.show_muscle7.set(True)
-        self.show_muscle8.set(True)
-        self.show_synergy1.set(True) 
-        self.show_synergy2.set(True)
-        self.show_synergy3.set(True) 
-        self.show_synergy4.set(True)
-        self.show_synergy5.set(True)
+        for show_muscle in self.ShowMuscles:
+            show_muscle.set(True)
+        for show_synergy in self.ShowSynergies:
+            show_synergy.set(True)
+        
 
 if __name__ == "__main__":
     root = tk.Tk()
