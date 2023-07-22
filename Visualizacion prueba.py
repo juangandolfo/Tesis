@@ -32,6 +32,7 @@ class GraphApp:
     MusclesColors = ['red','blue','green','yellow','pink','brown','orange','violet']
     SynergiesColors = ['red','blue','green','yellow','pink']
     #parameters to modify graphs
+    
     Sec2Display=5
     Sec2Save=50
     Sec2SaveLongHistory=5*60
@@ -48,7 +49,7 @@ class GraphApp:
         self.fig = plt.figure()
         
         #divido el espacio y seteo el ratio
-        gs = gridspec.GridSpec(nrows=2, ncols=2, width_ratios=[3, 6])
+        gs = gridspec.GridSpec(nrows=2, ncols=2, width_ratios=[1, 1])
         
         #agrego los subplots a la ventana
         self.DotsMuscles = self.fig.add_subplot(gs[0,0])  # Add first graph to the left column
@@ -72,7 +73,7 @@ class GraphApp:
         #Create the checkbutton and link it to variable
         Title1 = tk.Label(root, text="MUSCLES")
         Title1.pack()
-        self.musclesCheckboxes = [tk.Checkbutton(root, text='Show Muscle {}'.format(i+1), variable=self.ShowMuscles[i], command=self.update_line_visibility) for i in range(8)]
+        self.musclesCheckboxes = [tk.Checkbutton(root, text='Show Muscle {}'.format(i+1), variable=self.ShowMuscles[i], command=self.update_line_visibility) for i in range(self.MusclesNumber)]
         for checkbox in self.musclesCheckboxes: 
             checkbox.pack(anchor=tk.W)
         space1 = tk.Label(root, text="\n")
@@ -102,8 +103,18 @@ class GraphApp:
     def collect_data(self):
         #collect the data from the server
                 # now is randomized for testing
+        #esto es una posibilidad de como hacer llegar datos
+        #[ M1  M2  M3  M4  T ]
+        #[ [1,2,3]  [1,2,3]  [1,2,3]  [1,2,3]  [444,445,446] ]
+        #esto es otra posibilidad
+        #[ [[444,1],[445,2],[446,3]]  [[444,1],[445,2],[446,3]]  [[444,1],[445,2],[446,3]]  [[444,1],[445,2],[446,3]] ]
+        
+        
+        #[[1,0.1],[2,0.11],[3,0.4],[[444,1],[445,2],[446,3]]] Cuidado que no haga esto
+
         MuscleActivations = [random.gauss((i+1)/9,0.01) for i in range(self.MusclesNumber)]
         SynergiesActivations = [random.gauss((i+1)/6,0.01) for i in range(self.SynergiesNumber)]
+        
         Musclespoints = [(self.current_x, MuscleActivations[i]) for i in range(self.MusclesNumber)]
         SynergiesPoints = [(self.current_x, SynergiesActivations[i]) for i in range(self.SynergiesNumber)]
         #append to active display list and history list
@@ -262,7 +273,7 @@ class GraphApp:
         print(formatted_list)
     
     def print_Muscle2History(self):
-        print(self.Muscle2History)
+        print(self.MusclesHistory[2])
         
     def print_Muscle3History(self):
         print(self.Muscle1History)
@@ -301,7 +312,7 @@ class GraphApp:
         #create muscle and synergies lists
         self.current_x = 0
 
-        self.Muscles = [[] for _ in range(self.MusclesNumber)]       
+        self.Muscles = [[] for _ in range(self.MusclesNumber)]    
         self.MusclesHistory = [[] for _ in range(self.MusclesNumber)]
         self.Synergies = [[] for _ in range(self.SynergiesNumber)]
         self.SynergiesHistory = [[] for _ in range(self.SynergiesNumber)]
