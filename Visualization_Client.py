@@ -34,7 +34,7 @@ while True:
              #data_stack.extend(data)  
              print(f"Received {data!r}")  
              #stack_lock.release()  # Release lock after reading the stack
-             time.sleep(5)   
+             time.sleep(0.017)   
 
         except socket.error as e:
              print("Connection error:", e)

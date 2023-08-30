@@ -35,12 +35,20 @@ def Dictionary_to_matrix(dictionary):
     
     return matriz
 
-# Function to send the request and receive the data from client (PM)
+# Function to send the request and receive the data from client (PM) 
 def Get_data():
         request = "GET /data"
         client_socket.sendall(request.encode())
-        data = client_socket.recv(1024)
-        response_data = json.loads(data.decode()) # Decode the the received data
+        data = b''       
+        while True:
+            chunk = client_socket.recv(1024)
+            data += chunk
+            if b"#DELIMITER#" in data:
+                break  # Delimiter finded
+
+        data_json = data.decode().rstrip("#DELIMITER#") # Quit the delimiter and decode the received data
+        response_data = json.loads(data_json) # Get the original data       
+                
         return response_data
 
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -62,7 +70,7 @@ def Processing_Module_Client():
                 #data_stack = [np.concatenate((vector, row)) for vector, row in zip(data_stack, formated_data)] # If we use shared memory between the PM and the visualization app. We can avoid the 'for' using the transpose matrix (above line). 
                 #print(f"Received {data_stack!r}") 
                 stack_lock.release()  # Release lock after reading the stack
-                time.sleep(5)   
+                #time.sleep(1)   
 
             except socket.error as e:
                 print("Connection error:", e)

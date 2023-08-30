@@ -34,8 +34,9 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             # Check if the received data is a GET request for "/data"
             if data.decode().strip() == "GET /data":
                 response_data = API.PollData()
-                response_json = json.dumps(response_data, separators=(',', ':')).encode()  # Convert the dictionary to JSON and encode into bytes
-                conn.sendall(response_json)
+                response_json = json.dumps(response_data, separators=(',', ':')) # Convert the dictionary to JSON 
+                response_json += "#DELIMITER#" # Add a delimiter at the final 
+                conn.sendall(response_json.encode())
                 print("Data sent:", response_json)
             else:
                 # If the received data is not "GET /data", close the connection
