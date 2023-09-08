@@ -1,4 +1,10 @@
 #https://www.niit.com/india/knowledge-centre/python-game-development
+#import Visualization_Client as VC
+import socket
+import time
+import json
+from collections import deque
+from threading import Thread, Semaphore
 
 import pygame   
 import random   
@@ -13,6 +19,36 @@ from pygame.locals import (K_UP,
                            QUIT
                            )
 
+import Processing_Module as PM
+# Run Processing_Module
+
+#Processing_Module_Client_thread = Thread(target=PM.Processing_Module_Client)
+#Processing_Module_Server_thread = Thread(target=PM.Processing_Module_Server)
+#Processing_Module_Client_thread.start()
+#Processing_Module_Server_thread.start()
+
+
+
+# TCP/IP visualization client ------------------------------------------------------------------------------
+
+HOST = "127.0.0.1"  # The server's hostname or IP address
+PORT2 = 6002  # The port used by the API server
+
+# Create a socket
+client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+client_socket.connect((HOST, PORT2))
+
+#-----------------------------------------------------------------------------------------------------------
+
+# Function to send the request and receive the data from MP
+def Get_data():
+        request = "GET /data"
+        client_socket.sendall(request.encode())
+        data = client_socket.recv(1024)
+        response_data = json.loads(data.decode()) # Decode the received data
+        return response_data
+# ----------------------------------------------------------------------------------------------------------
+
 class Player(pygame.sprite.Sprite):
     def __init__(self):
         super(Player, self).__init__()
@@ -23,7 +59,7 @@ class Player(pygame.sprite.Sprite):
         self.rect.move_ip((SCREEN_WIDTH-self.surf.get_width())/2,(SCREEN_HEIGHT-self.surf.get_width())/2)
 
     def update(self, speed):
-        self.rect.move_ip(speed[0],speed[1])
+        self.rect.move_ip(speed[0],-speed[1])
         """if pressed_keys[K_UP]:
             self.rect.move_ip(0, -5)
         if pressed_keys[K_DOWN]:
@@ -52,6 +88,14 @@ def getSpeedFromKeyboard(pressed_keys):
         speed=(20, 0)
     else:
         speed=(0,0)    
+    return speed
+
+def getSpeedFromEMG():
+    time.sleep(0.15)
+    data = Get_data()
+    #print(f"Received {data!r}") 
+    print([5*data[1],5*data[2]]) 
+    speed=(5*data[1],5*data[2])       
     return speed
 
 class Enemy(pygame.sprite.Sprite):
@@ -135,12 +179,12 @@ running = True
 GenerateEnemies()
 
 while running:    
-    for event in pygame.event.get():
-        if event.type == KEYDOWN:
-            if event.key == K_ESCAPE:
-                running=False
-        elif event.type == QUIT:
-                running=False
+    #for event in pygame.event.get():
+        #if event.type == KEYDOWN:
+           # if event.key == K_ESCAPE:
+              #  running=False
+       # elif event.type == QUIT:
+               # running=False
         """elif event.type == ADDENEMY:
             new_enemy = Enemy()
             enemies.add(new_enemy)
@@ -152,8 +196,9 @@ while running:
         #screen.blit(surf, surf_center)
     
         screen.fill((0, 0, 0))
-        pressed_keys = pygame.key.get_pressed()
-        speed=getSpeedFromKeyboard(pressed_keys)
+        #pressed_keys = pygame.key.get_pressed()
+        #speed=getSpeedFromKeyboard(pressed_keys)
+        speed=getSpeedFromEMG()
         player.update(speed)
         enemies.update()
         screen.blit(player.surf, player.rect)

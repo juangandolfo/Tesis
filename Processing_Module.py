@@ -98,7 +98,11 @@ def Processing_Module_Server():
                 # Check if the received data is a GET request for "/data"
                 if  data.decode().strip() == "GET /data":
                     stack_lock.acquire()  # Acquire lock before accessing the stack
+                    #response_data = [9]
+                    #while response_data != []:
+                     #   try:
                     response_data = data_stack.popleft()
+                    #movimient = movimient + response_data
                     stack_lock.release()  # Release lock after reading the stack
                     response_data = response_data.tolist()
                     response_json = json.dumps(response_data).encode()  # Convert the dictionary to JSON and enconde intio bytes
@@ -112,7 +116,7 @@ def Processing_Module_Server():
 Processing_Module_Client_thread = Thread(target=Processing_Module_Client)
 Processing_Module_Server_thread = Thread(target=Processing_Module_Server)
 
-Processing_Module_Server_thread.start()
-Processing_Module_Client_thread.start()
 
+Processing_Module_Client_thread.start()
+Processing_Module_Server_thread.start()
 

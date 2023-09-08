@@ -242,7 +242,7 @@ class GraphApp:
         for tick in self.barsSynergies.get_xticklabels():
             tick.set_rotation(30)    
 
-
+ 
         self.canvas.draw()
         self.root.after(10, self.update_graph)
 
