@@ -43,20 +43,20 @@ class GraphApp:
     NumDataPts2Save = SampleFreq*Sec2Save
     
     def __init__(self, root):
-        
+
         self.root = root
         self.root.title("Muscle and synergies activations visualization")
         self.fig = plt.figure()
         
         #divido el espacio y seteo el ratio
-        gs = gridspec.GridSpec(nrows=2, ncols=2, width_ratios=[1, 1])
+        gs = gridspec.GridSpec(nrows=3, ncols=2, width_ratios=[1, 1],height_ratios=[3,1,3])
         
         #agrego los subplots a la ventana
         self.DotsMuscles = self.fig.add_subplot(gs[0,0])  # Add first graph to the left column
         self.BarsMusculos = self.fig.add_subplot(gs[0,1])  # Add second graph to the right column
         
-        self.DotsSynergies = self.fig.add_subplot(gs[1,0])
-        self.barsSynergies = self.fig.add_subplot(gs[1,1])
+        self.DotsSynergies = self.fig.add_subplot(gs[2,0])
+        self.barsSynergies = self.fig.add_subplot(gs[2,1])
         # Code for the first Graph
         self.initVariables()
 
@@ -101,17 +101,6 @@ class GraphApp:
         self.update_graph()
 
     def collect_data(self):
-        #collect the data from the server
-                # now is randomized for testing
-        #esto es una posibilidad de como hacer llegar datos
-        #[ M1  M2  M3  M4  T ]
-        #[ [1,2,3]  [1,2,3]  [1,2,3]  [1,2,3]  [444,445,446] ]
-        #esto es otra posibilidad
-        #[ [[444,1],[445,2],[446,3]]  [[444,1],[445,2],[446,3]]  [[444,1],[445,2],[446,3]]  [[444,1],[445,2],[446,3]] ]
-        
-        
-        #[[1,0.1],[2,0.11],[3,0.4],[[444,1],[445,2],[446,3]]] Cuidado que no haga esto
-
         MuscleActivations = [random.gauss((i+1)/9,0.01) for i in range(self.MusclesNumber)]
         SynergiesActivations = [random.gauss((i+1)/6,0.01) for i in range(self.SynergiesNumber)]
         
@@ -155,11 +144,18 @@ class GraphApp:
 
         for i in range(len(self.ShowMuscles)):
             if self.ShowMuscles[i].get():
-                self.DotsMuscles.plot(Muscles_x_values[i], Muscles_y_values[i],self.MusclesColors[i], label='Muscle {}'.format(i+1))      
+                try:
+                    self.DotsMuscles.plot(Muscles_x_values[i], Muscles_y_values[i],self.MusclesColors[i], label='Muscle {}'.format(i+1))      
+                except Exception as e:
+                    print(e)
+                    self.DotsMuscles.plot(Muscles_x_values[i], Muscles_y_values[i][:-1],self.MusclesColors[i], label='Muscle {}'.format(i+1))      
         for i in range(len(self.ShowSynergies)):
             if self.ShowSynergies[i].get():
-                self.DotsSynergies.plot(Synergies_x_values[i], Synergies_y_values[i],self.SynergiesColors[i], label='Synergy {}'.format(i+1))
-        
+                try:
+                    self.DotsSynergies.plot(Synergies_x_values[i], Synergies_y_values[i],self.SynergiesColors[i], label='Synergy {}'.format(i+1))
+                except Exception as e:
+                    print(e)
+                    self.DotsSynergies.plot(Synergies_x_values[i], Synergies_y_values[i][:-1],self.SynergiesColors[i], label='Synergy {}'.format(i+1))
         self.DotsMuscles.set_xlim(self.current_x - 1000, self.current_x)
         self.DotsMuscles.set_ylim(0, 1)
         self.DotsMuscles.set_xlabel('Muscles')
