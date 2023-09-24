@@ -3,12 +3,13 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import tkinter as tk
 import threading
+#from threading import Semaphore
 import time
 import matplotlib.gridspec as gridspec
 import numpy as np
 from scipy.signal import butter, filtfilt
 
-
+stack_lock = threading.Semaphore(1)
 
 class DataCollectionThread(threading.Thread):
     def __init__(self, graph_app):
@@ -27,6 +28,8 @@ class DataCollectionThread(threading.Thread):
 
 
 class GraphApp:
+    startTime = time.time()
+    startTime2 = time.time()
     MusclesNumber = 8
     SynergiesNumber = 5
     MusclesColors = ['red','blue','green','yellow','pink','brown','orange','violet']
@@ -47,6 +50,7 @@ class GraphApp:
         self.root = root
         self.root.title("Muscle and synergies activations visualization")
         self.fig = plt.figure()
+        self.fig2= plt.figure()
         
         #divido el espacio y seteo el ratio
         gs = gridspec.GridSpec(nrows=3, ncols=2, width_ratios=[1, 1],height_ratios=[3,1,3])
@@ -101,12 +105,15 @@ class GraphApp:
         self.update_graph()
 
     def collect_data(self):
+        #print(time.time()-self.startTime)
+        self.startTime= time.time()
         MuscleActivations = [random.gauss((i+1)/9,0.01) for i in range(self.MusclesNumber)]
         SynergiesActivations = [random.gauss((i+1)/6,0.01) for i in range(self.SynergiesNumber)]
         
         Musclespoints = [(self.current_x, MuscleActivations[i]) for i in range(self.MusclesNumber)]
         SynergiesPoints = [(self.current_x, SynergiesActivations[i]) for i in range(self.SynergiesNumber)]
         #append to active display list and history list
+        stack_lock.acquire()
         for i in range(len(self.Muscles)):
             self.Muscles[i].append(Musclespoints[i])
             self.MusclesHistory[i].append(Musclespoints[i])
@@ -131,31 +138,42 @@ class GraphApp:
                 self.SynergiesHistory[i] = self.SynergiesHistory[i][1:]
         
         self.current_x += 1
+        stack_lock.release()
 
     def update_graph(self):
+        print(time.time()-self.startTime2)
+        self.startTime2= time.time()
+
         self.DotsMuscles.clear()
         self.DotsSynergies.clear()
         
+        stack_lock.acquire()
+
         Muscles_x_values = [[point[0] for point in self.Muscles[i]] for i in range(len(self.Muscles))] #cada punto trae [numMuestra,muestra]
         Muscles_y_values = [[point[1] for point in self.Muscles[i]] for i in range(len(self.Muscles))]
         
         Synergies_x_values = [[point[0] for point in self.Synergies[i]] for i in range(len(self.Synergies))]
         Synergies_y_values = [[point[1] for point in self.Synergies[i]] for i in range(len(self.Synergies))]
 
+        stack_lock.release()
+
         for i in range(len(self.ShowMuscles)):
             if self.ShowMuscles[i].get():
-                try:
+                '''try:
                     self.DotsMuscles.plot(Muscles_x_values[i], Muscles_y_values[i],self.MusclesColors[i], label='Muscle {}'.format(i+1))      
                 except Exception as e:
                     print(e)
                     self.DotsMuscles.plot(Muscles_x_values[i], Muscles_y_values[i][:-1],self.MusclesColors[i], label='Muscle {}'.format(i+1))      
+                '''
+                self.DotsMuscles.plot(Muscles_x_values[i], Muscles_y_values[i],self.MusclesColors[i], label='Muscle {}'.format(i+1))
         for i in range(len(self.ShowSynergies)):
             if self.ShowSynergies[i].get():
-                try:
+                '''try:
                     self.DotsSynergies.plot(Synergies_x_values[i], Synergies_y_values[i],self.SynergiesColors[i], label='Synergy {}'.format(i+1))
                 except Exception as e:
                     print(e)
-                    self.DotsSynergies.plot(Synergies_x_values[i], Synergies_y_values[i][:-1],self.SynergiesColors[i], label='Synergy {}'.format(i+1))
+                    self.DotsSynergies.plot(Synergies_x_values[i], Synergies_y_values[i][:-1],self.SynergiesColors[i], label='Synergy {}'.format(i+1))'''
+                self.DotsSynergies.plot(Synergies_x_values[i], Synergies_y_values[i],self.SynergiesColors[i], label='Synergy {}'.format(i+1))
         self.DotsMuscles.set_xlim(self.current_x - 1000, self.current_x)
         self.DotsMuscles.set_ylim(0, 1)
         self.DotsMuscles.set_xlabel('Muscles')
@@ -272,7 +290,7 @@ class GraphApp:
         print(self.MusclesHistory[2])
         
     def print_Muscle3History(self):
-        print(self.Muscle1History)
+        self.fig2.draw()
         
     def print_Muscle4History(self):
         print(self.Muscle1History)
