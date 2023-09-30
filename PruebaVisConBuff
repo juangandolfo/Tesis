@@ -120,7 +120,7 @@ class GraphApp:
 
 
     def collect_data(self):
-        print(time.time()-self.startTime)
+        #print(time.time()-self.startTime)
         self.startTime= time.time()
         MuscleActivations = [random.gauss((i+1)/9,0.01) for i in range(self.MusclesNumber)]
         SynergiesActivations = [random.gauss((i+1)/6,0.01) for i in range(self.SynergiesNumber)]
@@ -141,7 +141,7 @@ class GraphApp:
         stack_lock.release()
 
     def update_graph(self):
-        #print(time.time()-self.startTime2)
+        print(time.time()-self.startTime2)
         self.startTime2= time.time()
 
         self.DotsMuscles.clear()

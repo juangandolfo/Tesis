@@ -107,7 +107,7 @@ def Processing_Module_Server():
                     response_data = response_data.tolist()
                     response_json = json.dumps(response_data).encode()  # Convert the dictionary to JSON and enconde intio bytes
                     conn.sendall(response_json)
-                    print("Data sent:", response_json)
+                    #print("Data sent:", response_json)
                 else:
                     # If the received data is not "GET /data", close the connection
                     print("Invalid request")

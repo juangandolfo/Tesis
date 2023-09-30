@@ -91,11 +91,11 @@ def getSpeedFromKeyboard(pressed_keys):
     return speed
 
 def getSpeedFromEMG():
-    time.sleep(0.15)
+    time.sleep(0.0005)
     data = Get_data()
     #print(f"Received {data!r}") 
     print([5*data[1],5*data[2]]) 
-    speed=(5*data[1],5*data[2])       
+    speed=(20000*data[1]-20000*data[2],0)       
     return speed
 
 class Enemy(pygame.sprite.Sprite):

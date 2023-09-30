@@ -5,7 +5,7 @@ import numpy as np
 from threading import Thread, Semaphore
 
 frequency = 2000 # Sample rate
-csv_file = 'Data_Source.csv'  # CSV file
+csv_file = 'Prueba1.csv'  # CSV file
 
 # Initialize global stack
 stack = []
