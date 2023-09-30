@@ -14,7 +14,7 @@ PORT2 = 6002 # The port used by the PM server
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 # List to save the received data 
-data_stack = deque()
+data_stack = deque() 
 stack_lock = Semaphore(1)  # Semaphore for stack access
 
 # Create a socket for the server
@@ -107,16 +107,16 @@ def Processing_Module_Server():
                     response_data = response_data.tolist()
                     response_json = json.dumps(response_data).encode()  # Convert the dictionary to JSON and enconde intio bytes
                     conn.sendall(response_json)
-                    print("Data sent:", response_json)
+                    #print("Data sent:", response_json)
                 else:
                     # If the received data is not "GET /data", close the connection
                     print("Invalid request")
     
 
-Processing_Module_Client_thread = Thread(target=Processing_Module_Client)
-Processing_Module_Server_thread = Thread(target=Processing_Module_Server)
+#Processing_Module_Client_thread = Thread(target=Processing_Module_Client)
+#Processing_Module_Server_thread = Thread(target=Processing_Module_Server)
 
 
-Processing_Module_Client_thread.start()
-Processing_Module_Server_thread.start()
+#Processing_Module_Client_thread.start()
+#Processing_Module_Server_thread.start()
 

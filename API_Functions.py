@@ -4,8 +4,8 @@ from collections import deque
 import numpy as np
 from threading import Thread, Semaphore
 
-frequency = 2000 # Sample rate
-csv_file = 'Data_Source.csv'  # CSV file
+frequency = 1000 # Sample rate
+csv_file = 'Prueba1.csv'  # CSV file
 
 # Initialize global stack
 stack = []
@@ -107,8 +107,8 @@ def Stop():
 #-------------------------------------------------------------------------------------------------------------
 
 # Test 
+'''
 
-''''
 def main():
     start_thread = Thread(target=Start)
     start_thread.start()
@@ -127,4 +127,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main() '''
+    main() 
+'''

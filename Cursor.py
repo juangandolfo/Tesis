@@ -22,10 +22,10 @@ from pygame.locals import (K_UP,
 import Processing_Module as PM
 # Run Processing_Module
 
-#Processing_Module_Client_thread = Thread(target=PM.Processing_Module_Client)
-#Processing_Module_Server_thread = Thread(target=PM.Processing_Module_Server)
-#Processing_Module_Client_thread.start()
-#Processing_Module_Server_thread.start()
+Processing_Module_Client_thread = Thread(target=PM.Processing_Module_Client)
+Processing_Module_Server_thread = Thread(target=PM.Processing_Module_Server)
+Processing_Module_Client_thread.start()
+Processing_Module_Server_thread.start()
 
 
 
@@ -91,11 +91,11 @@ def getSpeedFromKeyboard(pressed_keys):
     return speed
 
 def getSpeedFromEMG():
-    time.sleep(0.15)
+    time.sleep(0.0001)
     data = Get_data()
     #print(f"Received {data!r}") 
-    print([5*data[1],5*data[2]]) 
-    speed=(5*data[1],5*data[2])       
+    speed=(10000*abs(data[1])-abs(10000*data[2]),0)
+    print(speed)      
     return speed
 
 class Enemy(pygame.sprite.Sprite):
