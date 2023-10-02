@@ -4,11 +4,13 @@ import time
 import numpy as np
 from collections import deque
 from threading import Thread, Semaphore
+import LocalCircularBuffer
 
 
 HOST = "127.0.0.1"  # Standard adress (localhost)
 PORT = 6001  # Port to listen on from the API server (non-privileged ports are > 1023)
-PORT2 = 6002 # The port used by the PM server
+PORT_Cursor = 6002 # The port used by the Cursor client
+PORT_Visualization = 6003 # The port used by the Visualization client
 
 # Create a socket for the client 
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -83,10 +85,10 @@ def Processing_Module_Server():
     #with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
 
         # Link the socket to the IP and PORT selected: 
-        server_socket.bind((HOST, PORT2))
+        server_socket.bind((HOST, PORT_Cursor))
 
         # Listen the inner connections:
-        print("Server listening on", HOST, "port", PORT2)
+        print("Server listening on", HOST, "port", PORT_Cursor)
         server_socket.listen()
         
         # Accept the connection and open a socket to receive and send data. 
