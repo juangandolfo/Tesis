@@ -4,7 +4,9 @@ import time
 import numpy as np
 from collections import deque
 from threading import Thread, Semaphore
-import LocalCircularBuffer
+import LocalCircularBufferVector as Buffer
+
+
 
 
 HOST = "127.0.0.1"  # Standard adress (localhost)
@@ -16,7 +18,10 @@ PORT_Visualization = 6003 # The port used by the Visualization client
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 # List to save the received data 
-data_stack = deque() 
+BufferSize = 10
+NumberChannels = 9
+#data_stack = deque() 
+circular_stack = Buffer.CircularBufferVector(BufferSize, NumberChannels)
 stack_lock = Semaphore(1)  # Semaphore for stack access
 
 # Create a socket for the server
@@ -68,7 +73,9 @@ def Processing_Module_Client():
                 data = Get_data()
                 formated_data = Dictionary_to_matrix(data)
                 stack_lock.acquire()  # Acquire lock before accessing the stack
-                data_stack.extend(formated_data) # If we use TCP/IP between the PM and the visualization app. 
+                #data_stack.extend(formated_data) # If we use TCP/IP between the PM and the visualization app. 
+                circular_stack.add_matrix(formated_data)
+                #print(circular_stack.get_vectors())
                 #data_stack = [np.concatenate((vector, row)) for vector, row in zip(data_stack, formated_data)] # If we use shared memory between the PM and the visualization app. We can avoid the 'for' using the transpose matrix (above line). 
                 #print(f"Received {data_stack!r}") 
                 stack_lock.release()  # Release lock after reading the stack
@@ -103,11 +110,14 @@ def Processing_Module_Server():
                     #response_data = [9]
                     #while response_data != []:
                      #   try:
-                    response_data = data_stack.popleft()
+                    #response_data = data_stack.popleft()
+                    response_data = response_data + circular_stack.get_oldest_vector()
+                    print(response_data)
                     #movimient = movimient + response_data
                     stack_lock.release()  # Release lock after reading the stack
                     response_data = response_data.tolist()
                     response_json = json.dumps(response_data).encode()  # Convert the dictionary to JSON and enconde intio bytes
+                    response_data = 0
                     conn.sendall(response_json)
                     #print("Data sent:", response_json)
                 else:

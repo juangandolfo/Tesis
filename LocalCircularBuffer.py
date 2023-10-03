@@ -21,7 +21,7 @@ class CircularBuffer:
             return self.buffer[0]
         else:
             return self.buffer[self.head]
-
+'''
 # Usage example
 # uncomment the code below
 buffer = CircularBuffer(5)
@@ -34,6 +34,6 @@ for i in range(1):  # Adding more than capacity
 points = buffer.get_points()
 #points=buffer.get_oldest_point()
 print(points)
-
+'''
 
 

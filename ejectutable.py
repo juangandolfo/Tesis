@@ -17,7 +17,7 @@ Processing_Module_Server_thread = Thread(target=PM.Processing_Module_Server)
 Processing_Module_Client_thread.start()
 time.sleep(1.5)
 Processing_Module_Server_thread.start()
-time.sleep(5)
+time.sleep(1.5)
 import Cursor 
 Cursor_thread=Thread(target=Cursor.Cursor)
 Cursor_thread.start()

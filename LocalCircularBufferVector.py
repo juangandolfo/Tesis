@@ -7,6 +7,12 @@ class CircularBufferVector:
         self.buffer = [[None] * num_cols for _ in range(capacity)]
         self.size = 0
         self.head = 0
+        self.VisualizationHead = 0
+        self.VisualizationEmpty = True
+        self.CursorHead = 0
+        self.CursorEmpty = True
+
+
 
     def add_matrix(self, matrix):
         for row in matrix:
@@ -21,15 +27,39 @@ class CircularBufferVector:
             self.size += 1
         else:
             self.buffer[self.head] = vector
+            if self.head == self.CursorHead and self.CursorEmpty == False:
+                self.CursorHead = (self.CursorHead + 1) % self.capacity
+            if self.head == self.VisualizationHead and self.VisualizationEmpty == False:
+                self.VisualizationHead = (self.VisualizationHead + 1) % self.capacity
             self.head = (self.head + 1) % self.capacity
+        
+        self.VisualizationEmpty = False
+        self.CursorEmpty = False       
 
-    def get_vectors(self):
-        return [self.buffer[(self.head + i) % self.capacity] for i in range(self.size)]
+    def get_vectors(self, identifier=0):
+        if identifier == 1:
+            Data = [self.buffer[(self.VisualizationHead + i) % self.capacity] for i in range(self.size)]
+            self.VisualizationHead = (self.VisualizationHead + 1) % self.capacity
+        elif identifier == 2: 
+            Data = [self.buffer[(self.CursorHead + i) % self.capacity] for i in range(self.size)]
+            self.CursorHead = (self.CursorHead + 1) % self.capacity
+        else:
+            Data = [self.buffer[(self.head + i) % self.capacity] for i in range(self.size)]
 
-    def get_oldest_vector(self):
-        return self.buffer[self.head]
+        return Data
 
+    def get_oldest_vector(self, identifier=0):
+        if identifier == 1:
+            head = self.VisualizationHead
+        elif identifier == 2:
+            head = self.CursorHead
+        else:
+            head = self.head
+        return self.buffer[head]
+    
+    
 
+'''
 # Create a CircularBuffer with a capacity of 3, assuming each matrix has 2 rows and 3 columns
 buffer = CircularBufferVector(4, 3)
 
@@ -59,3 +89,21 @@ print(buffer.get_oldest_vector())
 # Get the oldest vector from the buffer
 oldest_vector = buffer.get_oldest_vector()
 print("Oldest vector in the buffer:", oldest_vector)
+'''
+
+'''[head cursor vis ][][][][]
+
+[head vis ][cursor][][][]
+
+[][head vis cursor][][][]
+
+[][head vis ][cursor][][]
+
+[][head vis ][][cursor][]
+
+[][head vis ][][][cursor]
+
+[cursor][head vis ][][][]
+
+[][head vis cursor][][][]'''
+
