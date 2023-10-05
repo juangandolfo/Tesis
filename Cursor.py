@@ -122,6 +122,7 @@ class Enemy(pygame.sprite.Sprite):
         self.rect = self.surf.get_rect(
         center=position)
 
+
 pygame.init()
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 800
@@ -142,14 +143,14 @@ all_sprites = pygame.sprite.Group()
 all_sprites.add(player)
 
 position=[(180,180),
-           (100,SCREEN_HEIGHT/2),
-           (180,SCREEN_HEIGHT-180),
-           (SCREEN_WIDTH/2,100),
-           (SCREEN_WIDTH-180,180),
-           (SCREEN_WIDTH/2,SCREEN_HEIGHT-100),
-           (SCREEN_WIDTH-100,SCREEN_HEIGHT/2),
-           (SCREEN_WIDTH-180,SCREEN_HEIGHT-180),
-           ]
+        (100,SCREEN_HEIGHT/2),
+        (180,SCREEN_HEIGHT-180),
+        (SCREEN_WIDTH/2,100),
+        (SCREEN_WIDTH-180,180),
+        (SCREEN_WIDTH/2,SCREEN_HEIGHT-100),
+        (SCREEN_WIDTH-100,SCREEN_HEIGHT/2),
+        (SCREEN_WIDTH-180,SCREEN_HEIGHT-180),
+        ]
 def GenerateEnemies():
     objectiveEnemy=random.randint(0,7)
     for i in range(8): 
@@ -181,10 +182,10 @@ GenerateEnemies()
 while running:    
     #for event in pygame.event.get():
         #if event.type == KEYDOWN:
-           # if event.key == K_ESCAPE:
-              #  running=False
-       # elif event.type == QUIT:
-               # running=False
+        # if event.key == K_ESCAPE:
+            #  running=False
+    # elif event.type == QUIT:
+            # running=False
         """elif event.type == ADDENEMY:
             new_enemy = Enemy()
             enemies.add(new_enemy)
@@ -221,6 +222,6 @@ while running:
         #clock.tick(60)
 
 
-        
     
+
 
