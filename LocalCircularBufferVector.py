@@ -51,8 +51,10 @@ class CircularBufferVector:
     def get_oldest_vector(self, identifier=0):
         if identifier == 1:
             head = self.VisualizationHead
+            self.VisualizationHead = (self.VisualizationHead + 1) % self.capacity
         elif identifier == 2:
             head = self.CursorHead
+            self.CursorHead = (self.CursorHead + 1) % self.capacity
         else:
             head = self.head
         return self.buffer[head]
@@ -70,11 +72,11 @@ matrix3 = [[13, 14, 15], [16, 17, 18]]
 matrix4 = [[19,20,21],[22,23,24],[25,26,27]]
 
 # Add matrices to the circular buffer
-#print(buffer.get_vectors())
-#print(buffer.get_oldest_vector())
+print(buffer.get_vectors())
+print(buffer.get_oldest_vector())
 buffer.add_matrix(matrix1)
-#print(buffer.get_vectors())
-#print(buffer.get_oldest_vector())
+print(buffer.get_vectors())
+print(buffer.get_oldest_vector())
 buffer.add_matrix(matrix2)
 print(buffer.get_vectors())
 print(buffer.get_oldest_vector())
@@ -85,10 +87,19 @@ buffer.add_matrix(matrix4)
 print(buffer.get_vectors())
 print(buffer.get_oldest_vector())
 
+print(buffer.get_oldest_vector(1))
+print(buffer.get_oldest_vector(1))
+print(buffer.get_oldest_vector(2))
+print(buffer.get_oldest_vector(2))
 
+print(buffer.get_vectors(1))
+print(buffer.get_vectors(1))
+print(buffer.get_vectors(2))
+print(buffer.get_vectors(2))
 # Get the oldest vector from the buffer
-oldest_vector = buffer.get_oldest_vector()
-print("Oldest vector in the buffer:", oldest_vector)
+#oldest_vector = buffer.get_oldest_vector()
+#print("Oldest vector in the buffer:", oldest_vector)
+
 '''
 
 '''[head cursor vis ][][][][]

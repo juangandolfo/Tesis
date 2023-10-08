@@ -111,7 +111,7 @@ def Processing_Module_Server():
                     #while response_data != []:
                      #   try:
                     #response_data = data_stack.popleft()
-                    response_data = response_data + circular_stack.get_oldest_vector()
+                    response_data = circular_stack.get_oldest_vector(1)
                     print(response_data)
                     #movimient = movimient + response_data
                     stack_lock.release()  # Release lock after reading the stack
