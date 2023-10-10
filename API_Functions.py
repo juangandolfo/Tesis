@@ -4,8 +4,8 @@ from collections import deque
 import numpy as np
 from threading import Thread, Semaphore
 
-frequency = 2 # Sample rate
-csv_file = 'Prueba1.csv'  # CSV file
+frequency = 10 # Sample rate
+csv_file = 'Data_Source.csv'  # CSV file
 
 # Initialize global stack
 stack = []
@@ -79,6 +79,7 @@ def CheckDataQueue():
 
 def PollData():
     if not CheckDataQueue():
+        #return {'t':[0], 'M1':[0], 'M2':[0], 'M3':[0], 'M4':[0], 'M5':[0], 'M6':[0], 'M7':[0], 'M8':[0]}
         return {}
 
     # Create the data dictionary

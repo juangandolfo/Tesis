@@ -18,7 +18,7 @@ PORT_Visualization = 6003 # The port used by the Visualization client
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 # List to save the received data 
-BufferSize = 10
+BufferSize = 1000
 NumberChannels = 9
 #data_stack = deque() 
 circular_stack = Buffer.CircularBufferVector(BufferSize, NumberChannels)
@@ -113,11 +113,15 @@ def Processing_Module_Server():
                     #response_data = data_stack.popleft()
                     response_data = circular_stack.get_oldest_vector(1)
                     print(response_data)
+                    if len(response_data) == 0:
+                        response_data = [0,0,0,0,0,0,0,0,0]
+                           
+                 
+                    #print(response_data)
                     #movimient = movimient + response_data
                     stack_lock.release()  # Release lock after reading the stack
-                    response_data = response_data.tolist()
+                    response_data = np.array(response_data).tolist()
                     response_json = json.dumps(response_data).encode()  # Convert the dictionary to JSON and enconde intio bytes
-                    response_data = 0
                     conn.sendall(response_json)
                     #print("Data sent:", response_json)
                 else:

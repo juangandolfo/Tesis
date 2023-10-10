@@ -49,7 +49,7 @@ class Player(pygame.sprite.Sprite):
         self.rect.move_ip((Cursor.SCREEN_WIDTH-self.surf.get_width())/2,(Cursor.SCREEN_HEIGHT-self.surf.get_width())/2)
 
     def update(self, speed):
-        self.rect.move_ip(speed[0],-speed[1])
+        self.rect.move_ip(speed[0],speed[1])
         """if pressed_keys[K_UP]:
             self.rect.move_ip(0, -5)
         if pressed_keys[K_DOWN]:
@@ -81,11 +81,9 @@ def getSpeedFromKeyboard(pressed_keys):
     return speed
 
 def getSpeedFromEMG():
-    time.sleep(1)
-    data = Get_data()
-    #print(f"Received {data!r}") 
-    speed=(1000*abs(data[1])-abs(1000*data[2]),0)
-    #print(speed)      
+    time.sleep(0.01)
+    data = Get_data() 
+    speed=(data[1],data[2])
     return speed
 
 class Enemy(pygame.sprite.Sprite):
