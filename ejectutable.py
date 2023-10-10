@@ -2,9 +2,7 @@ import API_Functions as API
 import API_Server
 from threading import Thread
 import Processing_Module as PM
-
 import time
-
 
 start_thread = Thread(target=API.Start)
 start_thread.start()
