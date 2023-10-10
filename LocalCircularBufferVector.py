@@ -39,15 +39,25 @@ class CircularBufferVector:
     def get_vectors(self, identifier=0):
         Data = []
         if identifier == 1:
-            if self.VisualizationEmpty == False:
-                while (self.VisualizationEmpty == False):           
+            while (self.VisualizationEmpty == False):    
+                if self.size < self.capacity:       
+                    Data.append(self.buffer[self.VisualizationHead])
+                    self.VisualizationHead = (self.VisualizationHead + 1) % self.capacity
+                    if self.VisualizationHead == self.size:
+                        self.VisualizationEmpty = True
+                else:
                     Data.append(self.buffer[self.VisualizationHead])
                     self.VisualizationHead = (self.VisualizationHead + 1) % self.capacity
                     if self.VisualizationHead == self.head:
                         self.VisualizationEmpty = True
         elif identifier == 2:
-            if self.CursorEmpty == False:
-                while (self.CursorEmpty == False):           
+            while (self.CursorEmpty == False):           
+                if self.size < self.capacity:
+                    Data.append(self.buffer[self.CursorHead])
+                    self.CursorHead = (self.CursorHead + 1) % self.capacity
+                    if self.CursorHead == self.size:
+                        self.CursorEmpty = True
+                else:
                     Data.append(self.buffer[self.CursorHead])
                     self.CursorHead = (self.CursorHead + 1) % self.capacity
                     if self.CursorHead == self.head:
@@ -99,8 +109,8 @@ matrix4 = [[19,20,21],[22,23,24],[25,26,27]]
 buffer.add_matrix(matrix4)
 print(buffer.get_vectors())
 
-print(buffer.get_oldest_vector(1))
-print(buffer.get_oldest_vector(1))
+#print(buffer.get_oldest_vector(1))
+#print(buffer.get_oldest_vector(1))
 print(buffer.get_vectors(1))
 print(buffer.get_oldest_vector(2))
 print(buffer.get_vectors(2))
