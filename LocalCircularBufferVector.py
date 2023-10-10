@@ -37,31 +37,51 @@ class CircularBufferVector:
         self.CursorEmpty = False       
 
     def get_vectors(self, identifier=0):
+        Data = []
         if identifier == 1:
-            Data = [self.buffer[(self.VisualizationHead + i) % self.capacity] for i in range(self.size)]
-            self.VisualizationHead = (self.VisualizationHead + 1) % self.capacity
-        elif identifier == 2: 
-            Data = [self.buffer[(self.CursorHead + i) % self.capacity] for i in range(self.size)]
-            self.CursorHead = (self.CursorHead + 1) % self.capacity
+            if self.VisualizationEmpty == False:
+                while (self.VisualizationEmpty == False):           
+                    Data.append(self.buffer[self.VisualizationHead])
+                    self.VisualizationHead = (self.VisualizationHead + 1) % self.capacity
+                    if self.VisualizationHead == self.head:
+                        self.VisualizationEmpty = True
+        elif identifier == 2:
+            if self.CursorEmpty == False:
+                while (self.CursorEmpty == False):           
+                    Data.append(self.buffer[self.CursorHead])
+                    self.CursorHead = (self.CursorHead + 1) % self.capacity
+                    if self.CursorHead == self.head:
+                        self.CursorEmpty = True
         else:
             Data = [self.buffer[(self.head + i) % self.capacity] for i in range(self.size)]
 
         return Data
 
     def get_oldest_vector(self, identifier=0):
+        Data = []
         if identifier == 1:
-            head = self.VisualizationHead
-            self.VisualizationHead = (self.VisualizationHead + 1) % self.capacity
+            
+            if self.VisualizationEmpty == False:
+                Data = self.buffer[self.VisualizationHead]
+                self.VisualizationHead = (self.VisualizationHead + 1) % self.capacity
+                if self.VisualizationHead  == self.head:
+                    self.VisualizationEmpty = True
+                                   
+
         elif identifier == 2:
-            head = self.CursorHead
-            self.CursorHead = (self.CursorHead + 1) % self.capacity
+            if self.CursorEmpty == False:
+                Data = self.buffer[self.CursorHead]
+                self.CursorHead = (self.CursorHead + 1) % self.capacity
+                if self.CursorHead  == self.head:
+                    self.CursorEmpty = True
+                                 
+
         else:
-            head = self.head
-        return self.buffer[head]
+            Data = self.buffer[self.head]
+        return Data
     
     
 
-'''
 # Create a CircularBuffer with a capacity of 3, assuming each matrix has 2 rows and 3 columns
 buffer = CircularBufferVector(4, 3)
 
@@ -72,49 +92,16 @@ matrix3 = [[13, 14, 15], [16, 17, 18]]
 matrix4 = [[19,20,21],[22,23,24],[25,26,27]]
 
 # Add matrices to the circular buffer
-print(buffer.get_vectors())
-print(buffer.get_oldest_vector())
-buffer.add_matrix(matrix1)
-print(buffer.get_vectors())
-print(buffer.get_oldest_vector())
-buffer.add_matrix(matrix2)
-print(buffer.get_vectors())
-print(buffer.get_oldest_vector())
-buffer.add_matrix(matrix3)
-print(buffer.get_vectors())
-print(buffer.get_oldest_vector())
+#print(buffer.get_vectors())
+#print(buffer.get_oldest_vector())
+#buffer.add_matrix(matrix1)
+#buffer.add_matrix(matrix2)
 buffer.add_matrix(matrix4)
 print(buffer.get_vectors())
-print(buffer.get_oldest_vector())
 
 print(buffer.get_oldest_vector(1))
 print(buffer.get_oldest_vector(1))
-print(buffer.get_oldest_vector(2))
-print(buffer.get_oldest_vector(2))
-
 print(buffer.get_vectors(1))
-print(buffer.get_vectors(1))
+print(buffer.get_oldest_vector(2))
 print(buffer.get_vectors(2))
-print(buffer.get_vectors(2))
-# Get the oldest vector from the buffer
-#oldest_vector = buffer.get_oldest_vector()
-#print("Oldest vector in the buffer:", oldest_vector)
-
-'''
-
-'''[head cursor vis ][][][][]
-
-[head vis ][cursor][][][]
-
-[][head vis cursor][][][]
-
-[][head vis ][cursor][][]
-
-[][head vis ][][cursor][]
-
-[][head vis ][][][cursor]
-
-[cursor][head vis ][][][]
-
-[][head vis cursor][][][]'''
-
+#print(buffer.get_vectors(1))
