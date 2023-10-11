@@ -70,28 +70,41 @@ class CircularBufferVector:
     def get_oldest_vector(self, identifier=0):
         Data = []
         if identifier == 1:
-            
-            if self.VisualizationEmpty == False:
-                Data = self.buffer[self.VisualizationHead]
-                self.VisualizationHead = (self.VisualizationHead + 1) % self.capacity
-                if self.VisualizationHead  == self.head:
-                    self.VisualizationEmpty = True
-                                   
+            if self.size < self.capacity:
+                if self.VisualizationEmpty == False:
+                    Data = self.buffer[self.VisualizationHead]
+                    self.VisualizationHead = (self.VisualizationHead + 1) % self.capacity
+                    if self.VisualizationHead  == self.size:
+                        self.VisualizationEmpty = True
+            else:
+                 if self.VisualizationEmpty == False:
+                    Data = self.buffer[self.VisualizationHead]
+                    self.VisualizationHead = (self.VisualizationHead + 1) % self.capacity
+                    if self.VisualizationHead  == self.head:
+                        self.VisualizationEmpty = True
+                                    
 
         elif identifier == 2:
-            if self.CursorEmpty == False:
-                Data = self.buffer[self.CursorHead]
-                self.CursorHead = (self.CursorHead + 1) % self.capacity
-                if self.CursorHead  == self.head:
-                    self.CursorEmpty = True
-                                 
+             if self.size < self.capacity:
+                if self.CursorEmpty == False:
+                    Data = self.buffer[self.CursorHead]
+                    self.CursorHead = (self.CursorHead + 1) % self.capacity
+                    if self.CursorHead  == self.size:
+                        self.CursorEmpty = True
+             else: 
+                if self.CursorEmpty == False:
+                    Data = self.buffer[self.CursorHead]
+                    self.CursorHead = (self.CursorHead + 1) % self.capacity
+                    if self.CursorHead  == self.head:
+                        self.CursorEmpty = True
+                             
 
         else:
             Data = self.buffer[self.head]
         return Data
     
     
-'''
+
 # Create a CircularBuffer with a capacity of 3, assuming each matrix has 2 rows and 3 columns
 buffer = CircularBufferVector(4, 3)
 
@@ -113,6 +126,8 @@ print(buffer.get_vectors())
 #print(buffer.get_oldest_vector(1))
 print(buffer.get_vectors(1))
 print(buffer.get_oldest_vector(2))
+print(buffer.get_oldest_vector(2))
+print(buffer.get_oldest_vector(2))
+print(buffer.get_oldest_vector(2))
 print(buffer.get_vectors(2))
 #print(buffer.get_vectors(1))
-'''

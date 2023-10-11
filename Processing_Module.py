@@ -112,7 +112,7 @@ def Processing_Module_Server():
                      #   try:
                     #response_data = data_stack.popleft()
                     response_data = circular_stack.get_oldest_vector(1)
-                    print(response_data)
+                    #print(response_data)
                     if len(response_data) == 0:
                         response_data = [0,0,0,0,0,0,0,0,0]
                            
