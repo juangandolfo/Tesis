@@ -88,6 +88,7 @@ def getSpeedFromEMG():
     time.sleep(1/frequency)
     data = Get_data() 
     speed=(data[1],data[2])
+    print(speed)
     return speed
 
 class Enemy(pygame.sprite.Sprite):
