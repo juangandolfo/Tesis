@@ -34,8 +34,7 @@ def API_Server():
                     conn.sendall(response_json.encode())
                     #print("Data sent:", response_json)
                 else:
-                    # If the received data is not "GET /data", close the connection
-                    print("Invalid request")
+                   print("Invalid request")
                     
 
 

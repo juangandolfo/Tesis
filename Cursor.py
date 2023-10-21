@@ -19,7 +19,7 @@ from pygame.locals import (K_UP,
                            QUIT
                            )
 
-# TCP/IP visualization client ------------------------------------------------------------------------------
+# TCP/IP Cursor client ------------------------------------------------------------------------------
 
 HOST = "127.0.0.1"  # The server's hostname or IP address
 PORT2 = 6002  # The port used by the API server
@@ -28,11 +28,12 @@ PORT2 = 6002  # The port used by the API server
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client_socket.connect((HOST, PORT2))
 
+frequency = 5
 #-----------------------------------------------------------------------------------------------------------
 
 # Function to send the request and receive the data from MP
 def Get_data():
-        request = "GET /data"
+        request = "GET /data1"
         client_socket.sendall(request.encode())
         data = client_socket.recv(1024)
         response_data = json.loads(data.decode()) # Decode the received data
@@ -49,7 +50,10 @@ class Player(pygame.sprite.Sprite):
         self.rect.move_ip((Cursor.SCREEN_WIDTH-self.surf.get_width())/2,(Cursor.SCREEN_HEIGHT-self.surf.get_width())/2)
 
     def update(self, speed):
-        self.rect.move_ip(speed[0],speed[1])
+        try:
+            self.rect.move_ip(speed[0],speed[1])
+        except:
+            self.rect.move_ip(0,0)
         """if pressed_keys[K_UP]:
             self.rect.move_ip(0, -5)
         if pressed_keys[K_DOWN]:
@@ -81,7 +85,7 @@ def getSpeedFromKeyboard(pressed_keys):
     return speed
 
 def getSpeedFromEMG():
-    time.sleep(0.01)
+    time.sleep(1/frequency)
     data = Get_data() 
     speed=(data[1],data[2])
     return speed

@@ -10,22 +10,25 @@ import LocalCircularBufferVector as Buffer
 
 
 HOST = "127.0.0.1"  # Standard adress (localhost)
-PORT = 6001  # Port to listen on from the API server (non-privileged ports are > 1023)
-PORT_Cursor = 6002 # The port used by the Cursor client
-PORT_Visualization = 6003 # The port used by the Visualization client
+PORT_Client = 6001  # Port to get data from the API Server
+PORT_Server = 6002 # The port used by the PM Server
+
 
 # Create a socket for the client 
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
+# Create a socket for the server
+server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+# Link the socket to the IP and PORT selected: 
+server_socket.bind((HOST, PORT_Server))
+
+
 # List to save the received data 
-BufferSize = 1000
+BufferSize = 10000
 NumberChannels = 9
 #data_stack = deque() 
 circular_stack = Buffer.CircularBufferVector(BufferSize, NumberChannels)
 stack_lock = Semaphore(1)  # Semaphore for stack access
-
-# Create a socket for the server
-server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 
 
@@ -42,7 +45,7 @@ def Dictionary_to_matrix(dictionary):
     
     return matriz
 
-# Function to send the request and receive the data from client (PM) 
+# Function to send the request and receive the data from API Server
 def Get_data():
         request = "GET /data"
         client_socket.sendall(request.encode())
@@ -58,6 +61,48 @@ def Get_data():
                 
         return response_data
 
+# Function to handle the connection with a client
+def Handle_Client(conn,addr):
+    print(f"Connected by {addr}")
+    #Connected = True
+    while True:
+        data = conn.recv(1024)
+        # Check if the received data is a GET request for "/data"
+        if  data.decode().strip() == "GET /data1":
+            stack_lock.acquire()  # Acquire lock before accessing the stack
+            response_data = circular_stack.get_oldest_vector(1)
+            #print(response_data)
+            stack_lock.release()  # Release lock after reading the stack
+                     
+            if len(response_data) == 0:
+                response_data = [0,0,0,0,0,0,0,0,0]
+                         
+            response_data = np.array(response_data).tolist()
+            response_json = json.dumps(response_data).encode()  # Convert the dictionary to JSON and enconde intio bytes
+            conn.sendall(response_json)
+            #print("Data sent:", response_json)
+
+        elif  data.decode().strip() == "GET /data2":
+            stack_lock.acquire()  # Acquire lock before accessing the stack
+            response_data = circular_stack.get_oldest_vector(2)
+            #print(response_data)
+            stack_lock.release()  # Release lock after reading the stack
+                     
+            if len(response_data) == 0:
+                response_data = [0,0,0,0,0,0,0,0,0]
+                         
+            response_data = np.array(response_data).tolist()
+            response_json = json.dumps(response_data).encode()  # Convert the dictionary to JSON and enconde intio bytes
+            conn.sendall(response_json)
+            #print("Data sent:", response_json)
+        
+        #if data.decode().strip() == "DISCONNECT":
+             #Connected = False
+
+        else:
+            print("Invalid request") 
+    #conn.close()                        
+        
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -65,7 +110,7 @@ def Get_data():
                
 def Processing_Module_Client():
     global data_stack
-    client_socket.connect((HOST, PORT))
+    client_socket.connect((HOST, PORT_Client))
     
      # Loop to send the request and save the data 
     while True:
@@ -88,51 +133,21 @@ def Processing_Module_Client():
 
 def Processing_Module_Server():
 
-    # Create a socket
-    #with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-
-        # Link the socket to the IP and PORT selected: 
-        server_socket.bind((HOST, PORT_Cursor))
-
         # Listen the inner connections:
-        print("Server listening on", HOST, "port", PORT_Cursor)
+        print("Server listening on", HOST, "port", PORT_Server)
         server_socket.listen()
+        Num_Clients = 0
         
-        # Accept the connection and open a socket to receive and send data. 
-        conn, addr = server_socket.accept()
-        with conn:
-            print(f"Connected by {addr}")
-            while True:
-                data = conn.recv(1024)
-                # Check if the received data is a GET request for "/data"
-                if  data.decode().strip() == "GET /data":
-                    stack_lock.acquire()  # Acquire lock before accessing the stack
-                    #response_data = [9]
-                    #while response_data != []:
-                     #   try:
-                    #response_data = data_stack.popleft()
-                    response_data = circular_stack.get_oldest_vector(1)
-                    print(response_data)
-                    if len(response_data) == 0:
-                        response_data = [0,0,0,0,0,0,0,0,0]
-                           
-                 
-                    #print(response_data)
-                    #movimient = movimient + response_data
-                    stack_lock.release()  # Release lock after reading the stack
-                    response_data = np.array(response_data).tolist()
-                    response_json = json.dumps(response_data).encode()  # Convert the dictionary to JSON and enconde intio bytes
-                    conn.sendall(response_json)
-                    #print("Data sent:", response_json)
-                else:
-                    # If the received data is not "GET /data", close the connection
-                    print("Invalid request")
+        while Num_Clients < 2:
+             # Accept the connection and open a thread to handle the client. 
+             conn, addr = server_socket.accept()
+             thread = Thread(target = Handle_Client, args=(conn, addr))
+             thread.start()
+             Num_Clients = Num_Clients + 1
+             #print(Num_Clients)
+
+                    
     
 
-#Processing_Module_Client_thread = Thread(target=Processing_Module_Client)
-#Processing_Module_Server_thread = Thread(target=Processing_Module_Server)
 
-
-#Processing_Module_Client_thread.start()
-#Processing_Module_Server_thread.start()
 

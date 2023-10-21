@@ -70,14 +70,12 @@ class CircularBufferVector:
     def get_oldest_vector(self, identifier=0):
         Data = []
         if identifier == 1:
-            
             if self.VisualizationEmpty == False:
                 Data = self.buffer[self.VisualizationHead]
                 self.VisualizationHead = (self.VisualizationHead + 1) % self.capacity
                 if self.VisualizationHead  == self.head:
                     self.VisualizationEmpty = True
                                    
-
         elif identifier == 2:
             if self.CursorEmpty == False:
                 Data = self.buffer[self.CursorHead]
@@ -85,7 +83,6 @@ class CircularBufferVector:
                 if self.CursorHead  == self.head:
                     self.CursorEmpty = True
                                  
-
         else:
             Data = self.buffer[self.head]
         return Data
