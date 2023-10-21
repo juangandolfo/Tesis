@@ -1,9 +1,6 @@
 import socket
-import time
 import json
-from collections import deque
-from threading import Thread, Semaphore
-
+import time
 # TCP/IP visualization client ------------------------------------------------------------------------------
 HOST = "127.0.0.1"  # The server's hostname or IP address
 PORT_Client = 6002  # The port used by the API server
@@ -20,5 +17,10 @@ def Get_data():
         client_socket.sendall(request.encode())
         data = client_socket.recv(1024)
         response_data = json.loads(data.decode()) # Decode the received data
+        
         return response_data
 # ----------------------------------------------------------------------------------------------------------
+
+while 1:
+        print("dato cliente2:",Get_data())
+        time.sleep(1)

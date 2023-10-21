@@ -8,7 +8,6 @@ from threading import Thread, Semaphore
 
 import pygame   
 import random   
-import numpy
 from tkinter import messagebox
 from pygame.locals import (K_UP,
                            K_DOWN,
@@ -28,7 +27,7 @@ PORT2 = 6002  # The port used by the API server
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client_socket.connect((HOST, PORT2))
 
-frequency = 5
+frequency = 1
 #-----------------------------------------------------------------------------------------------------------
 
 # Function to send the request and receive the data from MP
@@ -86,9 +85,10 @@ def getSpeedFromKeyboard(pressed_keys):
 
 def getSpeedFromEMG():
     time.sleep(1/frequency)
-    data = Get_data() 
+    data = Get_data()
+    print("Client1:", data) 
     speed=(data[1],data[2])
-    print(speed)
+    #print(speed)
     return speed
 
 class Enemy(pygame.sprite.Sprite):

@@ -8,6 +8,32 @@ import time
 import matplotlib.gridspec as gridspec
 import numpy as np
 from scipy.signal import butter, filtfilt
+import socket
+import json
+import time
+
+
+# TCP/IP visualization client ------------------------------------------------------------------------------
+HOST = "127.0.0.1"  # The server's hostname or IP address
+PORT_Client = 6002  # The port used by the API server
+
+# Create a socket
+client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+client_socket.connect((HOST, PORT_Client))
+
+#-----------------------------------------------------------------------------------------------------------
+
+# Function to send the request and receive the data from MP
+def Get_data():
+        request = "GET /data2"
+        client_socket.sendall(request.encode())
+        data = client_socket.recv(1024)
+        response_data = json.loads(data.decode()) # Decode the received data
+        
+        return response_data
+# ----------------------------------------------------------------------------------------------------------
+
+
 
 
 
@@ -109,7 +135,12 @@ class GraphApp:
     def collect_data(self):
         #print(time.time()-self.startTime)
         self.startTime= time.time()
-        MuscleActivations = [random.gauss((i+1)/9,0.01) for i in range(self.MusclesNumber)]
+        #MuscleActivations = [random.gauss((i+1)/9,0.01) for i in range(self.MusclesNumber)]
+        time.sleep(1)
+        MuscleActivationsprint = Get_data()
+        
+        print("Client2:",MuscleActivationsprint)
+        MuscleActivations=MuscleActivationsprint[1:]
         SynergiesActivations = [random.gauss((i+1)/6,0.01) for i in range(self.SynergiesNumber)]
         
         Musclespoints = [(self.current_x, MuscleActivations[i]) for i in range(self.MusclesNumber)]
@@ -143,7 +174,7 @@ class GraphApp:
         stack_lock.release()
 
     def update_graph(self):
-        print(time.time()-self.startTime2)
+        #print(time.time()-self.startTime2)
         self.startTime2= time.time()
 
         self.DotsMuscles.clear()
@@ -258,7 +289,7 @@ class GraphApp:
         for tick in self.barsSynergies.get_xticklabels():
             tick.set_rotation(30)    
 
- 
+
         self.canvas.draw()
         self.root.after(10, self.update_graph)
 
@@ -343,11 +374,11 @@ class GraphApp:
         for show_synergy in self.ShowSynergies:
             show_synergy.set(True)
         
-
-if __name__ == "__main__":
-    root = tk.Tk()
-    app = GraphApp(root)
-    root.mainloop()
-    app.stop_data_collection()
+def Visualization():
+    while True:
+        root = tk.Tk()
+        app= GraphApp(root)
+        root.mainloop()
+        app.stop_data_collection()
 
 

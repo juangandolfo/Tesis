@@ -4,7 +4,7 @@ from collections import deque
 import numpy as np
 from threading import Thread, Semaphore
 
-frequency = 1000 # Sample rate
+frequency = 1 # Sample rate
 csv_file = 'Data_Source.csv'  # CSV file
 
 # Initialize global stack

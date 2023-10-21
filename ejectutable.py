@@ -19,3 +19,11 @@ time.sleep(0.1)
 import Cursor 
 Cursor_thread=Thread(target=Cursor.Cursor)
 Cursor_thread.start()
+
+
+
+
+import Visualizacion 
+Visualizacion_thread = Thread(target=Visualizacion.Visualization())
+Visualizacion_thread.start()
+
