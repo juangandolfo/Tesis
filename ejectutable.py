@@ -16,14 +16,13 @@ Processing_Module_Client_thread.start()
 time.sleep(0.1)
 Processing_Module_Server_thread.start()
 time.sleep(0.1)
-import Cursor 
-Cursor_thread=Thread(target=Cursor.Cursor)
-Cursor_thread.start()
+#import Cursor 
+#Cursor_thread=Thread(target=Cursor.Cursor)
+#Cursor_thread.start()
 
 
 
-
-import Visualizacion 
-Visualizacion_thread = Thread(target=Visualizacion.Visualization())
+import PruebaVisConBuffCopy 
+Visualizacion_thread = Thread(target=PruebaVisConBuffCopy.Visualization())
 Visualizacion_thread.start()
 

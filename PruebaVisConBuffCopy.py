@@ -1,17 +1,15 @@
 import random
 import matplotlib.pyplot as plt
+import matplotlib.animation as animation
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import tkinter as tk
 import threading
-#from threading import Semaphore
 import time
 import matplotlib.gridspec as gridspec
 import numpy as np
-from scipy.signal import butter, filtfilt
+import LocalCircularBuffer 
 import socket
 import json
-import time
-
 
 # TCP/IP visualization client ------------------------------------------------------------------------------
 HOST = "127.0.0.1"  # The server's hostname or IP address
@@ -35,8 +33,6 @@ def Get_data():
 
 
 
-
-
 stack_lock = threading.Semaphore(1)
 
 class DataCollectionThread(threading.Thread):
@@ -49,7 +45,7 @@ class DataCollectionThread(threading.Thread):
         self.running.set()
         while self.running.is_set():
             self.graph_app.collect_data()
-            time.sleep(1/80)
+            time.sleep(1/100)
 
     def stop(self):
         self.running.clear()
@@ -64,7 +60,7 @@ class GraphApp:
     SynergiesColors = ['red','blue','green','yellow','pink']
     #parameters to modify graphs
     
-    Sec2Display=5
+    Sec2Display=1
     Sec2Save=50
     Sec2SaveLongHistory=5*60
 
@@ -78,28 +74,39 @@ class GraphApp:
         self.root = root
         self.root.title("Muscle and synergies activations visualization")
         self.fig = plt.figure()
-        self.fig2= plt.figure()
         
         #divido el espacio y seteo el ratio
         gs = gridspec.GridSpec(nrows=3, ncols=2, width_ratios=[1, 1],height_ratios=[3,1,3])
         
         #agrego los subplots a la ventana
         self.DotsMuscles = self.fig.add_subplot(gs[0,0])  # Add first graph to the left column
-        print(gs[0,0])
         self.BarsMusculos = self.fig.add_subplot(gs[0,1])  # Add second graph to the right column
         
         self.DotsSynergies = self.fig.add_subplot(gs[2,0])
         self.barsSynergies = self.fig.add_subplot(gs[2,1])
-        
-        self.initVariables()
         # Code for the first Graph
+        self.initVariables()
+
+        #configuracion de DotsMuscles
+        self.DotsMuscles.set_ylim(0, 1)
+        self.DotsMuscles.set_xlabel('Muscles')
+        self.DotsMuscles.set_ylabel('Activation')
+        self.DotsMuscles.set_title('Last 5 seconds of muscle activation')
+        self.DotsMuscles.legend()         
+        
+        #configuracion de DotsSynergies
+        self.DotsSynergies.set_ylim(0, 1)
+        self.DotsSynergies.set_xlabel('synergies')
+        self.DotsSynergies.set_ylabel('Activation')
+        self.DotsSynergies.set_title('Last 5 seconds of synergies activation')
+        self.DotsSynergies.legend() 
+
         # labels for the second Graph
         self.BarsMusculos.set_title("Second Graph")
         self.BarsMusculos.set_xlabel("Tiempo")
         self.BarsMusculos.set_ylabel("Actividad Muscular")
 
         # Code for the checkboxes
-
         self.canvas = FigureCanvasTkAgg(self.fig, master=root)
         self.canvas.get_tk_widget().pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
 
@@ -133,15 +140,13 @@ class GraphApp:
 
         self.update_graph()
 
+
+
     def collect_data(self):
         #print(time.time()-self.startTime)
         self.startTime= time.time()
-        #MuscleActivations = [random.gauss((i+1)/9,0.01) for i in range(self.MusclesNumber)]
-        time.sleep(1)
-        MuscleActivationsprint = Get_data()
+        MuscleActivations = Get_data()
         
-        print("Client2:",MuscleActivationsprint)
-        MuscleActivations=MuscleActivationsprint[1:]
         SynergiesActivations = [random.gauss((i+1)/6,0.01) for i in range(self.SynergiesNumber)]
         
         Musclespoints = [(self.current_x, MuscleActivations[i]) for i in range(self.MusclesNumber)]
@@ -149,33 +154,18 @@ class GraphApp:
         #append to active display list and history list
         stack_lock.acquire()
         for i in range(len(self.Muscles)):
-            self.Muscles[i].append(Musclespoints[i])
-            self.MusclesHistory[i].append(Musclespoints[i])
-
+            self.Muscles[i].add_point(Musclespoints[i])
+            self.MusclesHistory[i].add_point(Musclespoints[i])
+           
         for i in range(len(self.Synergies)):
-            self.Synergies[i].append(SynergiesPoints[i])
-            self.SynergiesHistory[i].append(SynergiesPoints[i])    
-        
-        #delete old data
-        for i in range(len(self.Muscles)):
-            if len(self.Muscles[i]) > self.NumDataPts2Display:
-                self.Muscles[i] = self.Muscles[i][1:] 
-        for i in range(len(self.MusclesHistory)):
-            if (len(self.MusclesHistory)) > self.NumDataPts2Save:
-                self.MusclesHistory[i] = self.MusclesHistory[i][1:]     
-        
-        for i in range(len(self.Synergies)):
-            if len(self.Synergies[i]) > self.NumDataPts2Display:
-                self.Synergies[i] = self.Synergies[i][1:]
-        for i in range(len(self.SynergiesHistory)):
-            if len(self.SynergiesHistory[i]) > self.NumDataPts2Save:
-                self.SynergiesHistory[i] = self.SynergiesHistory[i][1:]
-        
+            self.Synergies[i].add_point(SynergiesPoints[i])
+            self.SynergiesHistory[i].add_point(SynergiesPoints[i])    
+                
         self.current_x += 1
         stack_lock.release()
 
     def update_graph(self):
-        #print(time.time()-self.startTime2)
+        print(time.time()-self.startTime2)
         self.startTime2= time.time()
 
         self.DotsMuscles.clear()
@@ -183,44 +173,32 @@ class GraphApp:
         
         stack_lock.acquire()
 
-        Muscles_x_values = [[point[0] for point in self.Muscles[i]] for i in range(len(self.Muscles))] #cada punto trae [numMuestra,muestra]
-        Muscles_y_values = [[point[1] for point in self.Muscles[i]] for i in range(len(self.Muscles))]
+        Muscles_x_values = [[point[0] for point in self.Muscles[i].get_points()] for i in range(len(self.Muscles))] #cada punto trae [numMuestra,muestra]
+        Muscles_y_values = [[point[1] for point in self.Muscles[i].get_points()] for i in range(len(self.Muscles))]
         
-        Synergies_x_values = [[point[0] for point in self.Synergies[i]] for i in range(len(self.Synergies))]
-        Synergies_y_values = [[point[1] for point in self.Synergies[i]] for i in range(len(self.Synergies))]
+        Synergies_x_values = [[point[0] for point in self.Synergies[i].get_points()] for i in range(len(self.Synergies))]
+        Synergies_y_values = [[point[1] for point in self.Synergies[i].get_points()] for i in range(len(self.Synergies))]
+
+        #tomando la ultima muestra
+        last_samples_muscles = [(self.Muscles[i].get_points()[-1][1] if self.Muscles[i] else 0) for i in range(len(self.Muscles))]
+        last_samples_synergies= [(self.Synergies[i].get_points()[-1][1] if self.Synergies[i] else 0) for i in range(len(self.Synergies))]
+
 
         stack_lock.release()
 
         for i in range(len(self.ShowMuscles)):
             if self.ShowMuscles[i].get():
                 self.DotsMuscles.plot(Muscles_x_values[i], Muscles_y_values[i],self.MusclesColors[i], label='Muscle {}'.format(i+1))
+                
         for i in range(len(self.ShowSynergies)):
             if self.ShowSynergies[i].get():
                 self.DotsSynergies.plot(Synergies_x_values[i], Synergies_y_values[i],self.SynergiesColors[i], label='Synergy {}'.format(i+1))
-        self.DotsMuscles.set_xlim(self.current_x - 1000, self.current_x)
-        self.DotsMuscles.set_ylim(0, 1)
-        self.DotsMuscles.set_xlabel('Muscles')
-        self.DotsMuscles.set_ylabel('Activation')
-        self.DotsMuscles.set_title('Last 5 seconds of muscle activation')
-        self.DotsMuscles.legend() 
-
-        self.DotsSynergies.set_xlim(self.current_x - 1000, self.current_x)
-        self.DotsSynergies.set_ylim(0, 1)
-        self.DotsSynergies.set_xlabel('synergies')
-        self.DotsSynergies.set_ylabel('Activation')
-        self.DotsSynergies.set_title('Last 5 seconds of synergies activation')
-        self.DotsSynergies.legend() 
+                
+        self.DotsMuscles.set_xlim(self.current_x - 600, self.current_x)
+        self.DotsSynergies.set_xlim(self.current_x - 600, self.current_x)
 
         # Create the bar graph for the second graph
-        #tomando la ultima muestra
-        last_samples_muscles = [(self.Muscles[i][-1][1] if self.Muscles[1] else 0) for i in range(len(self.Muscles))]
-        last_samples_synergies= [(self.Synergies[i][-1][1] if self.Synergies[1] else 0) for i in range(len(self.Synergies))]
-
-        #tomando con LPF
-        '''last_sample1 = self.apply_low_pass_filter(x_values1, y_values1, 50) if self.muscle1 else 0
-        last_sample2 = self.apply_low_pass_filter(x_values2, y_values2, 50) if self.muscle2 else 0
-        last_sample3 = self.apply_low_pass_filter(x_values3, y_values3, 50) if self.muscle3 else 0'''
-
+        
         # Create x-coordinates for the bars with an offset of 0.2
         x_bar_muscles = []
         heights_muscles = []
@@ -279,9 +257,8 @@ class GraphApp:
         for tick in self.barsSynergies.get_xticklabels():
             tick.set_rotation(30)    
 
-
         self.canvas.draw()
-        self.root.after(10, self.update_graph)
+        self.root.after(1, self.update_graph)
 
     def update_line_visibility(self):
         self.canvas.draw()
@@ -289,24 +266,8 @@ class GraphApp:
     def stop_data_collection(self):
         self.data_thread.stop()
 
-    def apply_low_pass_filter(self, x_values, y_values, window):
-        if len(x_values) < window or len(y_values) < window:
-            return 0.0  # Return default value if there are not enough samples
-
-        # Apply low-pass filter using Butterworth filter from scipy
-        sample_rate = 2000
-        cutoff_frequency = 0.1  # Adjust as needed
-        normalized_cutoff_frequency = cutoff_frequency / (0.5 * sample_rate)  # Normalize cutoff frequency
-        b, a = butter(4, normalized_cutoff_frequency, btype='low', analog=False)
-        filtered_y = filtfilt(b, a, y_values)
-
-        # Retrieve the last filtered sample
-        last_filtered_sample = filtered_y[-1]
-
-        return last_filtered_sample
-
     def print_Muscle1History(self):
-        formatted_list = '[{}]'.format('\n'.join('   '.join(map(str, item)) for item in self.MusclesHistory[1]))
+        formatted_list = '[{}]'.format('\n'.join('   '.join(map(str, item)) for item in self.MusclesHistory[1].get_points()))
         print(formatted_list)
     
     def print_Muscle2History(self):
@@ -349,10 +310,10 @@ class GraphApp:
         #create muscle and synergies lists
         self.current_x = 0
 
-        self.Muscles = [[] for _ in range(self.MusclesNumber)]    
-        self.MusclesHistory = [[] for _ in range(self.MusclesNumber)]
-        self.Synergies = [[] for _ in range(self.SynergiesNumber)]
-        self.SynergiesHistory = [[] for _ in range(self.SynergiesNumber)]
+        self.Muscles = [LocalCircularBuffer.CircularBuffer(self.NumDataPts2Display) for _ in range(self.MusclesNumber)]    
+        self.MusclesHistory = [LocalCircularBuffer.CircularBuffer(self.NumDataPts2Save) for _ in range(self.MusclesNumber)]
+        self.Synergies = [LocalCircularBuffer.CircularBuffer(self.NumDataPts2Display) for _ in range(self.SynergiesNumber)]
+        self.SynergiesHistory = [LocalCircularBuffer.CircularBuffer(self.NumDataPts2Save) for _ in range(self.SynergiesNumber)]
 
         #create and init variables for the checkboxes           
         self.ShowMuscles = [tk.BooleanVar() for _ in range(self.MusclesNumber)]
@@ -370,5 +331,3 @@ def Visualization():
         app= GraphApp(root)
         root.mainloop()
         app.stop_data_collection()
-
-
