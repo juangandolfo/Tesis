@@ -4,6 +4,7 @@ from collections import deque
 import numpy as np
 from threading import Thread, Semaphore
 
+
 frequency = 2000 # Sample rate
 csv_file = 'MCU.csv'  # CSV file
 

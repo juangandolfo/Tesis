@@ -24,3 +24,4 @@ def Get_data():
 while 1:
         print("dato cliente2:",Get_data())
         time.sleep(1)
+        

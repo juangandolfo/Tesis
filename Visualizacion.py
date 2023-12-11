@@ -36,7 +36,6 @@ def Get_data():
 
 
 
-
 stack_lock = threading.Semaphore(1)
 
 class DataCollectionThread(threading.Thread):

@@ -141,7 +141,6 @@ class GraphApp:
         self.update_graph()
 
 
-
     def collect_data(self):
         #print(time.time()-self.startTime)
         self.startTime= time.time()

@@ -224,7 +224,6 @@ class GraphApp:
 
         self.DotsMuscles.legend(['legend']) 
 
-
         '''
         self.DotsSynergies.set_xlim(self.current_x - 1000, self.current_x)
         self.DotsSynergies.set_ylim(0, 1)

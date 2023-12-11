@@ -8,7 +8,6 @@ from threading import Thread, Semaphore
 HOST = "127.0.0.1"  # The server's hostname or IP address
 PORT2 = 6002  # The port used by the API server
 
-
 # Create a socket
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client_socket.connect((HOST, PORT2))

@@ -4,7 +4,6 @@ import json
 import time
 import API_Functions as API
 
-
 HOST = "127.0.0.1"  # Standard adress (localhost)
 PORT = 6001  # Port to listen on (non-privileged ports are > 1023)
 

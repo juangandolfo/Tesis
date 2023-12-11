@@ -20,8 +20,6 @@ time.sleep(0.1)
 #Cursor_thread=Thread(target=Cursor.Cursor)
 #Cursor_thread.start()
 
-
-
 import PruebaVisConBuffCopy 
 Visualizacion_thread = Thread(target=PruebaVisConBuffCopy.Visualization())
 Visualizacion_thread.start()

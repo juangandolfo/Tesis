@@ -38,6 +38,7 @@ plt.legend()
 plt.grid(True)
 plt.show()
 
+
 # Graficar la Transformada de Fourier
 plt.subplot(2, 1, 2)
 plt.plot(frequencies, np.abs(fourier_transform))

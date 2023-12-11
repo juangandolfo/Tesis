@@ -27,7 +27,6 @@ class DataCollectionThread(threading.Thread):
     def stop(self):
         self.running.clear()
 
-
 class GraphApp:
     startTime = time.time()
     startTime2 = time.time()

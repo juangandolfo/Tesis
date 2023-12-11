@@ -46,7 +46,6 @@ while True:
     y1.add_point(np.sin(x.get_points()[-1])+0.2*np.random.rand())
     y2.add_point(np.sin(x.get_points()[-1])+ 0.5 + 0.2*np.random.rand())
     y3.add_point(np.sin(x.get_points()[-1])+ 1 + 0.2*np.random.rand())
-
     
     # Update the plot data
     line1.set_data(x.get_points(),y1.get_points())

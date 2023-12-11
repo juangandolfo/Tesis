@@ -21,6 +21,7 @@ class CircularBuffer:
             return self.buffer[0]
         else:
             return self.buffer[self.head]
+
 '''
 # Usage example
 # uncomment the code below
