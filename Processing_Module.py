@@ -57,8 +57,10 @@ def Get_data():
                 break  # Delimiter finded
 
         data_json = data.decode().rstrip("#DELIMITER#") # Quit the delimiter and decode the received data
-        response_data = json.loads(data_json) # Get the original data       
-                
+        response_data = json.loads(data_json) # Get the original data   
+        time.sleep(2)    
+        if response_data == {}:
+            raise Exception("No data received")
         return response_data
 
 # Function to handle the connection with a client
@@ -114,7 +116,11 @@ def Processing_Module_Client():
      # Loop to send the request and save the data 
     while True:
             try:
-                data = Get_data()
+                try:
+                    data = Get_data()
+                except Exception as e:
+                    print(e)
+                    continue
                 formated_data = Dictionary_to_matrix(data)
                 stack_lock.acquire()  # Acquire lock before accessing the stack
                 #data_stack.extend(formated_data) # If we use TCP/IP between the PM and the visualization app. 
@@ -124,7 +130,6 @@ def Processing_Module_Client():
                 #print(f"Received {data_stack!r}") 
                 stack_lock.release()  # Release lock after reading the stack
                 #time.sleep(1)   
-
             except socket.error as e:
                 print("Connection error:", e)
                 # Manage a connection error 
