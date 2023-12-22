@@ -32,15 +32,14 @@ circular_stack = Buffer.CircularBufferVector(BufferSize, NumberChannels)
 stack_lock = Semaphore(1)  # Semaphore for stack access
 
 
-
 # Auxiliar functions -------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-def Format_Data(dictionary):
+def Dictionary_to_matrix(dictionary):
     
     # Get the keys
-    columns = list(dictionary.Keys)
+    columns = list(dictionary.keys())
     # Get the data 
-    rows = [dictionary[column] for column in columns[1:]]
+    rows = [dictionary[column] for column in columns]
     matriz = np.array(rows).T 
     #rows = np.array(rows)
     
@@ -122,7 +121,7 @@ def Processing_Module_Client():
                 except Exception as e:
                     print(e)
                     continue
-                formated_data = Format_Data(data)
+                formated_data = Dictionary_to_matrix(data)
                 stack_lock.acquire()  # Acquire lock before accessing the stack
                 #data_stack.extend(formated_data) # If we use TCP/IP between the PM and the visualization app. 
                 circular_stack.add_matrix(formated_data)

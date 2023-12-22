@@ -4,8 +4,9 @@ from collections import deque
 import numpy as np
 from threading import Thread, Semaphore
 
-frequency = 2000 # Sample rate
-csv_file = 'Infinito.csv'  # CSV file
+frequency = 3 # Sample rate
+#csv_file = 'Infinito.csv'  # CSV file
+csv_file = 'Data_Source.csv'
 
 # Initialize global stack
 stack = []
@@ -54,6 +55,7 @@ class AeroPy:
         stack_lock.acquire()  # Acquire lock before accessing the stack
         data_available = len(stack) > 0
         stack_lock.release()  # Release lock after reading the stack
+        
         return data_available
 
     def PollData(self):
@@ -75,11 +77,13 @@ class AeroPy:
     def Stop(self):
         self.stop_flag = True
 
+
+aero_instance = AeroPy()
 #-------------------------------------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------------------------------------
 # Test 
 
-'''
+
 def main():
     # Create an instance of the AeroPy class
     aero_instance = AeroPy()
@@ -91,7 +95,7 @@ def main():
         if command == "poll":
             data = aero_instance.PollData()
             data2 = aero_instance.PollData()
-            print(data["M1"])          
+            print(data.dictionary)         
                       
         elif command == "stop":
             aero_instance.Stop()
@@ -104,5 +108,5 @@ def main():
 if __name__ == "__main__":
     main() 
 
-'''
+
 

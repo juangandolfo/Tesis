@@ -3,11 +3,19 @@ import random
 import json
 import time
 import pickle
-from Aero import AeroPy
+from Aero import *
+
 
 HOST = "127.0.0.1"  # Standard adress (localhost)
 PORT = 6001  # Port to listen on (non-privileged ports are > 1023)
 
+
+def FormattedDictionary_to_PythonDictionary(formatted_dictionary):
+    python_dictionary = {}
+    for key in formatted_dictionary.Keys:
+        python_dictionary[key] = formatted_dictionary[key]
+    
+    return python_dictionary
 
 def API_Server():
     # Create a socket
@@ -28,9 +36,9 @@ def API_Server():
                 data = conn.recv(1024)
                 # Check if the received data is a GET request for "/data"
                 if data.decode().strip() == "GET /data":
-                    dataReady = AeroPy.CheckDataQueue()
+                    dataReady = aero_instance.CheckDataQueue()
                     if dataReady: 
-                        response_data = AeroPy.PollData()
+                        response_data = FormattedDictionary_to_PythonDictionary(aero_instance.PollData())
                     else: 
                         response_data={}
                     serialized_data = pickle.dumps(response_data) # Serialize the object using pickle
