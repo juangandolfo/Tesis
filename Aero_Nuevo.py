@@ -22,7 +22,7 @@ class FormattedDictionary:
     def __getitem__(self, key):
         return self.dictionary[key]
 
-class AeroPy:
+class AeroPyNuevo:
     def __init__(self):
         self.stop_flag = False
     
@@ -78,15 +78,15 @@ class AeroPy:
         self.stop_flag = True
 
 
-aero_instance = AeroPy()
+aero_instance = AeroPyNuevo()
 #-------------------------------------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------------------------------------
 # Test 
 
-
+'''
 def main():
     # Create an instance of the AeroPy class
-    aero_instance = AeroPy()
+    aero_instance = AeroPyNuevo()
     start_thread = Thread(target=aero_instance.Start)
     start_thread.start()
 
@@ -109,4 +109,4 @@ if __name__ == "__main__":
     main() 
 
 
-
+'''

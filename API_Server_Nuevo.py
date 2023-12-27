@@ -3,7 +3,7 @@ import random
 import json
 import time
 import pickle
-from Aero import *
+from Aero_Nuevo import *
 
 
 HOST = "127.0.0.1"  # Standard adress (localhost)
