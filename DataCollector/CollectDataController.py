@@ -8,11 +8,19 @@ from threading import Thread
 from Plotter.GenericPlot import *
 from AeroPy.TrignoBase import *
 from AeroPy.DataManager import *
-import API_Server_Nuevo as API_Server
-import Processing_Module_Nuevo as PM
-import Cursor_Nuevo as Cursor
+
+
+
 import time
-       
+import sys
+sys.path.append("../")
+from GlobalParameters import *
+from API_Server_Nuevo import *    
+import Processing_Module_Nuevo as PM
+from Aero_Nuevo import *
+import Delsys_API_Server   
+
+
 
 clr.AddReference("System.Collections")
 from System.Collections.Generic import List
@@ -58,8 +66,7 @@ class PlottingManagement():
 
     def threadManager(self):
         """Handles the threads for the DataCollector gui"""
-        '''
-        self.emg_plot = deque()
+        '''self.emg_plot = deque()
 
         t1 = threading.Thread(target=self.streaming)
         t2 = threading.Thread(target=self.vispyPlot)
@@ -68,16 +75,29 @@ class PlottingManagement():
         t2.setDaemon(True)
 
         t1.start()
-        t2.start()
-        '''
+        t2.start()'''
+        #ejecutar ejecutable
+        ModoDelsys = True
+        if ModoDelsys:
+            API_server_thread=Thread(target=Delsys_API_Server.API_Server)  
+            API_server_thread.start()
+        else:
+            API_server_thread=Thread(target=API_Server.API_Server)  
+            API_server_thread.start()
+        time.sleep(0.1)
         Processing_Module_Client_thread = Thread(target=PM.Processing_Module_Client)
         Processing_Module_Server_thread = Thread(target=PM.Processing_Module_Server)
         Processing_Module_Client_thread.start()
         time.sleep(0.1)
         Processing_Module_Server_thread.start()
-        time.sleep(0.1)
-        Cursor_thread=Thread(target=Cursor.Cursor)
+        time.sleep(1)
+        import Cursor_Nuevo 
+        Cursor_thread=Thread(target=Cursor_Nuevo.Cursor)
         Cursor_thread.start()
+
+        
+        
+   
         
     #---------------------------------------------------------------------------------
     #---- Callback Functions

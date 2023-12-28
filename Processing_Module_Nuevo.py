@@ -1,17 +1,15 @@
+from  GlobalParameters import *
 import socket
 import json
 import time
 import pickle
 import numpy as np
-from collections import deque
 from threading import Thread, Semaphore
 import LocalCircularBufferVector as Buffer
 
 
-
-
 HOST = "127.0.0.1"  # Standard adress (localhost)
-PORT_Client = 6001  # Port to get data from the API Server
+PORT_Client = 6001  # Port to get data from the File API Server
 PORT_Server = 6002 # The port used by the PM Server
 
 

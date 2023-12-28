@@ -1,5 +1,5 @@
-import pythoncom
-pythoncom.CoInitialize()
+#import pythoncom
+#pythoncom.CoInitialize()
 
 from UIControls.FrameController import *
 
