@@ -25,7 +25,7 @@ def API_Server():
         s.bind((HOST, PORT))
 
         # Listen the inner connections:
-        print("Server listening on", HOST, "port", PORT)
+        print("API Server listening on", HOST, "port", PORT)
         s.listen()
         
         # Accept the connection and open a socket to receive and send data. 

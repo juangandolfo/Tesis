@@ -23,8 +23,8 @@ server_socket.bind((HOST, PORT_Server))
 
 
 # List to save the received data 
-BufferSize = 10000
-NumberChannels = 8
+BufferSize = 100000000
+NumberChannels = 2
 #data_stack = deque() 
 circular_stack = Buffer.CircularBufferVector(BufferSize, NumberChannels)
 stack_lock = Semaphore(1)  # Semaphore for stack access
@@ -37,10 +37,10 @@ def Dictionary_to_matrix(dictionary):
     # Get the keys
     columns = list(dictionary.keys())
     # Get the data 
-    rows = [dictionary[column] for column in columns]
-    matriz = np.array(rows).T 
-    #rows = np.array(rows)
-    
+    #rows = [dictionary[column] for column in columns]
+    #matriz = np.array(rows).T 
+    matriz = np.array(dictionary[columns[0]]).T
+    print(matriz[0][0])        
     return matriz
 
 # Function to send the request and receive the data from API Server
@@ -53,10 +53,11 @@ def Get_data():
             data += chunk
             if b"#DELIMITER#" in data:
                 break  # Delimiter finded
-
-        serialized_data = data.rstrip(b"#DELIMITER#") # Quit the delimiter and decode the received data
-        response_data = pickle.loads(serialized_data) # Get the original data   
-        time.sleep(0.1)  
+            
+        serialized_data = data.decode().rstrip("#DELIMITER#") # Quit the delimiter and decode the received data
+        response_data = json.loads(serialized_data) # Get the original data 
+        #print(response_data)  
+        time.sleep(0.5)  
         if response_data == {}:
             raise Exception("No data received")
         return response_data
@@ -108,7 +109,7 @@ def Handle_Client(conn,addr):
 # Threads -------------------------------------------------------------------------------------------------------------------------------------------------------------------------
                
 def Processing_Module_Client():
-    global data_stack
+    
     client_socket.connect((HOST, PORT_Client))
     
      # Loop to send the request and save the data 
@@ -120,14 +121,11 @@ def Processing_Module_Client():
                     print(e)
                     continue
                 formated_data = Dictionary_to_matrix(data)
+                
                 stack_lock.acquire()  # Acquire lock before accessing the stack
-                #data_stack.extend(formated_data) # If we use TCP/IP between the PM and the visualization app. 
                 circular_stack.add_matrix(formated_data)
-                #print(circular_stack.get_vectors())
-                #data_stack = [np.concatenate((vector, row)) for vector, row in zip(data_stack, formated_data)] # If we use shared memory between the PM and the visualization app. We can avoid the 'for' using the transpose matrix (above line). 
-                #print(f"Received {data_stack!r}") 
                 stack_lock.release()  # Release lock after reading the stack
-                #time.sleep(1)   
+                #time.sleep(0.5)  
             except socket.error as e:
                 print("Connection error:", e)
                 # Manage a connection error 

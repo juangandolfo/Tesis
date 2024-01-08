@@ -83,7 +83,7 @@ aero_instance = AeroPyNuevo()
 #-------------------------------------------------------------------------------------------------------------
 # Test 
 
-'''
+
 def main():
     # Create an instance of the AeroPy class
     aero_instance = AeroPyNuevo()
@@ -93,9 +93,20 @@ def main():
     while True:
         command = input("Enter a command (poll/stop): ")
         if command == "poll":
-            data = aero_instance.PollData()
-            data2 = aero_instance.PollData()
-            print(data.dictionary)         
+
+            DataOut = aero_instance.PollData()
+            print(DataOut)
+            python_dictionary = {}
+            
+            keys = []
+            for i in DataOut.Keys:
+                keys.append(i)
+             
+            for j in range(len(DataOut.Keys)):
+                python_dictionary[keys[j]] = DataOut[keys[j]]
+                
+            print(python_dictionary)      
+            print(python_dictionary[keys[0]]) 
                       
         elif command == "stop":
             aero_instance.Stop()
@@ -109,4 +120,4 @@ if __name__ == "__main__":
     main() 
 
 
-'''
+
