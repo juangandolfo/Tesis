@@ -84,11 +84,11 @@ class PlottingManagement():
         else:
             API_server_thread=Thread(target=API_Server.API_Server)  
             API_server_thread.start()
-        time.sleep(0.1)
+        time.sleep(0.5)
         Processing_Module_Client_thread = Thread(target=PM.Processing_Module_Client)
         Processing_Module_Server_thread = Thread(target=PM.Processing_Module_Server)
         Processing_Module_Client_thread.start()
-        time.sleep(0.1)
+        time.sleep(0.5)
         Processing_Module_Server_thread.start()
         time.sleep(1)
         import Cursor_Nuevo 
