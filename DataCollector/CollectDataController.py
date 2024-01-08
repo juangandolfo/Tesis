@@ -13,10 +13,10 @@ from AeroPy.DataManager import *
 
 import time
 import sys
-sys.path.append("../")
+#sys.path.append("../")
 from GlobalParameters import *
 from API_Server_Nuevo import *    
-import Processing_Module_Nuevo as PM
+import Processing_Module_Nuevo 
 from Aero_Nuevo import *
 import Delsys_API_Server   
 
@@ -79,14 +79,16 @@ class PlottingManagement():
         #ejecutar ejecutable
         ModoDelsys = True
         if ModoDelsys:
-            API_server_thread=Thread(target=Delsys_API_Server.API_Server)  
+            API_server_thread=Thread(target=Delsys_API_Server.API_Server, args=(TrigBase,))
             API_server_thread.start()
-        else:
+        else: 
             API_server_thread=Thread(target=API_Server.API_Server)  
             API_server_thread.start()
         time.sleep(0.5)
-        Processing_Module_Client_thread = Thread(target=PM.Processing_Module_Client)
-        Processing_Module_Server_thread = Thread(target=PM.Processing_Module_Server)
+        
+        Processing_Module_Client_thread = Thread(target=Processing_Module_Nuevo.Processing_Module_Client)
+        Processing_Module_Server_thread = Thread(target=Processing_Module_Nuevo.Processing_Module_Server)
+        
         Processing_Module_Client_thread.start()
         time.sleep(0.5)
         Processing_Module_Server_thread.start()
@@ -193,4 +195,11 @@ class PlottingManagement():
 
     def setSampleMode(self,curSensor,setMode):
         """Sets the sample mode for the selected sensor"""
-        TrigBase.SetSampleMode(curSensor,setMode)
+        #configure all the sensors
+        for i in range(self.SensorsFound):
+            TrigBase.SetSampleMode(i,setMode)
+        
+
+        
+        
+        

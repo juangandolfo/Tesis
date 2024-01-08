@@ -27,7 +27,7 @@ PORT2 = 6002  # The port used by the API server
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client_socket.connect((HOST, PORT2))
 
-frequency = 2
+frequency = 20000
 #-----------------------------------------------------------------------------------------------------------
 
 # Function to send the request and receive the data from MP
@@ -86,8 +86,8 @@ def getSpeedFromKeyboard(pressed_keys):
 def getSpeedFromEMG():
     time.sleep(1/frequency)
     data = Get_data()
-    print("Client1:", data) 
-    speed=(data[0],data[0])
+    #print("Client1:", data) 
+    speed=(data,data)
     #print(speed)
     return speed
 

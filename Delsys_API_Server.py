@@ -7,7 +7,7 @@ import numpy as np
 import clr  
 clr.AddReference("System")
 from System import Guid  
-import re
+
 
 
 HOST = "127.0.0.1"  # Standard adress (localhost)
@@ -56,6 +56,11 @@ def API_Server(AeroInstance):
                     serialized_data  += "#DELIMITER#" # Add a delimiter at the end 
                     conn.sendall(serialized_data.encode())
                     #print("Data sent:", serialized_data)
+                    """
+                elif data.decode().strip() == "GET /NumberSensors":
+                    response_data = AeroInstance.GetNumberSensors()
+                    serialized_data = json.dumps(response_data)
+                    """
                 else:
                    print("Invalid request")
                     
