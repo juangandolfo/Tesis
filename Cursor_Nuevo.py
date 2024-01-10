@@ -87,7 +87,7 @@ def getSpeedFromEMG():
     time.sleep(1/frequency)
     data = Get_data()
     #print("Client1:", data) 
-    speed=(data,data)
+    speed=(abs(data[0])-abs(data[1]),0)
     #print(speed)
     return speed
 

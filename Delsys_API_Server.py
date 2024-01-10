@@ -14,21 +14,27 @@ HOST = "127.0.0.1"  # Standard adress (localhost)
 PORT = 6001  # Port to listen on (non-privileged ports are > 1023)
 
 
-def FormattedDictionary_to_PythonDictionary(formatted_dictionary):
+def FormattedDictionary_to_PythonDictionary(formatted_dictionary, emgPositionVector):
     python_dictionary = {}
     #outArr = [[] for i in range(len(formatted_dictionary.Keys))] # matrix
     keys = []
 
     for i in formatted_dictionary.Keys:
         keys.append(i)
-    for j in range(len(keys)):
+    
+    '''for j in range(len(keys)): 
         #outArr[j].append(np.asarray(formatted_dictionary[keys[j]], dtype='object'))
         python_dictionary[str(keys[j])] = np.asarray(formatted_dictionary[keys[j]]).tolist()
-
+        # full data
+    '''
+    for j in emgPositionVector:
+        #outArr[j].append(np.asarray(formatted_dictionary[keys[j]], dtype='object')) # matrix
+        python_dictionary[str(keys[j])] = np.asarray(formatted_dictionary[keys[j]]).tolist()
+            
     return python_dictionary
 
 
-def API_Server(AeroInstance):
+def API_Server(AeroInstance,emgPositionVector):
     # Create a socket
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
 
@@ -49,7 +55,7 @@ def API_Server(AeroInstance):
                 if data.decode().strip() == "GET /data":
                     dataReady = AeroInstance.CheckDataQueue()
                     if dataReady: 
-                        response_data = FormattedDictionary_to_PythonDictionary(AeroInstance.PollData())
+                        response_data = FormattedDictionary_to_PythonDictionary(AeroInstance.PollData(),emgPositionVector)
                     else: 
                         response_data={}
                     serialized_data = json.dumps(response_data) # Serialize the object using json

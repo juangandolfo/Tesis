@@ -19,11 +19,11 @@ client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 # Link the socket to the IP and PORT selected: 
 server_socket.bind((HOST, PORT_Server))
-print("Processing Module Server listening on", HOST, "port", PORT_Server)
+
 
 # List to save the received data 
 BufferSize = 100000
-NumberChannels = 1
+NumberChannels = 2 
 #data_stack = deque() 
 
 circular_stack = Buffer.CircularBufferVector(BufferSize, NumberChannels)
@@ -38,10 +38,10 @@ def Dictionary_to_matrix(dictionary):
     # Get the keys
     columns = list(dictionary.keys())
     # Get the data 
-    #rows = [dictionary[column] for column in columns]
-    #matriz = np.array(rows).T 
-    matriz = np.array(dictionary[columns[0]]).T
-    print(matriz)        
+    rows = [dictionary[column] for column in columns]
+    matriz = np.array(rows).T 
+    #matriz = np.array(dictionary[columns]).T
+    #print(matriz)        
     return matriz
 
 # Function to send the request and receive the data from API Server
@@ -73,7 +73,7 @@ def Handle_Client(conn,addr):
         if  data.decode().strip() == "GET /data1":
             stack_lock.acquire()  # Acquire lock before accessing the stack
             response_data = circular_stack.get_oldest_vector(1)
-            print(response_data)
+            #print(response_data)
             stack_lock.release()  # Release lock after reading the stack
                      
             if NumberChannels == 1:
@@ -86,17 +86,21 @@ def Handle_Client(conn,addr):
             response_data = np.array(response_data).tolist()
             response_json = json.dumps(response_data).encode()  # Convert the dictionary to JSON and enconde intio bytes
             conn.sendall(response_json)
-            print("Data sent:", response_data)
+            #print("Data sent:", response_data)
 
         elif  data.decode().strip() == "GET /data2":
             stack_lock.acquire()  # Acquire lock before accessing the stack
             response_data = circular_stack.get_oldest_vector(2)
             #print(response_data)
             stack_lock.release()  # Release lock after reading the stack
-                     
-            if len(response_data) == 0:
-                response_data = [0,0,0,0,0,0,0,0,0]
-                         
+            
+            if NumberChannels == 1:
+                if response_data == None:
+                    response_data = 0
+            else:
+                if len(response_data) == 0:
+                    response_data = [0 for i in range(NumberChannels)]
+
             response_data = np.array(response_data).tolist()
             response_json = json.dumps(response_data).encode()  # Convert the dictionary to JSON and enconde intio bytes
             conn.sendall(response_json)
@@ -114,9 +118,8 @@ def Handle_Client(conn,addr):
 # Threads -------------------------------------------------------------------------------------------------------------------------------------------------------------------------
                
 def Processing_Module_Client():
-    print("Client connecting to", HOST, "port", PORT_Client)
     client_socket.connect((HOST, PORT_Client))
-    print("Client connected")
+    print("PM Client connected")
      # Loop to send the request and save the data 
     while True:
             try:

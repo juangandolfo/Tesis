@@ -18,10 +18,10 @@ class CircularBufferVector:
         for row in matrix:
             try:
                 if np.size(np.array(row))==self.num_cols:
-                    print("row",row)
+                    #print("row",row)
                     self.add_vector(row)
                 else:
-                    print("Error: The size of the vector is not the same as the number of columns of the buffer")
+                    print("Error: The size of the vector is not the same as the number of columns of the buffer",np.size(np.array(row)))
             except Exception as e:
                 print(e)
                 print("Error: Could not add the vector to the buffer")

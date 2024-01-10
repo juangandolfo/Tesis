@@ -77,9 +77,10 @@ class PlottingManagement():
         t1.start()
         t2.start()'''
         #ejecutar ejecutable
+        time.sleep(3)
         ModoDelsys = True
         if ModoDelsys:
-            API_server_thread=Thread(target=Delsys_API_Server.API_Server, args=(TrigBase,))
+            API_server_thread=Thread(target=Delsys_API_Server.API_Server, args=(TrigBase,self.dataStreamIdx))
             API_server_thread.start()
         else: 
             API_server_thread=Thread(target=API_Server.API_Server)  
@@ -145,27 +146,31 @@ class PlottingManagement():
             idxVal = 0
             for i in range(self.SensorsFound):
                 selectedSensor = TrigBase.GetSensorObject(i)
+                print(str(selectedSensor))
                 if len(selectedSensor.TrignoChannels) > 0:
                     for channel in range(len(selectedSensor.TrignoChannels)):
+                        print(selectedSensor.TrignoChannels[channel].Name)
                         self.sampleRates[i].append((selectedSensor.TrignoChannels[channel].SampleRate,
                                                     selectedSensor.TrignoChannels[channel].Name))
                         self.samplesPerFrame[i].append(selectedSensor.TrignoChannels[channel].SamplesPerFrame)
                         # ---- Collect the EMG channels for visualization, excluding skin check channels
                         if "EMG" in selectedSensor.TrignoChannels[channel].Name:
-                            if "TrignoAvanti" in str(selectedSensor) and "2" in selectedSensor.TrignoChannels[
+                             
+                            if "TrignoAvanti" in str(selectedSensor) and "RMS 2" in selectedSensor.TrignoChannels[
                                 channel].Name:  # Avanti skin check
                                 pass
-                            elif "AvantiDoubleMini" in str(selectedSensor) and "2" in selectedSensor.TrignoChannels[
+                            elif "AvantiDoubleMini" in str(selectedSensor) and "RMS 2" in selectedSensor.TrignoChannels[
                                 channel].Name:  # Duo Mini skin check 1
                                 pass
-                            elif "AvantiDoubleMini" in str(selectedSensor) and "4" in selectedSensor.TrignoChannels[
+                            elif "AvantiDoubleMini" in str(selectedSensor) and "RMS 4" in selectedSensor.TrignoChannels[
                                 channel].Name:  # Duo Mini skin check 2
                                 pass
                             else:
                                 self.dataStreamIdx.append(idxVal)
                                 plotCount += 1
+                                                    
                         idxVal += 1
-
+            print(self.dataStreamIdx)
             # ---- Create the plotting canvas and begin visualization
             #self.EMGplot.initiateCanvas(None, None, plotCount, 1, self.numSamples)
 
