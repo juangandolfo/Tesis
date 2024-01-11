@@ -210,8 +210,9 @@ class CollectDataWindow(QWidget):
     def sensorModeList_callback(self):
         curItem = self.SensorListBox.currentRow()
         selMode = self.SensorModeList.currentText()
+        
         if selMode != '':
-            self.CallbackConnector.setSampleMode(curItem,selMode)
+            self.CallbackConnector.setSampleMode_hardcoded()
 
 
 if __name__ == '__main__':

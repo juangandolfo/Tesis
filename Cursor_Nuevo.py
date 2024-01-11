@@ -27,7 +27,7 @@ PORT2 = 6002  # The port used by the API server
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client_socket.connect((HOST, PORT2))
 
-frequency = 20000
+frequency = 3000
 #-----------------------------------------------------------------------------------------------------------
 
 # Function to send the request and receive the data from MP

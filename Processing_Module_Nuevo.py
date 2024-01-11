@@ -86,7 +86,8 @@ def Handle_Client(conn,addr):
             response_data = np.array(response_data).tolist()
             response_json = json.dumps(response_data).encode()  # Convert the dictionary to JSON and enconde intio bytes
             conn.sendall(response_json)
-            #print("Data sent:", response_data)
+            print("Data sent:", response_data)
+            
 
         elif  data.decode().strip() == "GET /data2":
             stack_lock.acquire()  # Acquire lock before accessing the stack

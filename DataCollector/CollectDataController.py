@@ -171,6 +171,7 @@ class PlottingManagement():
                                                     
                         idxVal += 1
             print(self.dataStreamIdx)
+            
             # ---- Create the plotting canvas and begin visualization
             #self.EMGplot.initiateCanvas(None, None, plotCount, 1, self.numSamples)
 
@@ -200,11 +201,22 @@ class PlottingManagement():
 
     def setSampleMode(self,curSensor,setMode):
         """Sets the sample mode for the selected sensor"""
-        #configure all the sensors
+        TrigBase.SetSampleMode(curSensor,setMode)
+          
+    def setSampleMode_allSensors(self,setMode):
+        """Sets the same sample mode for all the sensors (it works for the same model)"""
         for i in range(self.SensorsFound):
-            TrigBase.SetSampleMode(i,setMode)
+            self.setSampleMode(i,setMode)
+            
+    def setSampleMode_hardcoded(self):        
+        """For different sensors models. It sets a hardcoded sample mode with the same frequency"""
+        for i in range(self.SensorsFound):
+            selectedSensor = TrigBase.GetSensorObject(i)
+            if "TrignoAvanti" in str(selectedSensor):
+                self.setSampleMode(i,"EMG raw (2148 Hz), skin check (74 Hz), +/-11mv, 10-850Hz")
+            elif "AvantiDoubleMini" in str(selectedSensor):
+                self.setSampleMode(i, "EMG raw x2 (2148Hz), +/-11mv, 10-850Hz")                 
+                             
         
-
         
-        
-        
+       
