@@ -22,7 +22,7 @@ server_socket.bind((HOST, PORT_Server))
 
 
 # List to save the received data 
-BufferSize = 100000
+BufferSize = 1000
 NumberChannels = 2 
 #data_stack = deque() 
 
@@ -60,7 +60,7 @@ def Get_data():
     #print(response_data)  
      
     if response_data == {}:
-        raise Exception("No data received")
+        raise Exception("PM:No data received")
     return response_data
 
 # Function to handle the connection with a client
@@ -80,13 +80,14 @@ def Handle_Client(conn,addr):
                 if response_data == None:
                     response_data = 0
             else:
-                if len(response_data) == 0:
+                if all(element is None for element in response_data):
+                    print("Empy buffer sample")
                     response_data = [0 for i in range(NumberChannels)]
                          
             response_data = np.array(response_data).tolist()
             response_json = json.dumps(response_data).encode()  # Convert the dictionary to JSON and enconde intio bytes
             conn.sendall(response_json)
-            print("Data sent:", response_data)
+            #print("PM: Data sent:", response_data)
             
 
         elif  data.decode().strip() == "GET /data2":
@@ -135,7 +136,7 @@ def Processing_Module_Client():
                 stack_lock.acquire()  # Acquire lock before accessing the stack
                 circular_stack.add_matrix(formated_data)
                 stack_lock.release()  # Release lock after reading the stack
-                time.sleep(0.5)  
+                #time.sleep(0.5)  
             except socket.error as e:
                 print("Connection error:", e)
                 # Manage a connection error 

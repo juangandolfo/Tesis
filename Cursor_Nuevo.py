@@ -84,11 +84,11 @@ def getSpeedFromKeyboard(pressed_keys):
     return speed
 
 def getSpeedFromEMG():
-    time.sleep(1/frequency)
+    #time.sleep(1/frequency)
     data = Get_data()
     #print("Client1:", data) 
-    speed=(abs(data[0])-abs(data[1]),0)
-    #print(speed)
+    speed=(10*(abs(data[0])-abs(data[1])),0)
+    print("Cursor:",speed)
     return speed
 
 
