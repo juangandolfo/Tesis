@@ -93,7 +93,7 @@ class PlottingManagement():
         Processing_Module_Client_thread.start()
         time.sleep(0.5)
         Processing_Module_Server_thread.start()
-        time.sleep(1)
+        time.sleep(0.5)
         import Cursor_Nuevo 
         Cursor_thread=Thread(target=Cursor_Nuevo.Cursor)
         Cursor_thread.start()

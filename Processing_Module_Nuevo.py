@@ -81,7 +81,6 @@ def Handle_Client(conn,addr):
                     response_data = 0
             else:
                 if all(element is None for element in response_data):
-                    print("Empy buffer sample")
                     response_data = [0 for i in range(NumberChannels)]
                          
             response_data = np.array(response_data).tolist()
@@ -100,13 +99,13 @@ def Handle_Client(conn,addr):
                 if response_data == None:
                     response_data = 0
             else:
-                if len(response_data) == 0:
+                if all(element is None for element in response_data):
                     response_data = [0 for i in range(NumberChannels)]
 
             response_data = np.array(response_data).tolist()
             response_json = json.dumps(response_data).encode()  # Convert the dictionary to JSON and enconde intio bytes
             conn.sendall(response_json)
-            print("Data sent:", response_data)
+            #print("Data sent:", response_data)
         
         #if data.decode().strip() == "DISCONNECT":
              #Connected = False
