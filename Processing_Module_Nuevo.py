@@ -39,9 +39,22 @@ def Dictionary_to_matrix(dictionary):
     columns = list(dictionary.keys())
     # Get the data 
     rows = [dictionary[column] for column in columns]
+
+    # Check if all rows have the same length
+    row_lengths = set(len(row) for row in rows)
+
+    if len(row_lengths) > 1:
+        
+        # Find the minimum length
+        min_length = min(row_lengths)
+        # Trim rows to the minimum length
+        rows = [row[:min_length] for row in rows]
+        print("Trimmed data")
+        time.sleep(3)
+
+    # Create the matrix    
     matriz = np.array(rows).T 
-    #matriz = np.array(dictionary[columns]).T
-    #print(matriz)        
+          
     return matriz
 
 # Function to send the request and receive the data from API Server
@@ -50,12 +63,22 @@ def Get_data():
     client_socket.sendall(request.encode())
     data = b''       
     while True:
-        chunk = client_socket.recv(1024)
-        data += chunk
-        if b"#DELIMITER#" in data:
-            break  # Delimiter finded
-        
-    serialized_data = data.decode().rstrip("#DELIMITER#") # Quit the delimiter and decode the received data
+        try:
+            client_socket.settimeout(0.5)
+            chunk = client_socket.recv(1024)
+            data += chunk
+            if b"~" in data:
+                break  # Delimiter found
+        except socket.timeout as e:
+            print(e)
+            time.sleep(5)
+            continue
+        except socket.error as e:
+            print(e)
+            time.sleep(5)
+            continue
+
+    serialized_data = data.decode().rstrip("~") # Quit the delimiter and decode the received data
     response_data = json.loads(serialized_data) # Get the original data 
     #print(response_data)  
      
@@ -68,6 +91,7 @@ def Handle_Client(conn,addr):
     print(f"Connected by {addr}")
     #Connected = True
     while True:
+        #print("PM Server live")
         data = conn.recv(1024)
         # Check if the received data is a GET request for "/data"
         if  data.decode().strip() == "GET /data1":
@@ -76,12 +100,8 @@ def Handle_Client(conn,addr):
             #print(response_data)
             stack_lock.release()  # Release lock after reading the stack
                      
-            if NumberChannels == 1:
-                if response_data == None:
-                    response_data = 0
-            else:
-                if all(element is None for element in response_data):
-                    response_data = [0 for i in range(NumberChannels)]
+            if response_data == []:
+                response_data = [0 for i in range(NumberChannels)]
                          
             response_data = np.array(response_data).tolist()
             response_json = json.dumps(response_data).encode()  # Convert the dictionary to JSON and enconde intio bytes
@@ -95,12 +115,8 @@ def Handle_Client(conn,addr):
             #print(response_data)
             stack_lock.release()  # Release lock after reading the stack
             
-            if NumberChannels == 1:
-                if response_data == None:
-                    response_data = 0
-            else:
-                if all(element is None for element in response_data):
-                    response_data = [0 for i in range(NumberChannels)]
+            if response_data == []:
+                response_data = [0 for i in range(NumberChannels)]
 
             response_data = np.array(response_data).tolist()
             response_json = json.dumps(response_data).encode()  # Convert the dictionary to JSON and enconde intio bytes
@@ -123,6 +139,7 @@ def Processing_Module_Client():
     print("PM Client connected")
      # Loop to send the request and save the data 
     while True:
+            #print("PM Client live")
             try:
                 try:
                     data = Get_data()
@@ -130,14 +147,13 @@ def Processing_Module_Client():
                     print(e)
                     continue
                 formated_data = Dictionary_to_matrix(data)
-                #print(formated_data)
-                       
                 stack_lock.acquire()  # Acquire lock before accessing the stack
                 circular_stack.add_matrix(formated_data)
                 stack_lock.release()  # Release lock after reading the stack
                 #time.sleep(0.5)  
             except socket.error as e:
                 print("Connection error:", e)
+                continue
                 # Manage a connection error 
 
 

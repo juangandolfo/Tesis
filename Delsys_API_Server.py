@@ -29,8 +29,8 @@ def FormattedDictionary_to_PythonDictionary(formatted_dictionary, emgPositionVec
     '''
     for j in emgPositionVector:
         #outArr[j].append(np.asarray(formatted_dictionary[keys[j]], dtype='object')) # matrix
-        python_dictionary[str(keys[j])] = np.asarray(formatted_dictionary[keys[j]]).tolist()
-            
+            python_dictionary[str(keys[j])] = np.asarray(formatted_dictionary[keys[j]]).tolist()
+          
     return python_dictionary
 
 
@@ -59,8 +59,13 @@ def API_Server(AeroInstance,emgPositionVector):
                     else: 
                         response_data={}
                     serialized_data = json.dumps(response_data) # Serialize the object using json
-                    serialized_data  += "#DELIMITER#" # Add a delimiter at the end 
-                    conn.sendall(serialized_data.encode())
+                    serialized_data  += "~" # Add a delimiter at the end 
+                    try:
+                        conn.sendall(serialized_data.encode())
+                        #print(serialized_data)
+                    except Exception as e:
+                        print(e)
+                        time.sleep(5)    
                     #print("Data sent:", serialized_data)
                     """
                 elif data.decode().strip() == "GET /NumberSensors":

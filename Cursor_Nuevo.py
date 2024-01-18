@@ -34,8 +34,15 @@ frequency = 3000
 def Get_data():
         request = "GET /data1"
         client_socket.sendall(request.encode())
-        data = client_socket.recv(1024)
-        response_data = json.loads(data.decode()) # Decode the received data
+        try:
+            data = client_socket.recv(1024)
+            response_data = json.loads(data.decode()) # Decode the received data
+        except socket.timeout as e:
+            print(e)
+        except socket.error as e:
+            print(e)
+            
+
         return response_data
 # ----------------------------------------------------------------------------------------------------------
 
