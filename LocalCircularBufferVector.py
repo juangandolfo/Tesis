@@ -76,7 +76,7 @@ class CircularBufferVector:
 
     def get_oldest_vector(self, identifier=0):
         Data = []
-        if identifier == 1:
+        if identifier == 1: 
             if self.size < self.capacity:
                 if self.VisualizationEmpty == False:
                     Data = self.buffer[self.VisualizationHead]
@@ -111,8 +111,8 @@ class CircularBufferVector:
         return Data
     
     
-'''
-# Create a CircularBuffer with a capacity of 3, assuming each matrix has 2 rows and 3 columns
+
+"""# Create a CircularBuffer with a capacity of 3, assuming each matrix has 2 rows and 3 columns
 buffer = CircularBufferVector(4, 3)
 
 # Example matrices (each matrix has 2 rows and 3 columns)
@@ -128,14 +128,15 @@ matrix4 = [[19,20,21],[22,23,24],[25,26,27]]
 #buffer.add_matrix(matrix2)
 buffer.add_matrix(matrix4)
 print(buffer.get_vectors())
+print(buffer.get_oldest_vector())
 
+print(buffer.get_oldest_vector(1))
 #print(buffer.get_oldest_vector(1))
-#print(buffer.get_oldest_vector(1))
-print(buffer.get_vectors(1))
-print(buffer.get_oldest_vector(2))
-print(buffer.get_oldest_vector(2))
-print(buffer.get_oldest_vector(2))
-print(buffer.get_oldest_vector(2))
-print(buffer.get_vectors(2))
 #print(buffer.get_vectors(1))
-'''
+#print(buffer.get_oldest_vector())
+#print(buffer.get_oldest_vector())
+#print(buffer.get_oldest_vector(2))
+#print(buffer.get_oldest_vector(2))
+#print(buffer.get_vectors(2))
+#print(buffer.get_vectors(1))"""
+

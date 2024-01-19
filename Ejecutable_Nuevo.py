@@ -1,7 +1,7 @@
 from GlobalParameters import *
 from Aero_Nuevo import *
 import API_Server_Nuevo as API_Server
-import Processing_Module_Nuevo as PM
+import PM_Communications as PM
 import time
 from threading import Thread
 import Delsys_API_Server

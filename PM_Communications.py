@@ -1,11 +1,13 @@
 from  GlobalParameters import *
+from PM_DataStructure import *
 import socket
 import json
 import time
 import pickle
 import numpy as np
-from threading import Thread, Semaphore
-import LocalCircularBufferVector as Buffer
+from threading import Thread
+
+
 
 
 HOST = "127.0.0.1"  # Standard adress (localhost)
@@ -21,16 +23,6 @@ server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server_socket.bind((HOST, PORT_Server))
 
 
-# List to save the received data 
-BufferSize = 1000
-NumberChannels = 2 
-#data_stack = deque() 
-
-circular_stack = Buffer.CircularBufferVector(BufferSize, NumberChannels)
-
-stack_lock = Semaphore(1)  # Semaphore for stack access
-
-
 # Auxiliar functions -------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 def Dictionary_to_matrix(dictionary):
@@ -40,7 +32,7 @@ def Dictionary_to_matrix(dictionary):
     # Get the data 
     rows = [dictionary[column] for column in columns]
 
-    # Check if all rows have the same length
+    # Check if all rows have the same  
     row_lengths = set(len(row) for row in rows)
 
     if len(row_lengths) > 1:
@@ -101,10 +93,11 @@ def Handle_Client(conn,addr):
             stack_lock.release()  # Release lock after reading the stack
                      
             if response_data == []:
+                print("Empty data")
                 response_data = [0 for i in range(NumberChannels)]
                          
             response_data = np.array(response_data).tolist()
-            response_json = json.dumps(response_data).encode()  # Convert the dictionary to JSON and enconde intio bytes
+            response_json = json.dumps(response_data).encode()  # Convert the dictionary to JSON and enconde into bytes
             conn.sendall(response_json)
             #print("PM: Data sent:", response_data)
             
@@ -139,7 +132,7 @@ def Processing_Module_Client():
     print("PM Client connected")
      # Loop to send the request and save the data 
     while True:
-            #print("PM Client live")
+            print("PM Client live")
             try:
                 try:
                     data = Get_data()

@@ -16,7 +16,7 @@ import sys
 #sys.path.append("../")
 from GlobalParameters import *
 from API_Server_Nuevo import *    
-import Processing_Module_Nuevo 
+import PM_Communications 
 from Aero_Nuevo import *
 import Delsys_API_Server   
 
@@ -87,8 +87,8 @@ class PlottingManagement():
             API_server_thread.start()
         #time.sleep(0.5)
         
-        Processing_Module_Client_thread = Thread(target=Processing_Module_Nuevo.Processing_Module_Client)
-        Processing_Module_Server_thread = Thread(target=Processing_Module_Nuevo.Processing_Module_Server)
+        Processing_Module_Client_thread = Thread(target=PM_Communications.Processing_Module_Client)
+        Processing_Module_Server_thread = Thread(target=PM_Communications.Processing_Module_Server)
         
         Processing_Module_Client_thread.start()
         time.sleep(0.5)
