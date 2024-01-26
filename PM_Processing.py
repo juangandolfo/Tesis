@@ -1,6 +1,8 @@
-from PM_DataStructure import *
+import PM_DataStructure as PM_DS
 import numpy as np
 from threading import Thread
+import GlobalParameters
+import time
 
 
 class DataProcessing:
@@ -17,19 +19,43 @@ class DataProcessing:
     def Set_LastOutputWeight(self, Weight):
         self.LastOutputWeight = Weight
 
+    def MapActivation(self,data,matriz):
+        return np.matmul(matriz,data)
+
+    def UpdatePosition(self,synergyActivation,synergy_CursorMap):
+        longitud_deseada = 8
+        ceros_faltantes = longitud_deseada - len(synergyActivation)
+        synergyActivation = np.pad(synergyActivation, (0, ceros_faltantes), mode='constant')
+        left,right,up,down = synergy_CursorMap
+        return np.array([synergyActivation[right]-synergyActivation[left],synergyActivation[up]-synergyActivation[down]])
+
 DataProcessing = DataProcessing()
+LastRawData = [0 for i in range(GlobalParameters.MusclesNumber)]
 
 def Processing():
-    stack_lock.acquire()  # Acquire lock before accessing the stack
-    LastRawData = circular_stack.get_oldest_vector("identificador nuevo")
-    RawData = circular_stack.get_vectors("identificador nuevo")
-    if RawData != []:
-        ProcessedData = DataProcessing.DummyLowPassFilter(DataProcessing.Rectify(RawData), LastRawData)
-        circular_stack.add_vector(ProcessedData)
-    stack_lock.release() 
-#Hay que programar el puntero en el buffer y agregar delay al cursor.
+    #print("PM: Processing live")
+    LastRawData = [0 for i in range(GlobalParameters.MusclesNumber)]
+    while True:
+        
+        PM_DS.stack_lock.acquire()  
+        RawData = PM_DS.PM_DataStruct.circular_stack.get_oldest_vector(1)
+        PM_DS.stack_lock.release()
+        if RawData != []:
+            ProcessedData = DataProcessing.DummyLowPassFilter(DataProcessing.Rectify(RawData), LastRawData)
+            #print(ProcessedData)
+            LastRawData = RawData
+            PM_DS.SynergyBase_Semaphore.acquire()
+            SynergyActivations = DataProcessing.MapActivation(ProcessedData,GlobalParameters.SynergyBase)
+            #print(SynergyActivations)
+            PM_DS.SynergyBase_Semaphore.release()
+            NewMovement = DataProcessing.UpdatePosition(SynergyActivations, GlobalParameters.synergy_CursorMap)
+            PM_DS.PositionOutput_Semaphore.acquire()
+            PM_DS.PM_DataStruct.positionOutput = PM_DS.PM_DataStruct.positionOutput + NewMovement
+            """if PM_DS.PM_DataStruct.positionOutput != [0,0]:
+                PM_DS.PM_DataStruct.positionOutput = np.average([PM_DS.PM_DataStruct.positionOutput, NewMovement], axis=0)
+            else:
+                 PM_DS.PM_DataStruct.positionOutput = NewMovement"""
+            #PM_DS.PM_DataStruct.positionOutput = GlobalParameters.CursorMovement_Gain*NewMovement
+            PM_DS.PositionOutput_Semaphore.release()
 
 
-DataProcessing = DataProcessing()
-Processing = Thread(target=Processing)
-Processing.start()

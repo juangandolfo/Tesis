@@ -1,5 +1,5 @@
 from  GlobalParameters import *
-from PM_DataStructure import *
+import PM_DataStructure as PM_DS
 import socket
 import json
 import time
@@ -42,7 +42,7 @@ def Dictionary_to_matrix(dictionary):
         # Trim rows to the minimum length
         rows = [row[:min_length] for row in rows]
         print("Trimmed data")
-        time.sleep(3)
+        
 
     # Create the matrix    
     matriz = np.array(rows).T 
@@ -63,11 +63,11 @@ def Get_data():
                 break  # Delimiter found
         except socket.timeout as e:
             print(e)
-            time.sleep(5)
+            
             continue
         except socket.error as e:
             print(e)
-            time.sleep(5)
+            
             continue
 
     serialized_data = data.decode().rstrip("~") # Quit the delimiter and decode the received data
@@ -87,29 +87,35 @@ def Handle_Client(conn,addr):
         data = conn.recv(1024)
         # Check if the received data is a GET request for "/data"
         if  data.decode().strip() == "GET /data1":
-            stack_lock.acquire()  # Acquire lock before accessing the stack
-            response_data = circular_stack.get_oldest_vector(1)
+            #PM_DS.stack_lock.acquire()  # Acquire lock before accessing the stack
+            #response_data = PM_DS.PM_DataStruct.circular_stack.get_oldest_vector(1)
             #print(response_data)
-            stack_lock.release()  # Release lock after reading the stack
-                     
+            #PM_DS.stack_lock.release()  # Release lock after reading the stack
+
+            PM_DS.PositionOutput_Semaphore.acquire()
+            response_data = PM_DS.PM_DataStruct.positionOutput
+            PM_DS.PM_DataStruct.positionOutput = [0,0]
+            PM_DS.PositionOutput_Semaphore.release()
+
             if response_data == []:
                 print("Empty data")
-                response_data = [0 for i in range(NumberChannels)]
+                response_data = [0 for i in range(MusclesNumber)]
                          
             response_data = np.array(response_data).tolist()
+            #print(response_data)
             response_json = json.dumps(response_data).encode()  # Convert the dictionary to JSON and enconde into bytes
             conn.sendall(response_json)
             #print("PM: Data sent:", response_data)
             
 
         elif  data.decode().strip() == "GET /data2":
-            stack_lock.acquire()  # Acquire lock before accessing the stack
-            response_data = circular_stack.get_oldest_vector(2)
+            PM_DS.stack_lock.acquire()  # Acquire lock before accessing the stack
+            response_data = PM_DS.PM_DataStruct.circular_stack.get_oldest_vector(2)
             #print(response_data)
-            stack_lock.release()  # Release lock after reading the stack
+            PM_DS.stack_lock.release()  # Release lock after reading the stack
             
             if response_data == []:
-                response_data = [0 for i in range(NumberChannels)]
+                response_data = [0 for i in range(MusclesNumber)]
 
             response_data = np.array(response_data).tolist()
             response_json = json.dumps(response_data).encode()  # Convert the dictionary to JSON and enconde intio bytes
@@ -129,25 +135,30 @@ def Handle_Client(conn,addr):
                
 def Processing_Module_Client():
     client_socket.connect((HOST, PORT_Client))
-    print("PM Client connected")
-     # Loop to send the request and save the data 
+    #print("PM Client connected")
+    #request Number of cahnnels from host
+    #globalParameters.MusclesNumber = GetMusclesNumber()
+    PM_DS.PM_DataStruct.InitializeRawDataBuffer()
+    #finger dance logic for calibration
+    #GlobalParameters.SynergyBase = GetSynergyBase()
+    # Loop to send the request and save the data 
     while True:
-            print("PM Client live")
+        #print("PM Client live")
+        try:
             try:
-                try:
-                    data = Get_data()
-                except Exception as e:
-                    print(e)
-                    continue
-                formated_data = Dictionary_to_matrix(data)
-                stack_lock.acquire()  # Acquire lock before accessing the stack
-                circular_stack.add_matrix(formated_data)
-                stack_lock.release()  # Release lock after reading the stack
-                #time.sleep(0.5)  
-            except socket.error as e:
-                print("Connection error:", e)
+                data = Get_data()
+            except Exception as e:
+                #print(e)
                 continue
-                # Manage a connection error 
+            formated_data = Dictionary_to_matrix(data)
+            PM_DS.stack_lock.acquire()  # Acquire lock before accessing the stack
+            PM_DS.PM_DataStruct.circular_stack.add_matrix(formated_data)
+            PM_DS.stack_lock.release()  # Release lock after reading the stack
+            #time.sleep(0.5)  
+        except socket.error as e:
+            print("Connection error:", e)
+            continue
+            # Manage a connection error 
 
 
 def Processing_Module_Server():

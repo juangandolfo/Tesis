@@ -11,14 +11,17 @@ from AeroPy.DataManager import *
 
 
 
+
 import time
 import sys
 #sys.path.append("../")
 from GlobalParameters import *
 from API_Server_Nuevo import *    
 import PM_Communications 
+import PM_Processing
 from Aero_Nuevo import *
 import Delsys_API_Server   
+
 
 
 
@@ -89,11 +92,14 @@ class PlottingManagement():
         
         Processing_Module_Client_thread = Thread(target=PM_Communications.Processing_Module_Client)
         Processing_Module_Server_thread = Thread(target=PM_Communications.Processing_Module_Server)
-        
+        Processing_Module = Thread(target=PM_Processing.Processing)
+
         Processing_Module_Client_thread.start()
-        time.sleep(0.5)
+        time.sleep(0.2)
         Processing_Module_Server_thread.start()
-        time.sleep(0.5)
+        time.sleep(0.2)
+        Processing_Module.start()
+        time.sleep(0.2)
         import Cursor_Nuevo 
         Cursor_thread=Thread(target=Cursor_Nuevo.Cursor)
         Cursor_thread.start()
@@ -146,10 +152,10 @@ class PlottingManagement():
             idxVal = 0
             for i in range(self.SensorsFound):
                 selectedSensor = TrigBase.GetSensorObject(i)
-                print(str(selectedSensor))
+                #print(str(selectedSensor))
                 if len(selectedSensor.TrignoChannels) > 0:
                     for channel in range(len(selectedSensor.TrignoChannels)):
-                        print(selectedSensor.TrignoChannels[channel].Name)
+                        #print(selectedSensor.TrignoChannels[channel].Name)
                         self.sampleRates[i].append((selectedSensor.TrignoChannels[channel].SampleRate,
                                                     selectedSensor.TrignoChannels[channel].Name))
                         self.samplesPerFrame[i].append(selectedSensor.TrignoChannels[channel].SamplesPerFrame)
@@ -170,8 +176,7 @@ class PlottingManagement():
                                 plotCount += 1
                                                     
                         idxVal += 1
-            print(self.dataStreamIdx)
-            
+                #print(self.dataStreamIdx)       
             # ---- Create the plotting canvas and begin visualization
             #self.EMGplot.initiateCanvas(None, None, plotCount, 1, self.numSamples)
 
