@@ -13,6 +13,12 @@ class DataProcessing:
     def Rectify(self, data):
         return np.abs(data)
     
+    def Normalize(self, data, peaks, size):
+        for i in range(size):
+            if data[i] > peaks[i]:
+                peaks[i] = data[i]
+        return data/peaks
+    
     def DummyLowPassFilter(self, data, LastOutput):
         return np.array(LastOutput)*self.LastOutputWeight + np.array(data)*(1-self.LastOutputWeight)
     
@@ -34,28 +40,26 @@ LastRawData = [0 for i in range(GlobalParameters.MusclesNumber)]
 
 def Processing():
     #print("PM: Processing live")
-    LastRawData = [0 for i in range(GlobalParameters.MusclesNumber)]
+    LastNormalizedData = [0 for i in range(GlobalParameters.MusclesNumber)]
     while True:
         
         PM_DS.stack_lock.acquire()  
         RawData = PM_DS.PM_DataStruct.circular_stack.get_oldest_vector(1)
         PM_DS.stack_lock.release()
         if RawData != []:
-            ProcessedData = DataProcessing.DummyLowPassFilter(DataProcessing.Rectify(RawData), LastRawData)
-            #print(ProcessedData)
-            LastRawData = RawData
+            RectifiedData = DataProcessing.Rectify(RawData)
+            NormalizedData = DataProcessing.Normalize(RectifiedData, GlobalParameters.PeakActivation, GlobalParameters.MusclesNumber)
+            ProcessedData = DataProcessing.DummyLowPassFilter(NormalizedData, LastNormalizedData)
+            LastNormalizedData = NormalizedData
+
             PM_DS.SynergyBase_Semaphore.acquire()
             SynergyActivations = DataProcessing.MapActivation(ProcessedData,GlobalParameters.SynergyBase)
-            #print(SynergyActivations)
             PM_DS.SynergyBase_Semaphore.release()
+
             NewMovement = DataProcessing.UpdatePosition(SynergyActivations, GlobalParameters.synergy_CursorMap)
+            
             PM_DS.PositionOutput_Semaphore.acquire()
-            PM_DS.PM_DataStruct.positionOutput = PM_DS.PM_DataStruct.positionOutput + NewMovement
-            """if PM_DS.PM_DataStruct.positionOutput != [0,0]:
-                PM_DS.PM_DataStruct.positionOutput = np.average([PM_DS.PM_DataStruct.positionOutput, NewMovement], axis=0)
-            else:
-                 PM_DS.PM_DataStruct.positionOutput = NewMovement"""
-            #PM_DS.PM_DataStruct.positionOutput = GlobalParameters.CursorMovement_Gain*NewMovement
+            PM_DS.PM_DataStruct.positionOutput = PM_DS.PM_DataStruct.positionOutput + GlobalParameters.CursorMovement_Gain*NewMovement
             PM_DS.PositionOutput_Semaphore.release()
 
 

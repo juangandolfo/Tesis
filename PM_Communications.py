@@ -1,4 +1,4 @@
-from  GlobalParameters import *
+import GlobalParameters
 import PM_DataStructure as PM_DS
 import socket
 import json
@@ -93,13 +93,13 @@ def Handle_Client(conn,addr):
             #PM_DS.stack_lock.release()  # Release lock after reading the stack
 
             PM_DS.PositionOutput_Semaphore.acquire()
-            response_data = PM_DS.PM_DataStruct.positionOutput
+            response_data = GlobalParameters.CursorMovement_Gain*PM_DS.PM_DataStruct.positionOutput
             PM_DS.PM_DataStruct.positionOutput = [0,0]
             PM_DS.PositionOutput_Semaphore.release()
 
             if response_data == []:
                 print("Empty data")
-                response_data = [0 for i in range(MusclesNumber)]
+                response_data = [0 for i in range(GlobalParameters.MusclesNumber)]
                          
             response_data = np.array(response_data).tolist()
             #print(response_data)
@@ -115,7 +115,7 @@ def Handle_Client(conn,addr):
             PM_DS.stack_lock.release()  # Release lock after reading the stack
             
             if response_data == []:
-                response_data = [0 for i in range(MusclesNumber)]
+                response_data = [0 for i in range(GlobalParameters.MusclesNumber)]
 
             response_data = np.array(response_data).tolist()
             response_json = json.dumps(response_data).encode()  # Convert the dictionary to JSON and enconde intio bytes

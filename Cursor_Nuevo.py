@@ -95,7 +95,7 @@ def getSpeedFromEMG():
     speed = Get_data()
     #print("Client1:", data) 
     #speed=(10*(abs(data[0])-abs(data[1])),0)
-    print("Cursor:",speed)
+    #print("Cursor:",speed)
     return speed
 
 
