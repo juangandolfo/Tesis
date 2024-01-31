@@ -35,8 +35,10 @@ class CircularBufferVector:
         else:
             self.buffer[self.head] = vector
             if self.head == self.CursorHead and self.CursorEmpty == False:
+                #print("Cursor head: Overwritten data")
                 self.CursorHead = (self.CursorHead + 1) % self.capacity
             if self.head == self.VisualizationHead and self.VisualizationEmpty == False:
+                #print("Visualization head: Overwritten data")
                 self.VisualizationHead = (self.VisualizationHead + 1) % self.capacity
             self.head = (self.head + 1) % self.capacity
         

@@ -6,7 +6,7 @@ import numpy as np
 class PM_DataStructure:
     def __init__(self) -> None:
         self.circular_stack = Buffer.CircularBufferVector(1, GlobalParameters.MusclesNumber)
-        self.positionOutput = [0,0]
+        self.positionOutput = np.zeros(2)
 
     def InitializeRawDataBuffer(self):
         self.circular_stack = Buffer.CircularBufferVector(GlobalParameters.RawData_BufferSize, GlobalParameters.MusclesNumber)

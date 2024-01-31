@@ -32,7 +32,7 @@ def Dictionary_to_matrix(dictionary):
     # Get the data 
     rows = [dictionary[column] for column in columns]
 
-    # Check if all rows have the same  
+    # Check if all rows have the same length 
     row_lengths = set(len(row) for row in rows)
 
     if len(row_lengths) > 1:
@@ -50,8 +50,8 @@ def Dictionary_to_matrix(dictionary):
     return matriz
 
 # Function to send the request and receive the data from API Server
-def Get_data():
-    request = "GET /data"
+def Request(Type):
+    request = "GET /"+Type
     client_socket.sendall(request.encode())
     data = b''       
     while True:
@@ -94,7 +94,7 @@ def Handle_Client(conn,addr):
 
             PM_DS.PositionOutput_Semaphore.acquire()
             response_data = GlobalParameters.CursorMovement_Gain*PM_DS.PM_DataStruct.positionOutput
-            PM_DS.PM_DataStruct.positionOutput = [0,0]
+            PM_DS.PM_DataStruct.positionOutput = np.zeros(2)
             PM_DS.PositionOutput_Semaphore.release()
 
             if response_data == []:
@@ -135,18 +135,22 @@ def Handle_Client(conn,addr):
                
 def Processing_Module_Client():
     client_socket.connect((HOST, PORT_Client))
-    #print("PM Client connected")
-    #request Number of cahnnels from host
-    #globalParameters.MusclesNumber = GetMusclesNumber()
+    
+    # Request Number of cahnnels from host
+    GlobalParameters.MusclesNumber = Request("SensorsNumber")
+    GlobalParameters.Initialize()
+
+    print(GlobalParameters.MusclesNumber)
     PM_DS.PM_DataStruct.InitializeRawDataBuffer()
     #finger dance logic for calibration
     #GlobalParameters.SynergyBase = GetSynergyBase()
-    # Loop to send the request and save the data 
+
+    # Loop to request data
     while True:
         #print("PM Client live")
         try:
             try:
-                data = Get_data()
+                data = Request("data")
             except Exception as e:
                 #print(e)
                 continue

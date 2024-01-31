@@ -7,8 +7,7 @@ import numpy as np
 import clr  
 clr.AddReference("System")
 from System import Guid  
-
-
+import API_Parameters
 
 HOST = "127.0.0.1"  # Standard adress (localhost)
 PORT = 6001  # Port to listen on (non-privileged ports are > 1023)
@@ -50,9 +49,10 @@ def API_Server(AeroInstance,emgPositionVector):
         with conn:
             print(f"Connected by {addr}")
             while True:
-                data = conn.recv(1024)
+                DataReceived = conn.recv(1024)
                 # Check if the received data is a GET request for "/data"
-                if data.decode().strip() == "GET /data":
+                data = DataReceived.decode().strip()
+                if data == "GET /data":
                     dataReady = AeroInstance.CheckDataQueue()
                     if dataReady: 
                         response_data = FormattedDictionary_to_PythonDictionary(AeroInstance.PollData(),emgPositionVector)
@@ -65,13 +65,19 @@ def API_Server(AeroInstance,emgPositionVector):
                         #print(serialized_data)
                     except Exception as e:
                         print(e)
-                        time.sleep(5)    
+                           
                     #print("Data sent:", serialized_data)
-                    """
-                elif data.decode().strip() == "GET /NumberSensors":
-                    response_data = AeroInstance.GetNumberSensors()
-                    serialized_data = json.dumps(response_data)
-                    """
+                    
+                elif data == "GET /SensorsNumber":
+                   
+                    serialized_data = json.dumps(API_Parameters.ChannelsNumber)
+                    serialized_data  += "~"
+                    try:
+                        conn.sendall(serialized_data.encode())
+                        #print(serialized_data)
+                    except Exception as e:
+                        print(e)
+                           
                 else:
                    print("Invalid request")
                     

@@ -40,7 +40,12 @@ LastRawData = [0 for i in range(GlobalParameters.MusclesNumber)]
 
 def Processing():
     #print("PM: Processing live")
+    while(GlobalParameters.Initialized == False):
+       pass
+
     LastNormalizedData = [0 for i in range(GlobalParameters.MusclesNumber)]
+    print(GlobalParameters.SynergyBase)
+    
     while True:
         
         PM_DS.stack_lock.acquire()  
@@ -51,7 +56,7 @@ def Processing():
             NormalizedData = DataProcessing.Normalize(RectifiedData, GlobalParameters.PeakActivation, GlobalParameters.MusclesNumber)
             ProcessedData = DataProcessing.DummyLowPassFilter(NormalizedData, LastNormalizedData)
             LastNormalizedData = NormalizedData
-
+            #print(ProcessedData)
             PM_DS.SynergyBase_Semaphore.acquire()
             SynergyActivations = DataProcessing.MapActivation(ProcessedData,GlobalParameters.SynergyBase)
             PM_DS.SynergyBase_Semaphore.release()
