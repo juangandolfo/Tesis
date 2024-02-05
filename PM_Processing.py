@@ -44,7 +44,7 @@ def Processing():
        pass
 
     LastNormalizedData = [0 for i in range(GlobalParameters.MusclesNumber)]
-    print(GlobalParameters.SynergyBase)
+    #print(GlobalParameters.SynergyBase)
     
     while True:
         
