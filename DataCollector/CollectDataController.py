@@ -119,11 +119,8 @@ class PlottingManagement():
             self.Reset_Callback()
 
         f = TrigBase.ScanSensors().Result
-        print("f:", f)
         self.nameList = TrigBase.GetSensorNames()
-        print("NameList", self.nameList[0])
         self.SensorsFound = len(self.nameList)
-        print("SensorsFound", self.SensorsFound)
         TrigBase.SelectAllSensors()
         return self.nameList
 
@@ -210,7 +207,8 @@ class PlottingManagement():
         for i in range(self.SensorsFound):
             selectedSensor = TrigBase.GetSensorObject(i)
             if "TrignoAvanti" in str(selectedSensor):
-                self.setSampleMode(i,"EMG raw (2148 Hz), skin check (74 Hz), +/-11mv, 10-850Hz")
+                #self.setSampleMode(i,"EMG raw (2148 Hz), skin check (74 Hz), +/-11mv, 10-850Hz")
+                self.setSampleMode(i,"EMG raw (4370 Hz), skin check (74 Hz), +/-11mv, 20-450Hz")
             elif "AvantiDoubleMini" in str(selectedSensor):
                 self.setSampleMode(i, "EMG raw x2 (2148Hz), +/-11mv, 10-850Hz") 
             print("AllSampleModes", TrigBase.GetAllSampleModes()[i])                

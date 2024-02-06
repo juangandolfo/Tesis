@@ -54,12 +54,15 @@ def API_Server(AeroInstance,emgPositionVector):
                 data = DataReceived.decode().strip()
                 if data == "GET /data":
                     dataReady = AeroInstance.CheckDataQueue()
+                    
                     if dataReady: 
                         response_data = FormattedDictionary_to_PythonDictionary(AeroInstance.PollData(),emgPositionVector)
                     else: 
                         response_data={}
+                    
                     serialized_data = json.dumps(response_data) # Serialize the object using json
                     serialized_data  += "~" # Add a delimiter at the end 
+                    
                     try:
                         conn.sendall(serialized_data.encode())
                         #print(serialized_data)

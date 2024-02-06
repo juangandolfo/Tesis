@@ -60,14 +60,15 @@ def Request(Type):
             chunk = client_socket.recv(1024)
             data += chunk
             if b"~" in data:
+                print("Delimiter found")
                 break  # Delimiter found
+        
         except socket.timeout as e:
             print(e)
-            
             continue
+        
         except socket.error as e:
             print(e)
-            
             continue
 
     serialized_data = data.decode().rstrip("~") # Quit the delimiter and decode the received data
@@ -147,17 +148,24 @@ def Processing_Module_Client():
 
     # Loop to request data
     while True:
-        #print("PM Client live")
+        print("PM Client live")
         try:
             try:
+                print(1)
                 data = Request("data")
+                print(2)
             except Exception as e:
-                #print(e)
+                print(e)
                 continue
+            print(3)
             formated_data = Dictionary_to_matrix(data)
+            print(4)
             PM_DS.stack_lock.acquire()  # Acquire lock before accessing the stack
+            print(5)
             PM_DS.PM_DataStruct.circular_stack.add_matrix(formated_data)
+            print(6)
             PM_DS.stack_lock.release()  # Release lock after reading the stack
+            print(7)
             #time.sleep(0.5)  
         except socket.error as e:
             print("Connection error:", e)
