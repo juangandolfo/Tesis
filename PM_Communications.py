@@ -141,7 +141,7 @@ def Processing_Module_Client():
     GlobalParameters.MusclesNumber = Request("SensorsNumber")
     GlobalParameters.Initialize()
 
-    print(GlobalParameters.MusclesNumber)
+    #print(GlobalParameters.MusclesNumber)
     PM_DS.PM_DataStruct.InitializeRawDataBuffer()
     #finger dance logic for calibration
     #GlobalParameters.SynergyBase = GetSynergyBase()
@@ -151,22 +151,15 @@ def Processing_Module_Client():
         print("PM Client live")
         try:
             try:
-                print(1)
                 data = Request("data")
-                print(2)
             except Exception as e:
                 print(e)
                 continue
-            print(3)
             formated_data = Dictionary_to_matrix(data)
-            print(4)
             PM_DS.stack_lock.acquire()  # Acquire lock before accessing the stack
-            print(5)
             PM_DS.PM_DataStruct.circular_stack.add_matrix(formated_data)
-            print(6)
             PM_DS.stack_lock.release()  # Release lock after reading the stack
-            print(7)
-            #time.sleep(0.5)  
+            
         except socket.error as e:
             print("Connection error:", e)
             continue
