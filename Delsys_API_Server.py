@@ -80,7 +80,16 @@ def API_Server(AeroInstance,emgPositionVector):
                         #print(serialized_data)
                     except Exception as e:
                         print(e)
-                           
+
+                elif data == "GET /SampleRate":
+                   
+                    serialized_data = json.dumps(API_Parameters.SampleRate)
+                    serialized_data  += "~"
+                    try:
+                        conn.sendall(serialized_data.encode())
+                    except Exception as e:
+                        print(e)
+
                 else:
                    print("Invalid request")
                     

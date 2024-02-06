@@ -139,6 +139,7 @@ def Processing_Module_Client():
     
     # Request Number of cahnnels from host
     GlobalParameters.MusclesNumber = Request("SensorsNumber")
+    GlobalParameters.sampleRate = Request("SampleRate")
     GlobalParameters.Initialize()
 
     #print(GlobalParameters.MusclesNumber)

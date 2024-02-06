@@ -8,6 +8,8 @@ Initialized = False
 MusclesNumber = 1
 synergysNumber = MusclesNumber
 RawData_BufferSize = 1000
+sampleRate = 1
+
 
 synergy_CursorMap = [0,1,0,1]
 CursorMovement_Gain = 3
