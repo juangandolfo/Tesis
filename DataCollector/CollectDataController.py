@@ -165,7 +165,8 @@ class PlottingManagement():
                                                     
                         idxVal += 1
             print(self.dataStreamIdx) 
-            API_Parameters.ChannelsNumber = len(self.dataStreamIdx)      
+            API_Parameters.ChannelsNumber = len(self.dataStreamIdx)
+            API_Parameters.SampleRate = max(self.sampleRates, key=lambda x: x[0])[0][0]      
             # ---- Create the plotting canvas and begin visualization
             #self.EMGplot.initiateCanvas(None, None, plotCount, 1, self.numSamples)
 
