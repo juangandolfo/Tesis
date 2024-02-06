@@ -60,7 +60,7 @@ def Request(Type):
             chunk = client_socket.recv(1024)
             data += chunk
             if b"~" in data:
-                print("Delimiter found")
+                #print("Delimiter found")
                 break  # Delimiter found
         
         except socket.timeout as e:
@@ -149,7 +149,7 @@ def Processing_Module_Client():
 
     # Loop to request data
     while True:
-        print("PM Client live")
+        #print("PM Client live")
         try:
             try:
                 data = Request("data")
