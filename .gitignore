@@ -1,0 +1,12 @@
+__pycache__/
+DataCollector/__pycache__/
+*.cypthon-311.pyc
+__pycache__/API_Parameters.cpython-38.pyc
+__pycache__/API_Parameters.cpython-38.pyc
+__pycache__/API_Parameters.cpython-38.pyc
+__pycache__/API_Server_Nuevo.cpython-38.pyc
+__pycache__/Delsys_API_Server.cpython-38.pyc
+__pycache__/GlobalParameters.cpython-38.pyc
+__pycache__/PM_Communications.cpython-38.pyc
+__pycache__/PM_Processing.cpython-38.pyc
+DataCollector/__pycache__/CollectDataController.cpython-38.pyc
