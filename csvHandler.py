@@ -1,47 +1,36 @@
-# In this file we will decalre the parametrs that will be used in the PM
+import csv
 import numpy as np
-import csvHandler
 
 
-ModoDelsys = True # True if we use the Delsys API Server, False if we use the API Server from the PM.
-Initialized = False
-getConfigurationFromCsv = True
+class ExperimentData:
+    def __init__(self, SynergyBase, Synergy_CursorMap, PeakActivation, Noise):
+        self.SynergyBase = SynergyBase
+        self.Synergy_CursorMap = Synergy_CursorMap
+        self.PeakActivation = PeakActivation
+        self.Noise = Noise
 
-MusclesNumber = 8
-synergysNumber = MusclesNumber
-RawData_BufferSize = 1000
-sampleRate = 1
 
-SynergyConfigurationFile = 'SynergyConfiguration.csv'
-
-synergy_CursorMap = [0,1,0,1]
-CursorMovement_Gain = 3
-
-SynergyBase = np.identity(8)
-
-PeakActivation = []
-Noise = []
-
-def Initialize():
-    global SynergyBase 
-    global PeakActivation 
-    global Initialized
-
-    if getConfigurationFromCsv:
-        try:
-            csvHandler.Read_csv(SynergyConfigurationFile, synergysNumber, MusclesNumber)
-        except Exception as e:
-            print(e)
-    PeakActivation = np.ones(MusclesNumber) 
+def SaveExperimentConfiguration(data, filename):
+    fieldnames = ['SynergyBase', 'Synergy_CursorMap', 'PeakActivation', 'Noise']
     
-    Initialized = True
+    
+    with open(filename + ".csv", 'w', newline='') as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+        writer.writeheader()
+        writer.writerow({'SynergyBase': data.SynergyBase,
+                         'Synergy_CursorMap': data.Synergy_CursorMap,
+                         'PeakActivation': data.PeakActivation,
+                         'Noise': data.Noise})
+    
+# Create an instance of ExperimentData
+data = ExperimentData(np.identity(8), np.array([1, 2]), np.array([3, 4]), np.array([5, 6]))
+
+# Call the function with the instance of ExperimentData
+SaveExperimentConfiguration(data, "Experiment1")
 
 
-
-
-
-
-def Read_csv(csvfile):
+def Read_csv(csvfile, synergysNumber, MusclesNumber):
     
     global synergy_CursorMap
     global SynergyBase
@@ -85,5 +74,3 @@ def Read_csv(csvfile):
                     raise Exception("Hay mas musculos en la matriz que channels disponibles")
                 SynergyBase[i, j-1] = float(row[j])
                 
-                
-      
