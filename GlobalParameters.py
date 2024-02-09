@@ -80,7 +80,4 @@ def Read_csv(csvfile):
                 SynergyBase[i, j-1] = float(row[j])
                 
                 
-
-Initialize()
-print(synergy_CursorMap)
-print(SynergyBase)       
+      
