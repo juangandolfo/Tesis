@@ -36,11 +36,6 @@ def Initialize():
     
     Initialized = True
 
-
-
-
-
-
 def Read_csv(csvfile):
     
     global synergy_CursorMap
