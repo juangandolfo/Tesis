@@ -35,22 +35,33 @@ def Read_csv(csvfile):
     with open(csvfile, 'r') as csvfile:
         # Create a CSV reader object
         csv_reader = csv.reader(csvfile, delimiter=',')
-        row = np.array(next(csv_reader), dtype=float)
+        # get the first row
+        StrRow = next(csv_reader)   
+        row = np.array(StrRow, dtype=float) 
+        # get the number of muscles
         MusclesNumber = len(row)
-        while(row[0] != ''):
-            '''np.zeros(MusclesNumber).any()):'''
-            
-            SynergyBase.append(row)  
-            print(SynergyBase)
-            a = next(csv_reader)
-            print(a)
-            row = np.array(a, dtype=float)
-        print(1)
-            
+        #create the null row for comparison
+        NullRow = ['' for _ in range(MusclesNumber)]
+        SynergiesNumber = 0
+        while(StrRow != NullRow):
+            row = np.array(StrRow, dtype=float)
+            SynergyBase.append(row)
+            StrRow = next(csv_reader)
+            SynergiesNumber += 1
+        
+        SynergyBase = np.matrix(SynergyBase)
+        
+        strRow = next(csv_reader)
+        synergy_CursorMap = np.array(strRow[0].strip('[]').split(','), dtype=int)
+        
+        
+        return SynergyBase, synergy_CursorMap, MusclesNumber, SynergiesNumber
+
+        '''    
         row = next(csv_reader)
         SynergyBase.append((np.array(row, dtype=float)))  
         print(SynergyBase) 
-
+        '''
         '''while(row != ""):
             row = next(csv_reader)
             for j in range(1,MusclesNumber+1):
@@ -110,4 +121,4 @@ def Read_csv(csvfile):
 
 
 filename = "SynergyConfigurationFromExcel.csv"
-Read_csv(filename)
+print(Read_csv(filename))

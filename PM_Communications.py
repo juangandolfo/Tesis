@@ -140,8 +140,12 @@ def Processing_Module_Client():
     # Request Number of cahnnels from host
     GlobalParameters.MusclesNumber = Request("SensorsNumber")
     GlobalParameters.sampleRate = Request("SampleRate")
-    GlobalParameters.Initialize()
-
+    try:
+        GlobalParameters.Initialize()
+    except Exception as e:
+        print(e)
+        return
+        
     #print(GlobalParameters.MusclesNumber)
     PM_DS.PM_DataStruct.InitializeRawDataBuffer()
     #finger dance logic for calibration
