@@ -158,7 +158,7 @@ def Processing_Module_Client():
             try:
                 data = Request("data")
             except Exception as e:
-                print(e)
+                #print(e)
                 continue
             formated_data = Dictionary_to_matrix(data)
             PM_DS.stack_lock.acquire()  # Acquire lock before accessing the stack

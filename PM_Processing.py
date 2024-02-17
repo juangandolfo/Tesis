@@ -25,13 +25,14 @@ class DataProcessing:
     def Set_LastOutputWeight(self, Weight):
         self.LastOutputWeight = Weight
 
-    def MapActivation(self,data,matriz):
-        return np.matmul(matriz,data)
+    def MapActivation(self,matriz, data):
+        return np.matmul(matriz, data)
 
     def UpdatePosition(self,synergyActivation,synergy_CursorMap):
+        
         longitud_deseada = 8
         ceros_faltantes = longitud_deseada - len(synergyActivation)
-        synergyActivation = np.pad(synergyActivation, (0, ceros_faltantes), mode='constant')
+        synergyActivation = np.pad(synergyActivation, ((0,0),(0, ceros_faltantes)), mode='constant')[0]
         left,right,up,down = synergy_CursorMap
         return np.array([synergyActivation[right]-synergyActivation[left],synergyActivation[up]-synergyActivation[down]])
 
@@ -54,12 +55,13 @@ def Processing():
         if RawData != []:
             RectifiedData = DataProcessing.Rectify(RawData)
             NormalizedData = DataProcessing.Normalize(RectifiedData, GlobalParameters.PeakActivation, GlobalParameters.MusclesNumber)
-            ProcessedData = DataProcessing.DummyLowPassFilter(NormalizedData, LastNormalizedData)
+            ProcessedData = DataProcessing.DummyLowPassFilter(NormalizedData, LastNormalizedData).reshape(-1,1)
             LastNormalizedData = NormalizedData
-            #print(ProcessedData)
+            
             PM_DS.SynergyBase_Semaphore.acquire()
-            SynergyActivations = DataProcessing.MapActivation(ProcessedData,GlobalParameters.SynergyBase)
+            SynergyActivations = np.array(DataProcessing.MapActivation(GlobalParameters.SynergyBase,ProcessedData).T)
             PM_DS.SynergyBase_Semaphore.release()
+           
 
             NewMovement = DataProcessing.UpdatePosition(SynergyActivations, GlobalParameters.synergy_CursorMap)
             

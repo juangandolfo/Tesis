@@ -30,7 +30,9 @@ def Initialize():
     global synergysNumber
 
     SynergyBase, synergy_CursorMap, MusclesNumberFromCSV, synergysNumber = csvHandler.Read_csv(SynergyConfigurationFile)
-
+    print(SynergyBase)  
+    #SynergyBase = np.identity(MusclesNumber)
+    #print(SynergyBase)
     if MusclesNumberFromCSV != MusclesNumber:
         raise Exception("The number of muscles in the configuration file is different from the number of muscles in the PM")    
     PeakActivation = np.ones(MusclesNumber) 

@@ -22,11 +22,11 @@ def SaveExperimentConfiguration(data, filename):
                          'PeakActivation': data.PeakActivation,
                          'Noise': data.Noise})
     
-# Create an instance of ExperimentData
+'''# Create an instance of ExperimentData
 data = ExperimentData(np.identity(8), np.array([1, 2]), np.array([3, 4]), np.array([5, 6]))
 
 # Call the function with the instance of ExperimentData
-SaveExperimentConfiguration(data, "Experiment1")
+SaveExperimentConfiguration(data, "Experiment1")'''
 
 def Read_csv(csvfile):
     synergy_CursorMap = []
@@ -55,6 +55,6 @@ def Read_csv(csvfile):
         synergy_CursorMap = np.array(strRow[0].strip('[]').split(','), dtype=int)
         
         
-        return SynergyBase, synergy_CursorMap, MusclesNumber, SynergiesNumber
+        return SynergyBase, synergy_CursorMap-1, MusclesNumber, SynergiesNumber
 
    
