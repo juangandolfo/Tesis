@@ -1,7 +1,6 @@
 import csv
 import numpy as np
 
-
 class ExperimentData:
     def __init__(self, SynergyBase, Synergy_CursorMap, PeakActivation, Noise):
         self.SynergyBase = SynergyBase
@@ -29,12 +28,45 @@ data = ExperimentData(np.identity(8), np.array([1, 2]), np.array([3, 4]), np.arr
 # Call the function with the instance of ExperimentData
 SaveExperimentConfiguration(data, "Experiment1")
 
+def Read_csv(csvfile):
+    synergy_CursorMap = []
+    SynergyBase = []
+    # Open the CSV file
+    with open(csvfile, 'r') as csvfile:
+        # Create a CSV reader object
+        csv_reader = csv.reader(csvfile, delimiter=',')
+        row = np.array(next(csv_reader), dtype=float)
+        MusclesNumber = len(row)
+        while(row[0] != ''):
+            '''np.zeros(MusclesNumber).any()):'''
+            
+            SynergyBase.append(row)  
+            print(SynergyBase)
+            a = next(csv_reader)
+            print(a)
+            row = np.array(a, dtype=float)
+        print(1)
+            
+        row = next(csv_reader)
+        SynergyBase.append((np.array(row, dtype=float)))  
+        print(SynergyBase) 
 
-def Read_csv(csvfile, synergysNumber, MusclesNumber):
+        '''while(row != ""):
+            row = next(csv_reader)
+            for j in range(1,MusclesNumber+1):
+                if row[j] == "":
+                    raise Exception("Hay mas channels disponibles que musculos en la matriz de configuracion")
+                if j == MusclesNumber and row[j+1]!="":
+                    raise Exception("Hay mas musculos en la matriz que channels disponibles")
+                SynergyBase[i, j-1] = float(row[j])'''
+
+
+'''def Read_csv(csvfile, synergysNumber, MusclesNumber):
     
     global synergy_CursorMap
     global SynergyBase
 
+    
     left = [3, 10]
     rigth = [3,14]
     up = [1,12]
@@ -44,7 +76,8 @@ def Read_csv(csvfile, synergysNumber, MusclesNumber):
     with open(csvfile, 'r') as csvfile:
         # Create a CSV reader object
         csv_reader = csv.reader(csvfile, delimiter=';')
-        
+
+               
         next(csv_reader)
         row = next(csv_reader)
         synergy_CursorMap[2] = row[up[1]]
@@ -73,4 +106,8 @@ def Read_csv(csvfile, synergysNumber, MusclesNumber):
                 if j == MusclesNumber and row[j+1]!="":
                     raise Exception("Hay mas musculos en la matriz que channels disponibles")
                 SynergyBase[i, j-1] = float(row[j])
-                
+'''
+
+
+filename = "SynergyConfigurationFromExcel.csv"
+Read_csv(filename)
