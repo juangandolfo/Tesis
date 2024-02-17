@@ -13,11 +13,12 @@ class DataProcessing:
     def Rectify(self, data):
         return np.abs(data)
     
-    def Normalize(self, data, peaks, size):
+    def Normalize(self, data, peaks, size,threshold):
         for i in range(size):
             if data[i] > peaks[i]:
                 peaks[i] = data[i]
-        return data/peaks
+            data[i] = max(0, data[i] - threshold[i])
+        return data/(peaks-threshold)
     
     def DummyLowPassFilter(self, data, LastOutput):
         return np.array(LastOutput)*self.LastOutputWeight + np.array(data)*(1-self.LastOutputWeight)
@@ -54,7 +55,7 @@ def Processing():
         PM_DS.stack_lock.release()
         if RawData != []:
             RectifiedData = DataProcessing.Rectify(RawData)
-            NormalizedData = DataProcessing.Normalize(RectifiedData, GlobalParameters.PeakActivation, GlobalParameters.MusclesNumber)
+            NormalizedData = DataProcessing.Normalize(RectifiedData, GlobalParameters.PeakActivation, GlobalParameters.MusclesNumber, GlobalParameters.Threshold)
             ProcessedData = DataProcessing.DummyLowPassFilter(NormalizedData, LastNormalizedData).reshape(-1,1)
             LastNormalizedData = NormalizedData
             

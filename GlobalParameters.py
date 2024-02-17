@@ -20,7 +20,7 @@ CursorMovement_Gain = 50
 SynergyBase = np.identity(8)
 
 PeakActivation = []
-Noise = []
+Threshold = []
 
 def Initialize():
     global SynergyBase 
@@ -28,6 +28,7 @@ def Initialize():
     global PeakActivation 
     global Initialized
     global synergysNumber
+    global Threshold
 
     SynergyBase, synergy_CursorMap, MusclesNumberFromCSV, synergysNumber = csvHandler.Read_csv(SynergyConfigurationFile)
     print(SynergyBase)  
@@ -36,6 +37,7 @@ def Initialize():
     if MusclesNumberFromCSV != MusclesNumber:
         raise Exception("The number of muscles in the configuration file is different from the number of muscles in the PM")    
     PeakActivation = np.ones(MusclesNumber) 
+    Threshold = np.ones(MusclesNumber) * 0.1
     
     Initialized = True
 
