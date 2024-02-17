@@ -9,13 +9,13 @@ Initialized = False
 
 MusclesNumber = 8
 synergysNumber = MusclesNumber
-RawData_BufferSize = 1000
+RawData_BufferSize = 10
 sampleRate = 1
 
 SynergyConfigurationFile = 'SynergyConfigurationFromExcel.csv'
 
 synergy_CursorMap = [0,1,0,1]
-CursorMovement_Gain = 3
+CursorMovement_Gain = 10
 
 SynergyBase = np.identity(8)
 
