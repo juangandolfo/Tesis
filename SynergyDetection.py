@@ -30,24 +30,27 @@ with open(csv_file, 'r') as file:
 
 # Specify the number of components (factors) for factorization
 n_components = 2
-
+matrix = np.asarray(np.abs(matrix))
 # Perform NMF
 for n_components in range(2, 9):
-    matrix = abs(matrix)
+    
     print("\n\nNumber of components: ", n_components)
-    model = NMF(n_components=n_components, init='random', random_state=0)
-    W = model.fit_transform(np.asarray(matrix))
+    model = NMF(n_components=n_components, init='random', random_state=0, max_iter=100000,  l1_ratio=0.1, verbose=True, shuffle=False, solver='cd')
+    W = model.fit_transform(matrix)
     H = model.components_
     Reconstructed_matrix = model.inverse_transform(W)
-    print(matrix.shape, Reconstructed_matrix.shape)
+    #print(matrix.shape, Reconstructed_matrix.shape)
 
-    r_squared = skm.r2_score( np.asarray(Reconstructed_matrix), np.asarray(matrix))
+    r_squared = skm.r2_score( np.asarray(matrix), np.asarray(Reconstructed_matrix) )
+    print("R^2: ", r_squared)
     
     #print("err: ", 1 - (model.reconstruction_err_ / total_energy))
     vaf = 0
-    vaf = 1 - (np.sum((matrix  - Reconstructed_matrix)**2))/ np.sum(matrix**2)
+    # i want to calculate the VAF
+    # the vaf is calculated as the sum of the squares of the difference between the original matrix and the reconstructed matrix for each element
+    vaf = 1 - (np.sum((matrix - Reconstructed_matrix) ** 2) / np.sum(matrix ** 2))
     print("VAF: ", vaf)
-    print("R^2: ", r_squared)
+    
 
     # Print the factorized matrices
     #print("Matrix W (Basis Vectors):")
