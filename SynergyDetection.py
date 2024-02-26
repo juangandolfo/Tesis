@@ -1,5 +1,5 @@
 from sklearn.decomposition import NMF
-from sklearn.metrics import r2_score
+import sklearn.metrics as skm
 import numpy as np
 import csv
 
@@ -33,16 +33,21 @@ n_components = 2
 
 # Perform NMF
 for n_components in range(2, 9):
+    matrix = abs(matrix)
     print("\n\nNumber of components: ", n_components)
     model = NMF(n_components=n_components, init='random', random_state=0)
-    W = model.fit_transform(matrix)
+    W = model.fit_transform(np.asarray(matrix))
     H = model.components_
     Reconstructed_matrix = model.inverse_transform(W)
+    print(matrix.shape, Reconstructed_matrix.shape)
 
-    #r_squared = r2_score(matrix.flatten(), Reconstructed_matrix.flatten())
+    r_squared = skm.r2_score( np.asarray(Reconstructed_matrix), np.asarray(matrix))
+    
     #print("err: ", 1 - (model.reconstruction_err_ / total_energy))
-    #print("VAF: ", 1 - (np.sum(matrix - Reconstructed_matrix)**2)/ np.sum(matrix**2))
-    #print("R^2: ", r_squared)
+    vaf = 0
+    vaf = 1 - (np.sum((matrix  - Reconstructed_matrix)**2))/ np.sum(matrix**2)
+    print("VAF: ", vaf)
+    print("R^2: ", r_squared)
 
     # Print the factorized matrices
     #print("Matrix W (Basis Vectors):")
