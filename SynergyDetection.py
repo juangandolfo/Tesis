@@ -1,11 +1,32 @@
 from sklearn.decomposition import NMF
 from sklearn.metrics import r2_score
 import numpy as np
+import csv
 
+# create a matrix from a csv file
+matrix = np.matrix([[0,0,0,0,0,0,0,0]])
+csv_file = './prueba1Modificada.csv'
 # Example matrix to factorize
 # i will create a matrix of 25x8 with float numbers between 1 and 2
-matrix = np.random.rand(10000, 8)
-total_energy = np.linalg.norm(matrix, 'fro',)
+#matrix = np.random.rand(10000, 8)
+total_energy = np.linalg.norm(matrix, 'fro',)+1
+
+# i want to read a csv file with the data
+with open(csv_file, 'r') as file:
+        csv_reader = csv.reader(file, delimiter=';')
+        #print(csv_reader)
+
+        # Skip the headers row
+        next(csv_reader)
+
+        # Read each row of csv file
+        for row in csv_reader:
+            #stack_lock.acquire()  # Acquire lock before accessing the stack
+            row = np.array(row, dtype=np.float64)  # Convert the row to numpy array
+            #i want to add this row to a matrix
+            matrix = np.vstack([matrix, row[1:9]])
+            # row = [int(item) for item in row] , to avoid use numpy
+            #stack_lock.release()  # Release lock after modifying the stack
 
 # Specify the number of components (factors) for factorization
 n_components = 2
@@ -18,10 +39,10 @@ for n_components in range(2, 9):
     H = model.components_
     Reconstructed_matrix = model.inverse_transform(W)
 
-    r_squared = r2_score(matrix.flatten(), Reconstructed_matrix.flatten())
-    print("err: ", 1 - (model.reconstruction_err_ / total_energy))
-    print("VAF: ", 1 - (np.sum(matrix - Reconstructed_matrix)**2)/ np.sum(matrix**2))
-    print("R^2: ", r_squared)
+    #r_squared = r2_score(matrix.flatten(), Reconstructed_matrix.flatten())
+    #print("err: ", 1 - (model.reconstruction_err_ / total_energy))
+    #print("VAF: ", 1 - (np.sum(matrix - Reconstructed_matrix)**2)/ np.sum(matrix**2))
+    #print("R^2: ", r_squared)
 
     # Print the factorized matrices
     #print("Matrix W (Basis Vectors):")
@@ -34,4 +55,3 @@ Calculated_matrix = np.dot(W, H)
 
 #print("\Calculated Matrix:")
 #print(Calculated_matrix)
-
