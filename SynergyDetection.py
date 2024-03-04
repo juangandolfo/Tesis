@@ -5,7 +5,8 @@ import csv
 
 # create a matrix from a csv file
 matrix = np.matrix([[0,0,0,0,0,0,0,0]])
-csv_file = './prueba1Modificada.csv'
+#csv_file = './prueba1Modificada.csv'
+csv_file = './prueba1.csv'
 # Example matrix to factorize
 # i will create a matrix of 25x8 with float numbers between 1 and 2
 #matrix = np.random.rand(10000, 8)
@@ -29,16 +30,25 @@ with open(csv_file, 'r') as file:
             #stack_lock.release()  # Release lock after modifying the stack
 
 # Specify the number of components (factors) for factorization
-n_components = 2
 matrix = np.asarray(np.abs(matrix))
+H = []
+numpy_H_pinv = []
+H_Normalized = []
 # Perform NMF
 for n_components in range(2, 9):
-    
     print("\n\nNumber of components: ", n_components)
-    model = NMF(n_components=n_components, init='random', random_state=0, max_iter=100000,  l1_ratio=0.1, verbose=True, shuffle=False, solver='cd')
+    #nndsvd is the initialization method that returns  a matrix with the largest dispersion.
+    #cd is the solver used because is compatible with nndsvd
+    model = NMF(n_components=n_components, init='nndsvd', tol= 1e-5,max_iter=2000, solver='cd')
     W = model.fit_transform(matrix)
-    H = model.components_
+    H.append(model.components_)
+    H_Max = np.max(H[n_components-2])
+    H_Normalized.append(H[n_components-2] / H_Max)
     Reconstructed_matrix = model.inverse_transform(W)
+    # pseudo inverse matrix of H 
+    numpy_H_pinv.append(np.linalg.pinv(H_Normalized[n_components-2]))
+    #print("Pseudo inverse of H: ", numpy_H_pinv)
+    
     #print(matrix.shape, Reconstructed_matrix.shape)
 
     r_squared = skm.r2_score( np.asarray(matrix), np.asarray(Reconstructed_matrix) )
@@ -56,10 +66,36 @@ for n_components in range(2, 9):
     #print("Matrix W (Basis Vectors):")
     #print(W)
     print("\nMatrix H (Coefficients):")
-    print(H)
+    print(H_Normalized)
 
-# Obtain the original matrix
-Calculated_matrix = np.dot(W, H)
+csv_file = './prueba1Modificada.csv'
+matrix = np.matrix([[0,0,0,0,0,0,0,0]])
+
+with open(csv_file, 'r') as file:
+        csv_reader = csv.reader(file, delimiter=';')
+        #print(csv_reader)
+
+        # Skip the headers row
+        next(csv_reader)
+
+        # Read each row of csv file
+        for row in csv_reader:
+            #stack_lock.acquire()  # Acquire lock before accessing the stack
+            row = np.array(row, dtype=np.float64)  # Convert the row to numpy array
+            #i want to add this row to a matrix
+            matrix = np.vstack([matrix, row[1:9]])
+            # row = [int(item) for item in row] , to avoid use numpy
+            #stack_lock.release()  # Release lock after modifying the stack
+
+
+previous_shape = (0,0)
+for i in range(0, len(numpy_H_pinv)):
+    print("pseudo inverse of H: ", numpy_H_pinv[i])
+
+    SynergyActivations = np.dot(np.abs(matrix),numpy_H_pinv[i])
+    for j in range(0, SynergyActivations.shape[0], 1000):
+        if max(SynergyActivations[j]).any() > 0.005:
+            print("Result for row", j, ":", SynergyActivations[j])
 
 #print("\Calculated Matrix:")
 #print(Calculated_matrix)
