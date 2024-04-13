@@ -116,6 +116,35 @@ print(vafs)
 #plt.show()
 #for i in range(model.n):
 #    plt.plot(range(0,8), model.H[i,:])
+
+import kneed
+x = [2,3,4,5,6,7,8]
+y = vafs
+
+
+# calculate and show knee/elbow
+kneedle = kneed.KneeLocator(x, 
+y,curve='concave',direction='increasing')
+knee_point = kneedle.knee 
+print('Knee: ', knee_point) 
+
+# Plot VAF data
+x = list(range(2, 9))  # Number of synergies
+plt.plot(x, vafs, marker='o', label='VAF Curve')
+plt.xlabel('Number of Synergies')
+plt.ylabel('VAF')
+plt.title('VAF vs Number of Synergies')
+
+# Plot knee point
+plt.axvline(x=knee_point, color='red', linestyle='--', label='Knee Point')
+plt.legend()
+
+# Annotate knee point
+plt.text(knee_point + 0.1, max(vafs) - 0.05, f'Knee Point: {knee_point}', color='red')
+
+# Show plot
+plt.show()
+
     
 '''print("original model: ", numeroDeSinergias, "\n", H, "\n", Model.R2, "\n", Model.vaf)
 print ("Best number of components: ", Model.n, "\n", Model.H,"\n", Model.R2,"\n", Model.vaf)
@@ -300,3 +329,13 @@ for i in range(0, len(numpy_H_pinv)):
 #print("\Calculated Matrix:")
 #print(Calculated_matrix)
 '''
+
+
+
+# Las sinergias elegidas deben tener al menos un 0 en lugares distintos para garantizar que haya una unica solucion.
+# Revisar VAFS 
+# Encontrar un codo y dar la opcion de mostrar 
+# Venir a la proxima reunion con un control a partir de eleccion de sinergias arbitrarias
+
+
+

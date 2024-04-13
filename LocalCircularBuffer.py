@@ -37,4 +37,3 @@ points = buffer.get_points()
 print(points)
 '''
 
-

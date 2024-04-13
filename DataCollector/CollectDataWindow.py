@@ -11,6 +11,7 @@ from DataCollector.CollectDataController import *
 import tkinter as tk
 from tkinter import filedialog
 from Plotter import GenericPlot as gp
+import API_Parameters 
 
 class CollectDataWindow(QWidget):
     def __init__(self,controller):
@@ -18,6 +19,7 @@ class CollectDataWindow(QWidget):
         self.pipelinetext = "Off"
         self.controller = controller
         self.buttonPanel = self.ButtonPanel()
+        self.calibration_window = CalibrationWindow()
         self.plotPanel = self.Plotter()
         self.splitter = QSplitter(self)
         self.splitter.addWidget(self.buttonPanel)
@@ -111,6 +113,16 @@ class CollectDataWindow(QWidget):
         self.reset_button.setEnabled(False)
         buttonLayout.addWidget(self.reset_button)
 
+        #---- Calibration Button
+        self.calibration_button = QPushButton('Start Calibration', self)
+        self.calibration_button.setToolTip('Start Calibration')
+        self.calibration_button.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
+        self.calibration_button.objectName = 'Start Calibration'
+        self.calibration_button.clicked.connect(self.calibration_callback)  # Connect to the callback method
+        self.calibration_button.setStyleSheet('QPushButton {color: white;}')
+        self.calibration_button.setEnabled(True)
+        buttonLayout.addWidget(self.calibration_button)
+
         #---- Drop-down menu of sensor modes
         self.SensorModeList = QComboBox(self)
         self.SensorModeList.setToolTip('Sensor Modes')
@@ -182,9 +194,7 @@ class CollectDataWindow(QWidget):
 
     def start_callback(self):
         self.CallbackConnector.Start_Callback()
-        self.stop_button.setEnabled(True)
-        self.getpipelinestate()
-
+        
     def stop_callback(self):
         self.CallbackConnector.Stop_Callback()
         self.reset_button.setEnabled(True)
@@ -213,6 +223,116 @@ class CollectDataWindow(QWidget):
         
         if selMode != '':
             self.CallbackConnector.setSampleMode_hardcoded()
+
+    def calibration_callback(self):
+        self.calibration_window.show()
+        self.CallbackConnector.StartCalibration_Callback()
+        self.stop_button.setEnabled(True)
+        self.getpipelinestate()
+
+class CountdownWidget(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        layout = QVBoxLayout()
+        self.timer_label = QLabel("Countdown: 10")
+        layout.addWidget(self.timer_label)
+        self.setLayout(layout)
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.update_timer)
+        self.remaining_time = 10
+
+    def start_countdown(self):
+        self.remaining_time = 10
+        self.timer_label.setText("Countdown: 10")
+        self.timer.start(1000)
+
+    def update_timer(self):
+        self.remaining_time -= 1
+        if self.remaining_time >= 0:
+            self.timer_label.setText(f"Countdown: {self.remaining_time}")
+        else:
+            self.timer.stop()
+            self.timer_label.setText("Countdown: Done")
+            API_Parameters.CalibrationStageInitialized = False
+            API_Parameters.CalibrationStageFinished = True
+
+
+class CalibrationWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Calibration Window")
+        self.setGeometry(100, 100, 400, 200)
+        self.CalibrationStage = 0
+
+        central_widget = QWidget()
+        self.setCentralWidget(central_widget)
+
+        layout = QVBoxLayout(central_widget)
+
+        self.stage1_button = QPushButton("Stage 1")
+        self.stage2_button = QPushButton("Stage 2")
+        self.stage3_button = QPushButton("Stage 3")
+        self.terminate_button = QPushButton("Terminate Calibration")
+
+        layout.addWidget(self.stage1_button)
+        layout.addWidget(self.stage2_button)
+        layout.addWidget(self.stage3_button)
+        layout.addWidget(self.terminate_button)
+
+        self.stage_message_label = QLabel("")
+        layout.addWidget(self.stage_message_label)
+
+        # Initialize Start buttons for each stage
+        self.start_stage_button = QPushButton("Start")
+        self.start_stage_button.hide()  # Initially hide the Start button
+        layout.addWidget(self.start_stage_button)
+
+
+        self.timer_widget = CountdownWidget()
+        self.timer_widget.hide()  # Initially hide the CountdownWidget
+        layout.addWidget(self.timer_widget)
+
+        self.stage1_button.clicked.connect(self.stage1_callback)
+        self.stage2_button.clicked.connect(self.stage2_callback)
+        self.stage3_button.clicked.connect(self.stage3_callback)
+        self.terminate_button.clicked.connect(self.terminate_callback)
+
+        # Connect Start button to start countdown
+        self.start_stage_button.clicked.connect(self.start_countdown)
+
+
+    def stage1_callback(self):
+        self.stage_message_label.setText("Calibration Stage 1: Activation Threshold Detection")
+        # Show Start button for Stage 1 only
+        self.start_stage_button.show()
+        self.CalibrationStage = 1
+        self.timer_widget.hide()  # Hide the countdown widget when stage changes
+
+    def stage2_callback(self):
+        self.stage_message_label.setText("Calibration Stage 2: Activation Peaks Detection")
+        # Show Start button for Stage 2 only
+        self.start_stage_button.show()
+        self.CalibrationStage = 2
+        self.timer_widget.hide()  # Hide the countdown widget when stage changes
+
+    def stage3_callback(self):
+        self.stage_message_label.setText("Calibration Stage 3: Synergies Detection")
+        # Show Start button for Stage 3 only
+        self.start_stage_button.show()
+        self.CalibrationStage = 3
+        self.timer_widget.hide()  # Hide the countdown widget when stage changes
+
+    def start_countdown(self):
+        print("timer")
+        # Show the countdown widget and start the countdown
+        API_Parameters.CalibrationStage = self.CalibrationStage
+        API_Parameters.CalibrationStageInitialized = True 
+        self.timer_widget.show()
+        self.timer_widget.start_countdown()
+
+    def terminate_callback (self):
+        API_Parameters.TerminateCalibrationFlag = True
+        self.close()
 
 
 if __name__ == '__main__':

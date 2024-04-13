@@ -62,7 +62,23 @@ def Request(Type):
             if b"~" in data:
                 #print("Delimiter found")
                 break  # Delimiter found
-        
+            elif b"TC" in data: 
+                GlobalParameters.TerminateCalibration = True
+                break
+            
+            elif b"CS1" in data: 
+                GlobalParameters.CalibrationStage = 1
+                break
+            elif b"CS2" in data: 
+                GlobalParameters.CalibrationStage = 2
+                break
+            elif b"CS3" in data: 
+                GlobalParameters.CalibrationStage = 3
+                break
+            elif b"CSF" in data: 
+                GlobalParameters.CalibrationStage = 0
+                break
+            
         except socket.timeout as e:
             print(e)
             continue

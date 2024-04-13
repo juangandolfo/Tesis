@@ -82,17 +82,20 @@ class PlottingManagement():
         
         Processing_Module_Client_thread = Thread(target=PM_Communications.Processing_Module_Client)
         Processing_Module_Server_thread = Thread(target=PM_Communications.Processing_Module_Server)
-        Processing_Module = Thread(target=PM_Processing.Processing)
+        Processing_Module_Calibration = Thread(target=PM_Processing.CalibrationProcessing)
+        #Processing_Module = Thread(target=PM_Processing.Processing)
 
         Processing_Module_Client_thread.start()
         time.sleep(0.2)
         Processing_Module_Server_thread.start()
         time.sleep(0.2)
-        Processing_Module.start()
+        Processing_Module_Calibration.start()
         time.sleep(0.2)
-        import Cursor_Nuevo 
-        Cursor_thread=Thread(target=Cursor_Nuevo.Cursor)
-        Cursor_thread.start()
+        #Processing_Module.start()
+        #time.sleep(0.2)
+        #import Cursor_Nuevo 
+        #Cursor_thread=Thread(target=Cursor_Nuevo.Cursor)
+        #Cursor_thread.start()
 
         
         
@@ -124,7 +127,7 @@ class PlottingManagement():
         TrigBase.SelectAllSensors()
         return self.nameList
 
-    def Start_Callback(self):
+    def StartCalibration_Callback(self):
         """Callback to start the data stream from Sensors"""
         self.pauseFlag = False
         if TrigBase.GetPipelineState() == 'Connected':
@@ -173,6 +176,18 @@ class PlottingManagement():
         TrigBase.Start()
         self.threadManager()
 
+    def Start_Callback(self): 
+        
+        Processing_Module = Thread(target=PM_Processing.Processing)
+        Processing_Module.start()
+        time.sleep(0.2)
+        import Cursor_Nuevo 
+        Cursor_thread=Thread(target=Cursor_Nuevo.Cursor)
+        Cursor_thread.start()
+
+
+
+
     def Stop_Callback(self):
         """Callback to stop the data stream"""
         TrigBase.Stop()
@@ -189,7 +204,7 @@ class PlottingManagement():
         sampleModes = TrigBase.AvailibleSensorModes(sensorIdx)
         return sampleModes
 
-    def getCurMode(self):
+    def getCurMode(self): 
         """Gets the current mode of the sensors"""
         curModes = TrigBase.GetAllSampleModes()
         return curModes
