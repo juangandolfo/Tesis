@@ -49,8 +49,8 @@ def calculateSynergy(matrix):
                 
         #nndsvd is the initialization method that returns  a matrix with the largest dispersion.
         #cd is the solver used because is compatible with nndsvd
-        #model = NMF(n_components=n_components, init='nndsvd', tol= 0.5e-5,max_iter=20000000, solver='cd')
-        model = NMF(n_components=n_components, init='random', tol= 1e-5, max_iter=200000, solver='mu')
+        model = NMF(n_components=n_components, init='nndsvd', tol= 1e-5,max_iter=2000000, solver='cd')
+        #model = NMF(n_components=n_components, init='random', tol= 1e-5, max_iter=200000, solver='mu')
         W = model.fit_transform(matrix)
         
         #H.append(model.components_)
@@ -68,12 +68,15 @@ def calculateSynergy(matrix):
         # i want to calculate the VAF
         # the vaf is calculated as the sum of the squares of the difference between the original matrix and the reconstructed matrix for each element
         vaf = 1 - (np.sum((matrix - Reconstructed_matrix) ** 2) / np.sum(matrix ** 2))
+        print("VAF: ", vaf)
         vafs.append(vaf) 
         if n_components == 2:
             output = (n_components, H, r_squared, vafs)
         else:
-            if vaf > vafs[-1]:
+            print(vaf, vafs[-2])
+            if vaf>vafs[-2]:
                 output = (n_components, H, r_squared, vafs)
+                print("entre")
 
     return output
 
@@ -104,16 +107,42 @@ numeroDeSinergias = 4
 numeroDeMusculos = 8
 
 # Create a random matrix with high dispersion
-W = np.random.randint(0,10, (cantidadDeDatos, numeroDeSinergias))/10
-H = np.random.randint(0, 10,(numeroDeSinergias,numeroDeMusculos))/10
+W = np.random.rand(cantidadDeDatos,numeroDeSinergias)
+W = np.maximum(W, 0)
+print ("W: ", W)    
+'''#H = np.random.rand(numeroDeSinergias,numeroDeMusculos)
+
+H = np.maximum(H, 0)
+print ("H: ", H)    
+for i in range(H.shape[0]):
+    H[i,i] = 0 
+'''
+H = np.array([[1,0,0,0,0,0,0,0],[0,1,0,0,0,0,0,0],[0,0,1,0,0,0,0,0],[0,0,0,1,0,0,0,0]])
 M = np.dot(W,H)
 
+aux= []
 Model.n, Model.H, Model.R2, vafs = calculateSynergy(M)
 print(vafs)
-#plt.figure()
-#plt.subplot(111)
-#plt.axline(range(2,9), vafs)
-#plt.show()
+plt.figure()
+plt.subplot(111)
+plt.plot(range(2,9), vafs)
+plt.figure()
+
+for j in range(0, Model.n):   
+    plt.subplot(100*Model.n+10+j+1)
+    for i in range(0, Model.H.shape[1]):
+        aux.append(np.max(Model.H[j,i]))
+    plt.bar(range(0,8), aux)
+    aux = []
+plt.figure()
+for j in range(0, numeroDeSinergias):   
+    plt.subplot(100*numeroDeSinergias+10+j+1)
+    for i in range(0, H.shape[1]):
+        aux.append(np.max(H[j,i]))
+    plt.bar(range(0,8), aux)
+    aux = []
+plt.show()
+
 #for i in range(model.n):
 #    plt.plot(range(0,8), model.H[i,:])
 
@@ -146,7 +175,7 @@ plt.text(knee_point + 0.1, max(vafs) - 0.05, f'Knee Point: {knee_point}', color=
 plt.show()
 
     
-'''print("original model: ", numeroDeSinergias, "\n", H, "\n", Model.R2, "\n", Model.vaf)
+print("original model: ", numeroDeSinergias, "\n", H, "\n", Model.R2, "\n", Model.vaf)
 print ("Best number of components: ", Model.n, "\n", Model.H,"\n", Model.R2,"\n", Model.vaf)
 #plot_bars(H, H.shape[0], H.shape[1])
 
@@ -227,7 +256,6 @@ print ("W_rec: ", W_rec.shape)
 #print("model.H: ", Model.H)
 #print("H: ", H)
     
-'''
 
 
 
