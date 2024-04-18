@@ -3,7 +3,7 @@ import numpy as np
 from threading import Thread
 import GlobalParameters
 import time
-
+import SynergyDetection as SD
 import csv
 import numpy as np
 
@@ -84,7 +84,6 @@ def CalibrationProcessing():
     while(GlobalParameters.Initialized == False):
        pass
 
-    LastData = [0 for i in range(GlobalParameters.MusclesNumber)]
 
     while not GlobalParameters.TerminateCalibration:
         #print("PM: Calibration Processing live")
@@ -92,13 +91,14 @@ def CalibrationProcessing():
 
             if GlobalParameters.CalibrationStage == 1:
                 print("Detecting Thresholds...")
-                thresholds = np.zeros(GlobalParameters.MusclesNumber)
                 PM_DS.stack_lock.acquire()
                 PM_DS.PM_DataStruct.circular_stack.get_vectors(1)
                 PM_DS.stack_lock.release()
-                M1=[]
-                M2=[]
+
+                thresholds = np.zeros(GlobalParameters.MusclesNumber)
+                LastData = [0 for i in range(GlobalParameters.MusclesNumber)]
                 Peaks = [[] for _ in range(GlobalParameters.MusclesNumber)]
+
                 while(GlobalParameters.CalibrationStage == 1):
                     PM_DS.stack_lock.acquire()  
                     DataBatch = np.array(PM_DS.PM_DataStruct.circular_stack.get_vectors(1))
@@ -109,10 +109,6 @@ def CalibrationProcessing():
                         for row in range(len(DataBatch)):
                             DataBatch[row]= DataProcessing.DummyLowPassFilter(RectifiedMuscleData[row], LastData)
                             LastData = RectifiedMuscleData[row]
-
-                            DataMuscle=DataBatch[row]
-                            M1.append(DataMuscle[0])
-                            M2.append(DataMuscle[1]) 
 
                         for muscle in range(GlobalParameters.MusclesNumber): 
                             Peaks[muscle].append(np.max(DataBatch[:,muscle]))
@@ -128,7 +124,9 @@ def CalibrationProcessing():
                 PM_DS.stack_lock.acquire()
                 PM_DS.PM_DataStruct.circular_stack.get_vectors(1)
                 PM_DS.stack_lock.release()
-                
+
+                LastData = [0 for i in range(GlobalParameters.MusclesNumber)]
+
                 while(GlobalParameters.CalibrationStage == 2):
                     PM_DS.stack_lock.acquire()  
                     RawData = PM_DS.PM_DataStruct.circular_stack.get_oldest_vector(1)
@@ -144,9 +142,33 @@ def CalibrationProcessing():
                 print("Peaks:", GlobalParameters.PeakActivation)
                 
             elif GlobalParameters.CalibrationStage == 3:
+                print("Detecting Synergies...")
+                PM_DS.stack_lock.acquire()
                 PM_DS.PM_DataStruct.circular_stack.get_vectors(1)
+                PM_DS.stack_lock.release()
+
+                LastData = [0 for i in range(GlobalParameters.MusclesNumber)]
+                # Create an empty buffer with zeros
+                aux_buffer = np.zeros((10*2000, GlobalParameters.MusclesNumber)) #Parametrizar el tamaño del buffer.
+
                 while(GlobalParameters.CalibrationStage == 3): 
-                    print("Bucle stage 3")
+                    PM_DS.stack_lock.acquire()  
+                    RawData = PM_DS.PM_DataStruct.circular_stack.get_oldest_vector(1)
+                    PM_DS.stack_lock.release()
+                    if RawData != []:
+                        RectifiedData = DataProcessing.Rectify(RawData) 
+                        NormalizedData = DataProcessing.Normalize(RectifiedData, GlobalParameters.PeakActivation, GlobalParameters.MusclesNumber, GlobalParameters.Threshold)
+                        ProcessedData = DataProcessing.DummyLowPassFilter(NormalizedData, LastData)
+                        LastData = NormalizedData
+
+                        aux_buffer = np.roll(aux_buffer, -1, axis=0)  # Roll the buffer to make space for the new vector
+                        aux_buffer[-1] = ProcessedData                 # Add the new vector at the end of the buffer
+                    if GlobalParameters.CalibrationStage == 0:
+                        n_components, H, r_squared, vafs = SD.calculateSynergy(aux_buffer)
+                        print(n_components, H, r_squared, vafs)
+                        #SD.BarsGraphic(n_components, H, r_squared, vafs)
+                        #GlobalParameters.SynergyBase = H 
+                    
        
     print("PM: Calibration terminated")          
     # Plot the vectors
