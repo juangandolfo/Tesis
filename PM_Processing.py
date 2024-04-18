@@ -163,11 +163,12 @@ def CalibrationProcessing():
 
                         aux_buffer = np.roll(aux_buffer, -1, axis=0)  # Roll the buffer to make space for the new vector
                         aux_buffer[-1] = ProcessedData                 # Add the new vector at the end of the buffer
-                    if GlobalParameters.CalibrationStage == 0:
-                        n_components, H, r_squared, vafs = SD.calculateSynergy(aux_buffer)
-                        print(n_components, H, r_squared, vafs)
-                        #SD.BarsGraphic(n_components, H, r_squared, vafs)
-                        #GlobalParameters.SynergyBase = H 
+
+                n_components, H, r_squared, vafs = SD.calculateSynergy(aux_buffer)
+                print(n_components, H, r_squared, vafs)
+                #SD.BarsGraphic(n_components, H, r_squared, vafs)
+                GlobalParameters.SynergyBase = H
+                GlobalParameters.SynergyBaseInverse = np.linalg.pinv(H) 
                     
        
     print("PM: Calibration terminated")          

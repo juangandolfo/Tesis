@@ -4,6 +4,7 @@ import numpy as np
 import csv
 import itertools 
 import matplotlib.pyplot as plt
+import GlobalParameters
 
 def plot_bars(H, s, m):
     # Ensure that H and Model_H have the same shape
@@ -45,12 +46,13 @@ def calculateSynergy(matrix):
     output = []
     vafs = []	
     # Perform NMF
-    for n_components in range(2, 9):
+    for n_components in range(2, GlobalParameters.MusclesNumber+1):
                 
         #nndsvd is the initialization method that returns  a matrix with the largest dispersion.
         #cd is the solver used because is compatible with nndsvd
-        model = NMF(n_components=n_components, init='random', tol= 1e-5,max_iter=2000000, solver='cd')
+        model = NMF(n_components=n_components, init='nndsvd', tol= 1e-5,max_iter=20000, solver='cd')
         #model = NMF(n_components=n_components, init='random', tol= 1e-5, max_iter=200000, solver='mu')
+        print("Fitting model with ", n_components, " components")
         W = model.fit_transform(matrix)
         
         #H.append(model.components_)

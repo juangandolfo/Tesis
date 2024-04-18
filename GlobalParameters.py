@@ -39,7 +39,7 @@ def Initialize():
     #print(SynergyBase)
     if MusclesNumberFromCSV != MusclesNumber:
         raise Exception("The number of muscles in the configuration file is different from the number of muscles in the PM")    '''
-    PeakActivation = np.ones(MusclesNumber) 
+    PeakActivation = np.ones(MusclesNumber)*0.1 
     Threshold = np.ones(MusclesNumber) * 0.1
     
     Initialized = True
