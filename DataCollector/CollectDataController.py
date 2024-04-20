@@ -80,9 +80,10 @@ class PlottingManagement():
             API_server_thread.start()
         #time.sleep(0.5)
         
-        Processing_Module_Client_thread = Thread(target=PM_Communications.Processing_Module_Client)
-        Processing_Module_Server_thread = Thread(target=PM_Communications.Processing_Module_Server)
-        Processing_Module_Calibration = Thread(target=PM_Processing.CalibrationProcessing)
+        Processing_Module_Client_thread = Thread(target=PM_Communications.Processing_Module_Client,daemon=True)
+        
+        Processing_Module_Server_thread = Thread(target=PM_Communications.Processing_Module_Server,daemon=True)
+        Processing_Module_Calibration = Thread(target=PM_Processing.CalibrationProcessing,daemon=True)
         #Processing_Module = Thread(target=PM_Processing.Processing)
 
         Processing_Module_Client_thread.start()
@@ -178,11 +179,11 @@ class PlottingManagement():
 
     def Start_Callback(self): 
         
-        Processing_Module = Thread(target=PM_Processing.Processing)
+        Processing_Module = Thread(target=PM_Processing.Processing,daemon=True)
         Processing_Module.start()
         time.sleep(0.2)
         import Cursor_Nuevo 
-        Cursor_thread=Thread(target=Cursor_Nuevo.Cursor)
+        Cursor_thread=Thread(target=Cursor_Nuevo.Cursor,daemon=False)
         Cursor_thread.start()
 
 

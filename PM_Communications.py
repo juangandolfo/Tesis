@@ -53,6 +53,7 @@ def Dictionary_to_matrix(dictionary):
 def Request(Type):
     request = "GET /"+Type
     client_socket.sendall(request.encode())
+    
     data = b''       
     while True:
         try:
@@ -152,6 +153,7 @@ def Handle_Client(conn,addr):
                
 def Processing_Module_Client():
     client_socket.connect((HOST, PORT_Client))
+    print("PM Client live")
     
     # Request Number of cahnnels from host
     GlobalParameters.MusclesNumber = Request("SensorsNumber")

@@ -66,22 +66,19 @@ def API_Server(AeroInstance,emgPositionVector):
                         API_Parameters.TerminateCalibrationFlag = False 
                     
                     elif API_Parameters.CalibrationStageInitialized:
-
                             API_Parameters.CalibrationStageInitialized = False 
                             
                             if API_Parameters.CalibrationStage == 1:
-                                serialized_data  += "CS1" # Add a delimiter at the end     
+                                serialized_data  += "  CS1" # Add a delimiter at the end     
                             elif API_Parameters.CalibrationStage == 2:
                                 serialized_data  += "CS2" # Add a delimiter at the end   
                             elif API_Parameters.CalibrationStage == 3: 
                                 serialized_data  += "CS3" # Add a delimiter at the end
                     elif API_Parameters.CalibrationStageFinished: 
                          API_Parameters.CalibrationStageFinished = False
-                         serialized_data  += "CSF" # Add a delimiter at the end   
-                                 
+                         serialized_data  += "CSF" # Add a delimiter at the end        
                     else:
                         serialized_data  += "~" # Add a delimiter at the end 
-                    
                     try:
                         conn.sendall(serialized_data.encode())
                         #print(serialized_data)

@@ -14,7 +14,7 @@ sampleRate = 1
 
 SynergyConfigurationFile = 'SynergyConfigurationFromExcel.csv'
 
-synergy_CursorMap = [0,1,0,1]
+synergy_CursorMap = [0,1,2,3]
 CursorMovement_Gain = 50
 
 SynergyBase = np.identity(2)

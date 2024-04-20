@@ -239,10 +239,10 @@ class CountdownWidget(QWidget):
         self.setLayout(layout)
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_timer)
-        self.remaining_time = 10
+        #self.remaining_time = 30
 
     def start_countdown(self):
-        self.remaining_time = 10
+        self.remaining_time = 30
         self.timer_label.setText("Countdown: 10")
         self.timer.start(1000)
 
@@ -306,7 +306,7 @@ class CalibrationWindow(QMainWindow):
         # Show Start button for Stage 1 only
         self.start_stage_button.show()
         self.CalibrationStage = 1
-        self.timer_widget.hide()  # Hide the countdown widget when stage changes
+        self.timer_widget.hide()  #Hide the countdown widget when stage changes
 
     def stage2_callback(self):
         self.stage_message_label.setText("Calibration Stage 2: Activation Peaks Detection")
@@ -330,10 +330,11 @@ class CalibrationWindow(QMainWindow):
         self.timer_widget.show()
         self.timer_widget.start_countdown()
 
+        
+
     def terminate_callback (self):
         API_Parameters.TerminateCalibrationFlag = True
         self.close()
-
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

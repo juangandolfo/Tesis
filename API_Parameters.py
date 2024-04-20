@@ -6,3 +6,4 @@ TerminateCalibrationFlag = False
 
 CalibrationStageInitialized = False
 CalibrationStageFinished = False
+CalibrationStage = 0

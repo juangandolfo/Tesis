@@ -5,6 +5,7 @@ import csv
 import itertools 
 import matplotlib.pyplot as plt
 import GlobalParameters
+import kneed
 
 def plot_bars(H, s, m):
     # Ensure that H and Model_H have the same shape
@@ -38,6 +39,7 @@ def ReadCSV(csv_file):
     return matrix
 
 def calculateSynergy(matrix):
+    models = []
 
     H = []
     numpy_H_pinv = []
@@ -72,13 +74,25 @@ def calculateSynergy(matrix):
         vaf = 1 - (np.sum((matrix - Reconstructed_matrix) ** 2) / np.sum(matrix ** 2))
         #print("VAF: ", vaf)
         vafs.append(vaf) 
-        if n_components == 2:
+        '''if n_components == 2:
             output = (n_components, H, r_squared, vafs)
         else:
             #print(vaf, vafs[-2])
             if vaf>vafs[-2]:
-                output = (n_components, H, r_squared, vafs)
-                
+                output = (n_components, H, r_squared, vafs)'''
+        models.append((n_components, H, r_squared, vaf))
+    #deteccion de codo
+    
+    x = range(2, GlobalParameters.MusclesNumber+1)
+    y = vafs
+
+    # calculate and show knee/elbow
+    kneedle = kneed.KneeLocator(x,y,curve='concave',direction='increasing')
+    knee_point = kneedle.knee 
+    print('Knee: ', knee_point)
+    if knee_point == None:
+        knee_point = 2
+    output = models[knee_point-2]
     return output
 
 def BarsGraphic(n, H, R2, vafs):
@@ -166,14 +180,12 @@ def execute():
     #for i in range(model.n):
     #    plt.plot(range(0,8), model.H[i,:])
 
-    import kneed
     x = [2,3,4,5,6,7,8]
     y = vafs
 
 
     # calculate and show knee/elbow
-    kneedle = kneed.KneeLocator(x, 
-    y,curve='concave',direction='increasing')
+    kneedle = kneed.KneeLocator(x,y,curve='concave',direction='increasing')
     knee_point = kneedle.knee 
     print('Knee: ', knee_point) 
 

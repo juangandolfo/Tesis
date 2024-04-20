@@ -151,7 +151,6 @@ def CalibrationProcessing():
                 GlobalParameters.Threshold = thresholds
                 PlotResults(GlobalParameters.Threshold, "Thresholds")
                 
-
             elif GlobalParameters.CalibrationStage == 2:
                 print("Detecting Peaks...")
                 PM_DS.stack_lock.acquire()
