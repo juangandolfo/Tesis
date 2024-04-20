@@ -6,6 +6,9 @@ import time
 import SynergyDetection as SD
 import csv
 import numpy as np
+import matplotlib.pyplot as plt
+
+plt.switch_backend('TkAgg')
 
 # Function to save data to a CSV file
 def save_to_csv(filename, aux_vector, M1, M2):
@@ -14,6 +17,34 @@ def save_to_csv(filename, aux_vector, M1, M2):
         writer.writerow(['Thresholds', 'M1', 'M2'])
         for i in range(len(aux_vector)):
             writer.writerow([aux_vector[i], M1[i], M2[i]])
+
+def PlotResults(Thresholds, ID):
+    
+    num_musculos = len(Thresholds)
+    nombres_musculos = [f'Músculo {i+1}' for i in range(num_musculos)]  # Generar automáticamente los nombres de los músculos
+    
+    # Crear una figura y ejes para el gráfico de barras
+    fig, ax = plt.subplots(figsize=(8, 6))
+    
+    # Graficar las barras
+    ax.bar(nombres_musculos, Thresholds)  
+    
+    if ID == "Thresholds":
+
+        ax.set_xlabel('Muscles')  # Etiqueta del eje x
+        ax.set_ylabel('Thresholds')  # Etiqueta del eje y
+        ax.set_title('Detected thresholds')  # Título del gráfico
+
+    elif ID == "Peaks":
+        ax.set_xlabel('Muscles')  # Etiqueta del eje x
+        ax.set_ylabel('Peaks')  # Etiqueta del eje y
+        ax.set_title('Detected Peaks')  # Título del gráfico
+
+    else:
+        return
+    
+    plt.show()
+
 
 class DataProcessing:
 
@@ -115,9 +146,11 @@ def CalibrationProcessing():
 
                 for muscle in range(GlobalParameters.MusclesNumber):
                     thresholds[muscle] = np.median(np.array(Peaks[muscle]))
-
+                
                 print("Thresholds:", thresholds)
                 GlobalParameters.Threshold = thresholds
+                PlotResults(GlobalParameters.Threshold, "Thresholds")
+                
 
             elif GlobalParameters.CalibrationStage == 2:
                 print("Detecting Peaks...")
@@ -140,6 +173,7 @@ def CalibrationProcessing():
                             if ProcessedData[i] > GlobalParameters.PeakActivation[i]:
                                 GlobalParameters.PeakActivation[i] = ProcessedData[i]
                 print("Peaks:", GlobalParameters.PeakActivation)
+                PlotResults(GlobalParameters.PeakActivation, "Peaks")
                 
             elif GlobalParameters.CalibrationStage == 3:
                 print("Detecting Synergies...")
