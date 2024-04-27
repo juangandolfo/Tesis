@@ -125,8 +125,8 @@ class Enemy(pygame.sprite.Sprite):
 
 def Cursor():
     pygame.init()
-    Cursor.SCREEN_WIDTH = 800
-    Cursor.SCREEN_HEIGHT = 800
+    Cursor.SCREEN_WIDTH = 900
+    Cursor.SCREEN_HEIGHT = 900
 
     screen = pygame.display.set_mode((Cursor.SCREEN_WIDTH, Cursor.SCREEN_HEIGHT))
     """
@@ -210,7 +210,10 @@ def Cursor():
             if pygame.sprite.spritecollideany(player, objectives):
                 messagebox.showerror('You did it!!!!!!!!!!!!!!!','Lograste llegar al objetivo crackkk!!')
                 player.update((Cursor.SCREEN_WIDTH/2-player.rect.center[0],Cursor.SCREEN_HEIGHT/2-player.rect.center[1]))
+                for objective in objectives:
+                    objective.kill()
                 enemies.empty()
+
                 GenerateEnemies()
 
             if pygame.sprite.spritecollideany(player, enemies):

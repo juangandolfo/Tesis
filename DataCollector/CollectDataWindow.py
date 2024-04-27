@@ -242,8 +242,8 @@ class CountdownWidget(QWidget):
         #self.remaining_time = 30
 
     def start_countdown(self):
-        self.remaining_time = 30
-        self.timer_label.setText("Countdown: 10")
+        self.remaining_time = 10
+        self.timer_label.setText(f"Countdown: {self.remaining_time}")
         self.timer.start(1000)
 
     def update_timer(self):

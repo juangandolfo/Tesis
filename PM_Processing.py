@@ -149,7 +149,7 @@ def CalibrationProcessing():
                 
                 print("Thresholds:", thresholds)
                 GlobalParameters.Threshold = thresholds
-                PlotResults(GlobalParameters.Threshold, "Thresholds")
+                #PlotResults(GlobalParameters.Threshold, "Thresholds")
                 
             elif GlobalParameters.CalibrationStage == 2:
                 print("Detecting Peaks...")
@@ -172,7 +172,7 @@ def CalibrationProcessing():
                             if ProcessedData[i] > GlobalParameters.PeakActivation[i]:
                                 GlobalParameters.PeakActivation[i] = ProcessedData[i]
                 print("Peaks:", GlobalParameters.PeakActivation)
-                PlotResults(GlobalParameters.PeakActivation, "Peaks")
+                #PlotResults(GlobalParameters.PeakActivation, "Peaks")
                 
             elif GlobalParameters.CalibrationStage == 3:
                 print("Detecting Synergies...")

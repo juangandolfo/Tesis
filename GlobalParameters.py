@@ -17,7 +17,7 @@ SynergyConfigurationFile = 'SynergyConfigurationFromExcel.csv'
 synergy_CursorMap = [0,1,2,3]
 CursorMovement_Gain = 50
 
-SynergyBase = np.identity(2)
+SynergyBase = np.identity(4)
 SynergyBaseInverse = np.linalg.pinv(SynergyBase)
 PeakActivation = []
 Threshold = []
@@ -40,7 +40,7 @@ def Initialize():
     if MusclesNumberFromCSV != MusclesNumber:
         raise Exception("The number of muscles in the configuration file is different from the number of muscles in the PM")    '''
     PeakActivation = np.ones(MusclesNumber)*0.1 
-    Threshold = np.ones(MusclesNumber) * 0.1
+    Threshold = np.ones(MusclesNumber) * 0.055
     
     Initialized = True
 
