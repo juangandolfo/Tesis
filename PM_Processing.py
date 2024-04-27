@@ -45,6 +45,41 @@ def PlotResults(Thresholds, ID):
     
     plt.show()
 
+def PlotSynergiesDetected(vafs, knee_point, H):
+    # Plot VAF data
+    x = list(range(2, GlobalParameters.MusclesNumber+1))  # Number of muscles
+    plt.plot(x, vafs, marker='o', label='VAF Curve')
+    plt.xlabel('Number of Synergies')
+    plt.ylabel('VAF')
+    plt.title('VAF vs Number of Synergies')
+
+    # Plot knee point
+    plt.axvline(x=knee_point, color='red', linestyle='--', label='Knee Point')
+    plt.legend()
+
+    # Annotate knee point
+    plt.text(knee_point + 0.1, max(vafs) - 0.05, f'Knee Point: {knee_point}', color='red')
+
+    # Show plot
+    plt.show()
+
+    # Bars graphic of synergies 
+    aux= []
+    plt.figure()
+    #plt.subplot(111)
+    #plt.plot(range(2,GlobalParameters.MusclesNumber+1), vafs)
+    #plt.figure()
+
+    for j in range(0, knee_point):   
+        plt.subplot(100*knee_point+10+j+1)
+        for i in range(0, H.shape[1]):
+            aux.append(np.max(H[j,i]))
+        plt.bar(range(0,GlobalParameters.MusclesNumber), aux)
+        aux = []
+    
+    plt.show()
+
+
 
 class DataProcessing:
 
@@ -125,6 +160,8 @@ def CalibrationProcessing():
             PM_DS.PM_DataStruct.circular_stack.get_vectors(1)
             PM_DS.stack_lock.release()
 
+            GlobalParameters.Threshold = np.ones(GlobalParameters.MusclesNumber) * 0.055
+
             thresholds = np.zeros(GlobalParameters.MusclesNumber)
             LastData = [0 for i in range(GlobalParameters.MusclesNumber)]
             Peaks = [[] for _ in range(GlobalParameters.MusclesNumber)]
@@ -148,13 +185,15 @@ def CalibrationProcessing():
             
             print("Thresholds:", thresholds)
             GlobalParameters.Threshold = thresholds
-            #PlotResults(GlobalParameters.Threshold, "Thresholds")
+            PlotResults(GlobalParameters.Threshold, "Thresholds")
             
         elif GlobalParameters.CalibrationStage == 2:
             print("Detecting Peaks...")
             PM_DS.stack_lock.acquire()
             PM_DS.PM_DataStruct.circular_stack.get_vectors(1)
             PM_DS.stack_lock.release()
+
+            GlobalParameters.PeakActivation = np.ones(GlobalParameters.MusclesNumber)*0.1 
 
             LastData = [0 for i in range(GlobalParameters.MusclesNumber)]
 
@@ -171,7 +210,7 @@ def CalibrationProcessing():
                         if ProcessedData[i] > GlobalParameters.PeakActivation[i]:
                             GlobalParameters.PeakActivation[i] = ProcessedData[i]
             print("Peaks:", GlobalParameters.PeakActivation)
-            #PlotResults(GlobalParameters.PeakActivation, "Peaks")
+            PlotResults(GlobalParameters.PeakActivation, "Peaks")
             
         elif GlobalParameters.CalibrationStage == 3:
             print("Detecting Synergies...")
@@ -196,11 +235,12 @@ def CalibrationProcessing():
                     aux_buffer = np.roll(aux_buffer, -1, axis=0)  # Roll the buffer to make space for the new vector
                     aux_buffer[-1] = ProcessedData                 # Add the new vector at the end of the buffer
 
-            n_components, H, r_squared, vafs = SD.calculateSynergy(aux_buffer)
-            print(n_components, H, r_squared, vafs)
+            (n_components, H, r_squared, vaf), vafs = SD.calculateSynergy(aux_buffer)
+            print(n_components, H, r_squared, vaf)
             #SD.BarsGraphic(n_components, H, r_squared, vafs)
             GlobalParameters.SynergyBase = H
             GlobalParameters.SynergyBaseInverse = np.linalg.pinv(H) 
+            PlotSynergiesDetected(vafs, n_components, H)
                     
        
     print("PM: Calibration terminated")          

@@ -48,7 +48,7 @@ def calculateSynergy(matrix):
     output = []
     vafs = []	
     # Perform NMF
-    for n_components in range(2, GlobalParameters.MusclesNumber+1):
+    for n_components in range(2, GlobalParameters.MusclesNumber+1): 
                 
         #nndsvd is the initialization method that returns  a matrix with the largest dispersion.
         #cd is the solver used because is compatible with nndsvd
@@ -95,7 +95,7 @@ def calculateSynergy(matrix):
         print('Knee: None')
     print('Knee: ', knee_point)
     output = models[knee_point-2]
-    return output
+    return output, vafs
 
 def BarsGraphic(n, H, R2, vafs):
     aux= []
@@ -399,3 +399,4 @@ def execute():
     # Encontrar un codo y dar la opcion de mostrar 
     # Venir a la proxima reunion con un control a partir de eleccion de sinergias arbitrarias
 
+#execute()
