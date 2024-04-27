@@ -14,11 +14,20 @@ sampleRate = 1
 
 SynergyConfigurationFile = 'SynergyConfigurationFromExcel.csv'
 
-synergy_CursorMap = [0,1,0,1]
-CursorMovement_Gain = 50
-
+synergy_CursorMap = [0,90]
+CursorMovement_Gain = 5000000
 SynergyBase = np.identity(4)
 SynergyBaseInverse = np.linalg.pinv(SynergyBase)
+
+# Convert angles from degrees to radians
+angles_rad = np.radians(synergy_CursorMap)
+# Calculate the x and y components of each vector
+x = np.cos(angles_rad)
+y = np.sin(angles_rad)
+# Construct the projection matrix
+projectionMatrix = np.column_stack((x, y))        
+
+
 PeakActivation = []
 Threshold = []
 

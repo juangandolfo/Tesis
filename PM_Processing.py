@@ -106,14 +106,17 @@ class DataProcessing:
     def MapActivation(self,matriz, data):
         return np.matmul(data.T, matriz).T
 
-    def UpdatePosition(self,synergyActivation,synergy_CursorMap):
+    def UpdatePosition(self,synergyActivation, projectionMatrix):
         
-        longitud_deseada = 8
-        ceros_faltantes = longitud_deseada - len(synergyActivation)
-        synergyActivation = np.pad(synergyActivation, ((0,0),(0, ceros_faltantes)), mode='constant')[0]
-        left,right,up,down = synergy_CursorMap
-        return np.array([synergyActivation[right]-synergyActivation[left],synergyActivation[up]-synergyActivation[down]])
+        #longitud_deseada = 8
+        #ceros_faltantes = longitud_deseada - len(synergyActivation)
+        #synergyActivation = np.pad(synergyActivation, ((0,0),(0, ceros_faltantes)), mode='constant')[0]
+        #left,right,up,down = synergy_CursorMap
 
+        #return np.array([synergyActivation[right]-synergyActivation[left],synergyActivation[up]-synergyActivation[down]])
+        return np.matmul(synergyActivation,projectionMatrix)
+        
+        
 DataProcessing = DataProcessing()
 LastRawData = [0 for i in range(GlobalParameters.MusclesNumber)]
 
@@ -137,9 +140,8 @@ def Processing():
             SynergyActivations = np.array(DataProcessing.MapActivation(GlobalParameters.SynergyBaseInverse,ProcessedData).T)
             PM_DS.SynergyBase_Semaphore.release()
            
-
-            NewMovement = DataProcessing.UpdatePosition(SynergyActivations, GlobalParameters.synergy_CursorMap)
-            
+            NewMovement = DataProcessing.UpdatePosition(SynergyActivations, GlobalParameters.projectionMatrix)
+            #print(NewMovement)
             PM_DS.PositionOutput_Semaphore.acquire()
             PM_DS.PM_DataStruct.positionOutput = PM_DS.PM_DataStruct.positionOutput + GlobalParameters.CursorMovement_Gain*NewMovement/GlobalParameters.sampleRate
             PM_DS.PositionOutput_Semaphore.release()

@@ -234,7 +234,7 @@ class CountdownWidget(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         layout = QVBoxLayout()
-        self.timer_label = QLabel("Countdown: 10")
+        self.timer_label = QLabel("Countdown: 5")
         layout.addWidget(self.timer_label)
         self.setLayout(layout)
         self.timer = QTimer(self)
@@ -242,7 +242,7 @@ class CountdownWidget(QWidget):
         #self.remaining_time = 30
 
     def start_countdown(self):
-        self.remaining_time = 10
+        self.remaining_time = 5
         self.timer_label.setText(f"Countdown: {self.remaining_time}")
         self.timer.start(1000)
 
