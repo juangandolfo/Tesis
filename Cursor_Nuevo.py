@@ -95,7 +95,7 @@ def getSpeedFromEMG():
     speed = Get_data()
     #print("Client1:", data) 
     #speed=(10*(abs(data[0])-abs(data[1])),0)
-    #print("Cursor:",speed)
+    print("Cursor:",speed)
     return speed
 
 
@@ -125,8 +125,8 @@ class Enemy(pygame.sprite.Sprite):
 
 def Cursor():
     pygame.init()
-    Cursor.SCREEN_WIDTH = 900
-    Cursor.SCREEN_HEIGHT = 900
+    Cursor.SCREEN_WIDTH = 600
+    Cursor.SCREEN_HEIGHT = 600
 
     screen = pygame.display.set_mode((Cursor.SCREEN_WIDTH, Cursor.SCREEN_HEIGHT))
     """

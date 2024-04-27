@@ -7,14 +7,14 @@ ModoDelsys = True # True if we use the Delsys API Server, False if we use the AP
 Initialized = False
 
 
-MusclesNumber = 2
+MusclesNumber = 4
 synergysNumber = MusclesNumber
 RawData_BufferSize = 1000
 sampleRate = 1
 
 SynergyConfigurationFile = 'SynergyConfigurationFromExcel.csv'
 
-synergy_CursorMap = [0,1,2,3]
+synergy_CursorMap = [0,1,0,1]
 CursorMovement_Gain = 50
 
 SynergyBase = np.identity(4)

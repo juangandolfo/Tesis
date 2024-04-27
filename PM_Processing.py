@@ -83,12 +83,12 @@ DataProcessing = DataProcessing()
 LastRawData = [0 for i in range(GlobalParameters.MusclesNumber)]
 
 def Processing():
-    print("PM: Processing live")
+    
     
     LastNormalizedData = [0 for i in range(GlobalParameters.MusclesNumber)]
         
     while True:
-        
+        print("PM: Processing live")
         PM_DS.stack_lock.acquire()  
         RawData = PM_DS.PM_DataStruct.circular_stack.get_oldest_vector(1)
         PM_DS.stack_lock.release()
@@ -117,91 +117,90 @@ def CalibrationProcessing():
 
 
     while not GlobalParameters.TerminateCalibration:
-        #print("PM: Calibration Processing live")
-                
+        print("PM: Calibration Processing live")
+        
+        if GlobalParameters.CalibrationStage == 1:
+            print("Detecting Thresholds...")
+            PM_DS.stack_lock.acquire()
+            PM_DS.PM_DataStruct.circular_stack.get_vectors(1)
+            PM_DS.stack_lock.release()
 
-            if GlobalParameters.CalibrationStage == 1:
-                print("Detecting Thresholds...")
-                PM_DS.stack_lock.acquire()
-                PM_DS.PM_DataStruct.circular_stack.get_vectors(1)
+            thresholds = np.zeros(GlobalParameters.MusclesNumber)
+            LastData = [0 for i in range(GlobalParameters.MusclesNumber)]
+            Peaks = [[] for _ in range(GlobalParameters.MusclesNumber)]
+
+            while(GlobalParameters.CalibrationStage == 1):
+                PM_DS.stack_lock.acquire()  
+                DataBatch = np.array(PM_DS.PM_DataStruct.circular_stack.get_vectors(1))
                 PM_DS.stack_lock.release()
-
-                thresholds = np.zeros(GlobalParameters.MusclesNumber)
-                LastData = [0 for i in range(GlobalParameters.MusclesNumber)]
-                Peaks = [[] for _ in range(GlobalParameters.MusclesNumber)]
-
-                while(GlobalParameters.CalibrationStage == 1):
-                    PM_DS.stack_lock.acquire()  
-                    DataBatch = np.array(PM_DS.PM_DataStruct.circular_stack.get_vectors(1))
-                    PM_DS.stack_lock.release()
-                    if DataBatch != []:
-                        
-                        RectifiedMuscleData = DataProcessing.Rectify(DataBatch)
-                        for row in range(len(DataBatch)):
-                            DataBatch[row]= DataProcessing.DummyLowPassFilter(RectifiedMuscleData[row], LastData)
-                            LastData = RectifiedMuscleData[row]
-
-                        for muscle in range(GlobalParameters.MusclesNumber): 
-                            Peaks[muscle].append(np.max(DataBatch[:,muscle]))
-
-                for muscle in range(GlobalParameters.MusclesNumber):
-                    thresholds[muscle] = np.median(np.array(Peaks[muscle]))
-                
-                print("Thresholds:", thresholds)
-                GlobalParameters.Threshold = thresholds
-                #PlotResults(GlobalParameters.Threshold, "Thresholds")
-                
-            elif GlobalParameters.CalibrationStage == 2:
-                print("Detecting Peaks...")
-                PM_DS.stack_lock.acquire()
-                PM_DS.PM_DataStruct.circular_stack.get_vectors(1)
-                PM_DS.stack_lock.release()
-
-                LastData = [0 for i in range(GlobalParameters.MusclesNumber)]
-
-                while(GlobalParameters.CalibrationStage == 2):
-                    PM_DS.stack_lock.acquire()  
-                    RawData = PM_DS.PM_DataStruct.circular_stack.get_oldest_vector(1)
-                    PM_DS.stack_lock.release()
-                    if RawData != []:
-                        RectifiedData = DataProcessing.Rectify(RawData)
-                        ProcessedData = DataProcessing.DummyLowPassFilter(RectifiedData, LastData).reshape(-1,1)
-                        LastData = RectifiedData
+                if DataBatch != []:
                     
-                        for i in range(GlobalParameters.MusclesNumber):
-                            if ProcessedData[i] > GlobalParameters.PeakActivation[i]:
-                                GlobalParameters.PeakActivation[i] = ProcessedData[i]
-                print("Peaks:", GlobalParameters.PeakActivation)
-                #PlotResults(GlobalParameters.PeakActivation, "Peaks")
-                
-            elif GlobalParameters.CalibrationStage == 3:
-                print("Detecting Synergies...")
-                PM_DS.stack_lock.acquire()
-                PM_DS.PM_DataStruct.circular_stack.get_vectors(1)
+                    RectifiedMuscleData = DataProcessing.Rectify(DataBatch)
+                    for row in range(len(DataBatch)):
+                        DataBatch[row]= DataProcessing.DummyLowPassFilter(RectifiedMuscleData[row], LastData)
+                        LastData = RectifiedMuscleData[row]
+
+                    for muscle in range(GlobalParameters.MusclesNumber): 
+                        Peaks[muscle].append(np.max(DataBatch[:,muscle]))
+
+            for muscle in range(GlobalParameters.MusclesNumber):
+                thresholds[muscle] = np.median(np.array(Peaks[muscle]))
+            
+            print("Thresholds:", thresholds)
+            GlobalParameters.Threshold = thresholds
+            #PlotResults(GlobalParameters.Threshold, "Thresholds")
+            
+        elif GlobalParameters.CalibrationStage == 2:
+            print("Detecting Peaks...")
+            PM_DS.stack_lock.acquire()
+            PM_DS.PM_DataStruct.circular_stack.get_vectors(1)
+            PM_DS.stack_lock.release()
+
+            LastData = [0 for i in range(GlobalParameters.MusclesNumber)]
+
+            while(GlobalParameters.CalibrationStage == 2):
+                PM_DS.stack_lock.acquire()  
+                RawData = PM_DS.PM_DataStruct.circular_stack.get_oldest_vector(1)
                 PM_DS.stack_lock.release()
+                if RawData != []:
+                    RectifiedData = DataProcessing.Rectify(RawData)
+                    ProcessedData = DataProcessing.DummyLowPassFilter(RectifiedData, LastData).reshape(-1,1)
+                    LastData = RectifiedData
+                
+                    for i in range(GlobalParameters.MusclesNumber):
+                        if ProcessedData[i] > GlobalParameters.PeakActivation[i]:
+                            GlobalParameters.PeakActivation[i] = ProcessedData[i]
+            print("Peaks:", GlobalParameters.PeakActivation)
+            #PlotResults(GlobalParameters.PeakActivation, "Peaks")
+            
+        elif GlobalParameters.CalibrationStage == 3:
+            print("Detecting Synergies...")
+            PM_DS.stack_lock.acquire()
+            PM_DS.PM_DataStruct.circular_stack.get_vectors(1)
+            PM_DS.stack_lock.release()
 
-                LastData = [0 for i in range(GlobalParameters.MusclesNumber)]
-                # Create an empty buffer with zeros
-                aux_buffer = np.zeros((10*2000, GlobalParameters.MusclesNumber)) #Parametrizar el tamaño del buffer.
+            LastData = [0 for i in range(GlobalParameters.MusclesNumber)]
+            # Create an empty buffer with zeros
+            aux_buffer = np.zeros((10*2000, GlobalParameters.MusclesNumber)) #Parametrizar el tamaño del buffer.
 
-                while(GlobalParameters.CalibrationStage == 3): 
-                    PM_DS.stack_lock.acquire()  
-                    RawData = PM_DS.PM_DataStruct.circular_stack.get_oldest_vector(1)
-                    PM_DS.stack_lock.release()
-                    if RawData != []:
-                        RectifiedData = DataProcessing.Rectify(RawData) 
-                        NormalizedData = DataProcessing.Normalize(RectifiedData, GlobalParameters.PeakActivation, GlobalParameters.MusclesNumber, GlobalParameters.Threshold)
-                        ProcessedData = DataProcessing.DummyLowPassFilter(NormalizedData, LastData)
-                        LastData = NormalizedData
+            while(GlobalParameters.CalibrationStage == 3): 
+                PM_DS.stack_lock.acquire()  
+                RawData = PM_DS.PM_DataStruct.circular_stack.get_oldest_vector(1)
+                PM_DS.stack_lock.release()
+                if RawData != []:
+                    RectifiedData = DataProcessing.Rectify(RawData) 
+                    NormalizedData = DataProcessing.Normalize(RectifiedData, GlobalParameters.PeakActivation, GlobalParameters.MusclesNumber, GlobalParameters.Threshold)
+                    ProcessedData = DataProcessing.DummyLowPassFilter(NormalizedData, LastData)
+                    LastData = NormalizedData
 
-                        aux_buffer = np.roll(aux_buffer, -1, axis=0)  # Roll the buffer to make space for the new vector
-                        aux_buffer[-1] = ProcessedData                 # Add the new vector at the end of the buffer
+                    aux_buffer = np.roll(aux_buffer, -1, axis=0)  # Roll the buffer to make space for the new vector
+                    aux_buffer[-1] = ProcessedData                 # Add the new vector at the end of the buffer
 
-                n_components, H, r_squared, vafs = SD.calculateSynergy(aux_buffer)
-                print(n_components, H, r_squared, vafs)
-                #SD.BarsGraphic(n_components, H, r_squared, vafs)
-                GlobalParameters.SynergyBase = H
-                GlobalParameters.SynergyBaseInverse = np.linalg.pinv(H) 
+            n_components, H, r_squared, vafs = SD.calculateSynergy(aux_buffer)
+            print(n_components, H, r_squared, vafs)
+            #SD.BarsGraphic(n_components, H, r_squared, vafs)
+            GlobalParameters.SynergyBase = H
+            GlobalParameters.SynergyBaseInverse = np.linalg.pinv(H) 
                     
        
     print("PM: Calibration terminated")          

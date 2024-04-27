@@ -92,6 +92,8 @@ def calculateSynergy(matrix):
     print('Knee: ', knee_point)
     if knee_point == None:
         knee_point = 2
+        print('Knee: None')
+    print('Knee: ', knee_point)
     output = models[knee_point-2]
     return output
 
