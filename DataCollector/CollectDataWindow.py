@@ -253,9 +253,40 @@ class CountdownWidget(QWidget):
         else:
             self.timer.stop()
             self.timer_label.setText("Countdown: Done")
+
+            #Task deployed by a stage finished event
+            if API_Parameters.CalibrationStage == 3:
+                angle_window = AngleWindow()
+                angle_window.exec_()  # This will block until the window is closed
+                
             API_Parameters.CalibrationStageInitialized = False
             API_Parameters.CalibrationStageFinished = True
 
+class AngleWindow(QDialog):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Insert Angle Values")
+        
+        layout = QVBoxLayout()
+
+        self.angle_lineedits = []
+        for i in range(8):
+            angle_label = QLabel(f"Angle {i+1}:")
+            angle_lineedit = QLineEdit()
+            self.angle_lineedits.append(angle_lineedit)
+            layout.addWidget(angle_label)
+            layout.addWidget(angle_lineedit)
+
+        save_button = QPushButton("Save")
+        save_button.clicked.connect(self.save_angles)
+        layout.addWidget(save_button)
+
+        self.setLayout(layout)
+
+    def save_angles(self):
+        angles = [lineedit.text() for lineedit in self.angle_lineedits]
+        # Insert code to save angles to wherever you need
+        self.accept()  # Close the window after saving
 
 class CalibrationWindow(QMainWindow):
     def __init__(self):
@@ -329,8 +360,6 @@ class CalibrationWindow(QMainWindow):
         API_Parameters.CalibrationStageInitialized = True 
         self.timer_widget.show()
         self.timer_widget.start_countdown()
-
-        
 
     def terminate_callback (self):
         API_Parameters.TerminateCalibrationFlag = True

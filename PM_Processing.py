@@ -7,6 +7,7 @@ import SynergyDetection as SD
 import csv
 import numpy as np
 import matplotlib.pyplot as plt
+import PM_Communications as PM_Com
 
 plt.switch_backend('TkAgg')
 
@@ -106,15 +107,16 @@ class DataProcessing:
     def MapActivation(self,matriz, data):
         return np.matmul(data.T, matriz).T
 
-    def UpdatePosition(self,synergyActivation, projectionMatrix):
+    def UpdatePosition(self,synergyActivation, synergy_CursorMap):
         
-        #longitud_deseada = 8
-        #ceros_faltantes = longitud_deseada - len(synergyActivation)
-        #synergyActivation = np.pad(synergyActivation, ((0,0),(0, ceros_faltantes)), mode='constant')[0]
-        #left,right,up,down = synergy_CursorMap
+        '''longitud_deseada = 8
+        ceros_faltantes = longitud_deseada - len(synergyActivation)
+        synergyActivation = np.pad(synergyActivation, ((0,0),(0, ceros_faltantes)), mode='constant')[0]
+        left,right,up,down = synergy_CursorMap
 
-        #return np.array([synergyActivation[right]-synergyActivation[left],synergyActivation[up]-synergyActivation[down]])
-        return np.matmul(synergyActivation,projectionMatrix)
+        return np.array([synergyActivation[right]-synergyActivation[left],synergyActivation[up]-synergyActivation[down]])
+        '''
+        return np.ravel(np.matmul(synergyActivation,synergy_CursorMap))
         
         
 DataProcessing = DataProcessing()
@@ -140,7 +142,8 @@ def Processing():
             SynergyActivations = np.array(DataProcessing.MapActivation(GlobalParameters.SynergyBaseInverse,ProcessedData).T)
             PM_DS.SynergyBase_Semaphore.release()
            
-            NewMovement = DataProcessing.UpdatePosition(SynergyActivations, GlobalParameters.projectionMatrix)
+            #NewMovement = DataProcessing.UpdatePosition(SynergyActivations, GlobalParameters.synergy_CursorMap)
+            NewMovement = DataProcessing.UpdatePosition(SynergyActivations, GlobalParameters.projectionMatrix).reshape(2,)
             #print(NewMovement)
             PM_DS.PositionOutput_Semaphore.acquire()
             PM_DS.PM_DataStruct.positionOutput = PM_DS.PM_DataStruct.positionOutput + GlobalParameters.CursorMovement_Gain*NewMovement/GlobalParameters.sampleRate
@@ -234,15 +237,27 @@ def CalibrationProcessing():
                     ProcessedData = DataProcessing.DummyLowPassFilter(NormalizedData, LastData)
                     LastData = NormalizedData
 
-                    aux_buffer = np.roll(aux_buffer, -1, axis=0)  # Roll the buffer to make space for the new vector
-                    aux_buffer[-1] = ProcessedData                 # Add the new vector at the end of the buffer
+                    aux_buffer = np.roll(aux_buffer, -1, axis=0)    # Roll the buffer to make space for the new vector
+                    aux_buffer[-1] = ProcessedData                  # Add the new vector at the end of the buffer
 
             (n_components, H, r_squared, vaf), vafs = SD.calculateSynergy(aux_buffer)
             print(n_components, H, r_squared, vaf)
             #SD.BarsGraphic(n_components, H, r_squared, vafs)
             GlobalParameters.SynergyBase = H
-            GlobalParameters.SynergyBaseInverse = np.linalg.pinv(H) 
+            GlobalParameters.SynergyBaseInverse = np.linalg.pinv(H)   
             PlotSynergiesDetected(vafs, n_components, H)
+            AnglesRecieved = True
+            while not AnglesRecieved:
+                Recieved = PM_Com.Request("Angles")
+                print(Recieved)
+                if Recieved[0] == True:
+                    AnglesRecieved =True
+                    GlobalParameters.synergy_CursorMap = Recieved[1]
+                
+                #/GET angles
+                    #ShowButtons=true
+
+
                     
        
     print("PM: Calibration terminated")          

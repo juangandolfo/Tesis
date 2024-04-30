@@ -57,7 +57,7 @@ class Player(pygame.sprite.Sprite):
 
     def update(self, speed):
         try:
-            self.rect.move_ip(speed[0],speed[1])
+            self.rect.move_ip(speed[0],-speed[1])
         except:
             self.rect.move_ip(0,0)
         """if pressed_keys[K_UP]:
@@ -95,7 +95,7 @@ def getSpeedFromEMG():
     speed = Get_data()
     #print("Client1:", data) 
     #speed=(10*(abs(data[0])-abs(data[1])),0)
-    print("Cursor:",speed)
+    #print("Cursor:",speed)
     return speed
 
 
