@@ -47,6 +47,7 @@ def calculateSynergy(matrix):
     
     output = []
     vafs = []	
+    outputDefined = False
     # Perform NMF
     for n_components in range(2, GlobalParameters.MusclesNumber+1): 
                 
@@ -73,19 +74,27 @@ def calculateSynergy(matrix):
         # the vaf is calculated as the sum of the squares of the difference between the original matrix and the reconstructed matrix for each element
         vaf = 1 - (np.sum((matrix - Reconstructed_matrix) ** 2) / np.sum(matrix ** 2))
         #print("VAF: ", vaf)
-        vafs.append(vaf) 
-        '''if n_components == 2:
+        vafs.append(vaf)
+        models.append((n_components, H, r_squared, vaf))
+        # Comparación directa de VAFs
+        if n_components == 2:
             output = (n_components, H, r_squared, vafs)
         else:
             #print(vaf, vafs[-2])
             if vaf>vafs[-2]:
-                output = (n_components, H, r_squared, vafs)'''
-        models.append((n_components, H, r_squared, vaf))
-    #deteccion de codo
+                output = (n_components, H, r_squared, vafs)
+        '''if n_components ==2:
+            output = (n_components, H, r_squared, vafs)
+        else:
+            #print(vaf, vafs[-2])
+            if vaf>0.9 and outputDefined==False:
+                output = (n_components, H, r_squared, vafs)
+                outputDefined = True'''
     
-    x = range(2, GlobalParameters.MusclesNumber+1)
+    #deteccion de codo    
+    ''' x = range(2, GlobalParameters.MusclesNumber+1)
     y = vafs
-
+    
     # calculate and show knee/elbow
     kneedle = kneed.KneeLocator(x,y,curve='concave',direction='increasing')
     knee_point = kneedle.knee 
@@ -94,8 +103,10 @@ def calculateSynergy(matrix):
         knee_point = 2
         print('Knee: None')
     print('Knee: ', knee_point)
-    output = models[knee_point-2]
-    return output, vafs
+    output = models[knee_point-2]'''
+
+    #return output, vafs
+    return models, vafs, output
 
 def BarsGraphic(n, H, R2, vafs):
     aux= []

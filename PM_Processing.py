@@ -123,31 +123,42 @@ DataProcessing = DataProcessing()
 LastRawData = [0 for i in range(GlobalParameters.MusclesNumber)]
 
 def Processing():
-    
+    # create buffer for synergies
+    PM_DS.InitializeVisualizationBuffers()
     
     LastNormalizedData = [0 for i in range(GlobalParameters.MusclesNumber)]
-        
+       
     while True:
-        print("PM: Processing live")
+        #print("PM: Processing live")
         PM_DS.stack_lock.acquire()  
         RawData = PM_DS.PM_DataStruct.circular_stack.get_oldest_vector(1)
         PM_DS.stack_lock.release()
         if RawData != []:
             RectifiedData = DataProcessing.Rectify(RawData)
             NormalizedData = DataProcessing.Normalize(RectifiedData, GlobalParameters.PeakActivation, GlobalParameters.MusclesNumber, GlobalParameters.Threshold)
-            ProcessedData = DataProcessing.DummyLowPassFilter(NormalizedData, LastNormalizedData).reshape(-1,1)
+            #ProcessedData = DataProcessing.DummyLowPassFilter(NormalizedData, LastNormalizedData).reshape(-1,1)
+            ProcessedData = DataProcessing.DummyLowPassFilter(NormalizedData, LastNormalizedData)
+            reshapedData = ProcessedData.reshape(-1,1)
             LastNormalizedData = NormalizedData
-            
+            PM_DS.ProcessedDataBuffer_Semaphore.acquire()
+            PM_DS.ProcessedDataBuffer.add_vector(ProcessedData)
+            PM_DS.ProcessedDataBuffer_Semaphore.release()
+
             PM_DS.SynergyBase_Semaphore.acquire()
-            SynergyActivations = np.array(DataProcessing.MapActivation(GlobalParameters.SynergyBaseInverse,ProcessedData).T)
+            SynergyActivations = np.array(DataProcessing.MapActivation(GlobalParameters.SynergyBaseInverse,reshapedData).T)
             PM_DS.SynergyBase_Semaphore.release()
-           
+
+            PM_DS.SynergiesBuffer_Semaphore.acquire()
+            PM_DS.SynergiesBuffer.add_vector(SynergyActivations)
+            PM_DS.SynergiesBuffer_Semaphore.release()
+
             #NewMovement = DataProcessing.UpdatePosition(SynergyActivations, GlobalParameters.synergy_CursorMap)
             NewMovement = DataProcessing.UpdatePosition(SynergyActivations, GlobalParameters.projectionMatrix).reshape(2,)
             #print(NewMovement)
             PM_DS.PositionOutput_Semaphore.acquire()
             PM_DS.PM_DataStruct.positionOutput = PM_DS.PM_DataStruct.positionOutput + GlobalParameters.CursorMovement_Gain*NewMovement/GlobalParameters.sampleRate
             PM_DS.PositionOutput_Semaphore.release()
+        #time.sleep(0.001)
 
 
 def CalibrationProcessing():
@@ -168,15 +179,16 @@ def CalibrationProcessing():
             GlobalParameters.Threshold = np.ones(GlobalParameters.MusclesNumber) * 0.055
 
             thresholds = np.zeros(GlobalParameters.MusclesNumber)
-            LastData = [0 for i in range(GlobalParameters.MusclesNumber)]
+            #LastData = [0 for i in range(GlobalParameters.MusclesNumber)]
+            LastData = np.zeros((1,GlobalParameters.MusclesNumber))
             Peaks = [[] for _ in range(GlobalParameters.MusclesNumber)]
+            
 
             while(GlobalParameters.CalibrationStage == 1):
                 PM_DS.stack_lock.acquire()  
                 DataBatch = np.array(PM_DS.PM_DataStruct.circular_stack.get_vectors(1))
                 PM_DS.stack_lock.release()
                 if DataBatch != []:
-                    
                     RectifiedMuscleData = DataProcessing.Rectify(DataBatch)
                     for row in range(len(DataBatch)):
                         DataBatch[row]= DataProcessing.DummyLowPassFilter(RectifiedMuscleData[row], LastData)
@@ -184,7 +196,7 @@ def CalibrationProcessing():
 
                     for muscle in range(GlobalParameters.MusclesNumber): 
                         Peaks[muscle].append(np.max(DataBatch[:,muscle]))
-
+                print("stage1")
             for muscle in range(GlobalParameters.MusclesNumber):
                 thresholds[muscle] = np.median(np.array(Peaks[muscle]))
             
@@ -214,6 +226,7 @@ def CalibrationProcessing():
                     for i in range(GlobalParameters.MusclesNumber):
                         if ProcessedData[i] > GlobalParameters.PeakActivation[i]:
                             GlobalParameters.PeakActivation[i] = ProcessedData[i]
+                print("stage2")
             print("Peaks:", GlobalParameters.PeakActivation)
             PlotResults(GlobalParameters.PeakActivation, "Peaks")
             
@@ -239,27 +252,27 @@ def CalibrationProcessing():
 
                     aux_buffer = np.roll(aux_buffer, -1, axis=0)    # Roll the buffer to make space for the new vector
                     aux_buffer[-1] = ProcessedData                  # Add the new vector at the end of the buffer
-
-            (n_components, H, r_squared, vaf), vafs = SD.calculateSynergy(aux_buffer)
+                print("stage3")
+            '''(n_components, H, r_squared, vaf), vafs = SD.calculateSynergy(aux_buffer)
             print(n_components, H, r_squared, vaf)
-            #SD.BarsGraphic(n_components, H, r_squared, vafs)
+            SD.BarsGraphic(n_components, H, r_squared, vafs)
             GlobalParameters.SynergyBase = H
             GlobalParameters.SynergyBaseInverse = np.linalg.pinv(H)   
-            PlotSynergiesDetected(vafs, n_components, H)
-            AnglesRecieved = True
-            while not AnglesRecieved:
-                Recieved = PM_Com.Request("Angles")
-                print(Recieved)
-                if Recieved[0] == True:
-                    AnglesRecieved =True
-                    GlobalParameters.synergy_CursorMap = Recieved[1]
-                
-                #/GET angles
-                    #ShowButtons=true
-
-
-                    
-       
+            PlotSynergiesDetected(vafs, n_components, H)'''
+            GlobalParameters.modelsList, GlobalParameters.vafs, GlobalParameters.output= SD.calculateSynergy(aux_buffer)
+            for model in GlobalParameters.modelsList:
+                print(model[0])
+                print(model[1])
+                print(model[2])
+                print(model[3])
+                print(GlobalParameters.vafs)
+                PlotSynergiesDetected(GlobalParameters.vafs,model[0],model[1])
+            
+            #GlobalParameters.SynergyBase = GlobalParameters.modelsList[GlobalParameters.MusclesNumber-2][1]
+            GlobalParameters.SynergyBase = GlobalParameters.output[1]
+            GlobalParameters.SynergyBaseInverse = np.linalg.pinv(GlobalParameters.SynergyBase)
+            GlobalParameters.synergysNumber = GlobalParameters.output[0]
+        #time.sleep(0.001)
     print("PM: Calibration terminated")          
     # Plot the vectors
     

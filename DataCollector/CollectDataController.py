@@ -71,20 +71,19 @@ class PlottingManagement():
     def threadManager(self):
        
         time.sleep(3)
-    
+        
         if API_Parameters.DelsysMode:
-            API_server_thread=Thread(target=Delsys_API_Server.API_Server, args=(TrigBase,self.dataStreamIdx))
+            API_server_thread=Thread(target=Delsys_API_Server.API_Server, args=(TrigBase,self.dataStreamIdx),daemon=True)
             API_server_thread.start()
         else: 
             API_server_thread=Thread(target=API_Server.API_Server)  
             API_server_thread.start()
-        #time.sleep(0.5)
+        time.sleep(0.2)
+        #os.system("start cmd /k Python prueba_2.py") #
         
         Processing_Module_Client_thread = Thread(target=PM_Communications.Processing_Module_Client,daemon=True)
-        
         Processing_Module_Server_thread = Thread(target=PM_Communications.Processing_Module_Server,daemon=True)
         Processing_Module_Calibration = Thread(target=PM_Processing.CalibrationProcessing,daemon=True)
-        #Processing_Module = Thread(target=PM_Processing.Processing)
 
         Processing_Module_Client_thread.start()
         time.sleep(0.2)
@@ -92,15 +91,6 @@ class PlottingManagement():
         time.sleep(0.2)
         Processing_Module_Calibration.start()
         time.sleep(0.2)
-        #Processing_Module.start()
-        #time.sleep(0.2)
-        #import Cursor_Nuevo 
-        #Cursor_thread=Thread(target=Cursor_Nuevo.Cursor)
-        #Cursor_thread.start()
-
-        
-        
-   
         
     #---------------------------------------------------------------------------------
     #---- Callback Functions

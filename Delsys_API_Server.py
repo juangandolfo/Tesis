@@ -52,7 +52,17 @@ def API_Server(AeroInstance,emgPositionVector):
                 DataReceived = conn.recv(1024)
                 # Check if the received data is a GET request for "/data"
                 data = DataReceived.decode().strip()
-                if data == "GET /data":
+                if data == "GET /StartDataStreaming":
+                    #AeroInstance.Start()
+                    serialized_data = json.dumps(1) # Serialize the object using json
+                    serialized_data  += "~"
+                    try:
+                        conn.sendall(serialized_data.encode())
+                        #print(serialized_data)
+                    except Exception as e:
+                        print(e)
+                elif data == "GET /data":
+                    #print("Data requested")
                     dataReady = AeroInstance.CheckDataQueue()
                     
                     if dataReady: 
@@ -82,12 +92,13 @@ def API_Server(AeroInstance,emgPositionVector):
                     try:
                         conn.sendall(serialized_data.encode())
                         #print(serialized_data)
-                    except Exception as e:
+                    except Exception as e: 
                         print(e)
                            
                     #print("Data sent:", serialized_data)
                     
                 elif data == "GET /SensorsNumber":
+                    print("Sensors number requested")
                     serialized_data = json.dumps(API_Parameters.ChannelsNumber)
                     serialized_data  += "~"
                     try:
@@ -97,16 +108,8 @@ def API_Server(AeroInstance,emgPositionVector):
                         print(e)
 
                 elif data == "GET /SampleRate":
+                    print("Sample rate requested")
                     serialized_data = json.dumps(API_Parameters.SampleRate)
-                    serialized_data  += "~"
-                    try:
-                        conn.sendall(serialized_data.encode())
-                    except Exception as e:
-                        print(e)
-
-                elif data == "GET /Angles":
-                    API_Parameters.AnglesRequested = 1
-                    serialized_data = json.dumps(API_Parameters.AnglesOutput)
                     serialized_data  += "~"
                     try:
                         conn.sendall(serialized_data.encode())
