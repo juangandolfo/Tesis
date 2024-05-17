@@ -74,16 +74,16 @@ def calculateSynergy(matrix):
         vaf = 1 - (np.sum((matrix - Reconstructed_matrix) ** 2) / np.sum(matrix ** 2))
         #print("VAF: ", vaf)
         vafs.append(vaf) 
-        '''if n_components == 2:
+        if n_components == 2:
             output = (n_components, H, r_squared, vafs)
         else:
             #print(vaf, vafs[-2])
             if vaf>vafs[-2]:
-                output = (n_components, H, r_squared, vafs)'''
+                output = (n_components, H, r_squared, vafs)
         models.append((n_components, H, r_squared, vaf))
-    #deteccion de codo
     
-    x = range(2, GlobalParameters.MusclesNumber+1)
+    #deteccion de codo
+    '''x = range(2, GlobalParameters.MusclesNumber+1)
     y = vafs
 
     # calculate and show knee/elbow
@@ -94,7 +94,7 @@ def calculateSynergy(matrix):
         knee_point = 2
         print('Knee: None')
     print('Knee: ', knee_point)
-    output = models[knee_point-2]
+    output = models[knee_point-2]'''
     return output, vafs
 
 def BarsGraphic(n, H, R2, vafs):

@@ -231,6 +231,9 @@ class CollectDataWindow(QWidget):
         self.getpipelinestate()
 
 class CountdownWidget(QWidget):
+
+    timeout_signal = Signal()
+
     def __init__(self, parent=None):
         super().__init__(parent)
         layout = QVBoxLayout()
@@ -253,16 +256,13 @@ class CountdownWidget(QWidget):
         else:
             self.timer.stop()
             self.timer_label.setText("Countdown: Done")
-
-            #Task deployed by a stage finished event
-            if API_Parameters.CalibrationStage == 3:
-                angle_window = AngleWindow()
-                angle_window.exec_()  # This will block until the window is closed
-                
+            self.timeout_signal.emit() 
             API_Parameters.CalibrationStageInitialized = False
             API_Parameters.CalibrationStageFinished = True
 
-class AngleWindow(QDialog):
+class AngleWindow(QDialog, QObject):
+    angle_values_saved = Signal(list)
+
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Insert Angle Values")
@@ -270,10 +270,14 @@ class AngleWindow(QDialog):
         layout = QVBoxLayout()
 
         self.angle_lineedits = []
+        self.angle_labels = []
         for i in range(8):
-            angle_label = QLabel(f"Angle {i+1}:")
+            angle_label = QLabel(f"Synergy {i+1}:")
             angle_lineedit = QLineEdit()
+            angle_lineedit.hide()
+            angle_label.hide()
             self.angle_lineedits.append(angle_lineedit)
+            self.angle_labels.append(angle_label)
             layout.addWidget(angle_label)
             layout.addWidget(angle_lineedit)
 
@@ -283,10 +287,19 @@ class AngleWindow(QDialog):
 
         self.setLayout(layout)
 
+        self.angle_values_saved.connect(self.process_angles)  # Connect signal to method
+
     def save_angles(self):
         angles = [lineedit.text() for lineedit in self.angle_lineedits]
-        # Insert code to save angles to wherever you need
-        self.accept()  # Close the window after saving
+        self.angle_values_saved.emit(angles)
+        self.accept()  # Close the window
+
+    def process_angles(self, angles):
+        print("Received angles:", angles)
+        API_Parameters.AnglesReady = 1
+        API_Parameters.AnglesOutput = angles
+        # Do something with the angle values
+
 
 class CalibrationWindow(QMainWindow):
     def __init__(self):
@@ -318,10 +331,15 @@ class CalibrationWindow(QMainWindow):
         self.start_stage_button.hide()  # Initially hide the Start button
         layout.addWidget(self.start_stage_button)
 
-
         self.timer_widget = CountdownWidget()
         self.timer_widget.hide()  # Initially hide the CountdownWidget
+        self.timer_widget.timeout_signal.connect(self.show_angle_window) 
         layout.addWidget(self.timer_widget)
+
+        # Angles selection window
+        self.angle_window = AngleWindow()
+        self.angle_window.hide()  # Initially hide the AngleWindow
+        layout.addWidget(self.angle_window)
 
         self.stage1_button.clicked.connect(self.stage1_callback)
         self.stage2_button.clicked.connect(self.stage2_callback)
@@ -331,14 +349,13 @@ class CalibrationWindow(QMainWindow):
         # Connect Start button to start countdown
         self.start_stage_button.clicked.connect(self.start_countdown)
 
-
     def stage1_callback(self):
         self.stage_message_label.setText("Calibration Stage 1: Activation Threshold Detection")
         # Show Start button for Stage 1 only
         self.start_stage_button.show()
         self.CalibrationStage = 1
         self.timer_widget.hide()  #Hide the countdown widget when stage changes
-
+    
     def stage2_callback(self):
         self.stage_message_label.setText("Calibration Stage 2: Activation Peaks Detection")
         # Show Start button for Stage 2 only
@@ -352,7 +369,7 @@ class CalibrationWindow(QMainWindow):
         self.start_stage_button.show()
         self.CalibrationStage = 3
         self.timer_widget.hide()  # Hide the countdown widget when stage changes
-
+       
     def start_countdown(self):
         print("timer")
         # Show the countdown widget and start the countdown
@@ -364,6 +381,17 @@ class CalibrationWindow(QMainWindow):
     def terminate_callback (self):
         API_Parameters.TerminateCalibrationFlag = True
         self.close()
+
+    def show_angle_window(self):
+        API_Parameters.AnglesOutput = []
+        # Show the AngleWindow only in stage 3
+        if API_Parameters.CalibrationStage == 3:
+            self.angle_window.show()
+            for i in range(API_Parameters.ChannelsNumber):
+                self.angle_window.angle_lineedits[i].show()
+                self.angle_window.angle_labels[i].show()
+
+    
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

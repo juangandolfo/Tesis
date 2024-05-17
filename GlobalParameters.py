@@ -8,25 +8,22 @@ Initialized = False
 
 
 MusclesNumber = 4
-synergysNumber = MusclesNumber
+synergiesNumber = MusclesNumber
 RawData_BufferSize = 1000
 sampleRate = 1
 
 SynergyConfigurationFile = 'SynergyConfigurationFromExcel.csv'
 
 #synergy_CursorMap = [0,1,0,1]
-synergy_CursorMap = [45,115,270]
-CursorMovement_Gain = 50
+synergy_CursorMap = []
+CursorMovement_Gain = 150
 SynergyBase = np.identity(4)
 SynergyBaseInverse = np.linalg.pinv(SynergyBase)
 
-# Convert angles from degrees to radians
-angles_rad = np.radians(synergy_CursorMap)
-# Calculate the x and y components of each vector
-x = np.cos(angles_rad)
-y = np.sin(angles_rad)
-# Construct the projection matrix
-projectionMatrix = np.column_stack((x, y))        
+projectionMatrix = []
+
+AnglesRecieved = False
+RequestAngles = False
 
 
 PeakActivation = []
@@ -40,8 +37,9 @@ def Initialize():
     global synergy_CursorMap 
     global PeakActivation 
     global Initialized
-    global synergysNumber
+    global synergiesNumber
     global Threshold
+    global projectionMatrix
 
     '''SynergyBase, synergy_CursorMap, MusclesNumberFromCSV, synergysNumber = csvHandler.Read_csv(SynergyConfigurationFile)
     print(SynergyBase)  
@@ -52,7 +50,25 @@ def Initialize():
     PeakActivation = np.ones(MusclesNumber)*0.1 
     Threshold = np.ones(MusclesNumber) * 0.055
     
+    synergy_CursorMap = np.zeros(MusclesNumber) #pensar en cambiar esto por algo equiespaciado (360*i/musclesunmber)
+    for synergy in range(synergiesNumber):
+        synergy_CursorMap[synergy] = 360*synergy/synergiesNumber
+    projectionMatrix = GenerateProjectionMatrix(synergy_CursorMap)
+
     Initialized = True
+
+def GenerateProjectionMatrix(angles):
+    # Convert angles from degrees to radians
+    angles_rad = np.radians(synergy_CursorMap)
+    # Calculate the x and y components of each vector
+    x = np.cos(angles_rad)
+    y = np.sin(angles_rad)
+    # Construct the projection matrix
+    projectionMatrix = np.column_stack((x, y))
+    return projectionMatrix
+
+
+
 
 
        

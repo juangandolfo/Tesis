@@ -1,4 +1,6 @@
 
+import numpy as np
+
 ChannelsNumber = 0
 DelsysMode = True
 SampleRate = 0
@@ -8,8 +10,8 @@ CalibrationStageInitialized = False
 CalibrationStageFinished = False
 CalibrationStage = 0
 
-AnglesRequested = 0
-Angles = []
-AnglesOutput = [0,Angles]
+AnglesReady = 0
+#Angles = [1,1]
+AnglesOutput = []
 
 

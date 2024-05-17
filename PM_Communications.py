@@ -174,15 +174,32 @@ def Processing_Module_Client():
         #print("PM Client live")
         try:
             try:
-                data = Request("data")
+                if GlobalParameters.RequestAngles == True:
+                    data = Request("Angles")
+                    print("Angles")
+                    angles = []
+                    if data != []:
+                        for element in data:
+                             # Check if the element is not '0'
+                            if element != '':
+                                # If it's not '0', add it to the result
+                                angles.append(int(element))
+                        GlobalParameters.synergy_CursorMap = angles
+                        GlobalParameters.AnglesRecieved = True
+                        GlobalParameters.RequestAngles = False
+                        Request("data")
+                        #Request("Erase stack")
+
+                else:
+                    data = Request("data")
+                    formated_data = Dictionary_to_matrix(data)
+                    PM_DS.stack_lock.acquire()  # Acquire lock before accessing the stack
+                    PM_DS.PM_DataStruct.circular_stack.add_matrix(formated_data)
+                    PM_DS.stack_lock.release()  # Release lock after reading the stack
+                    
             except Exception as e:
                 #print(e)
                 continue
-            formated_data = Dictionary_to_matrix(data)
-            PM_DS.stack_lock.acquire()  # Acquire lock before accessing the stack
-            PM_DS.PM_DataStruct.circular_stack.add_matrix(formated_data)
-            PM_DS.stack_lock.release()  # Release lock after reading the stack
-            
         except socket.error as e:
             print("Connection error:", e)
             continue

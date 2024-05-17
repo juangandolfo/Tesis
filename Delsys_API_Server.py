@@ -105,13 +105,16 @@ def API_Server(AeroInstance,emgPositionVector):
                         print(e)
 
                 elif data == "GET /Angles":
-                    API_Parameters.AnglesRequested = 1
                     serialized_data = json.dumps(API_Parameters.AnglesOutput)
                     serialized_data  += "~"
                     try:
                         conn.sendall(serialized_data.encode())
                     except Exception as e:
                         print(e)
+                #elif data == "GET /Erase data":
+                    #dataReady = AeroInstance.CheckDataQueue()
+                    
+                    
 
                 else:
                    print("Invalid request")

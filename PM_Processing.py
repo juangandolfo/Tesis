@@ -7,7 +7,6 @@ import SynergyDetection as SD
 import csv
 import numpy as np
 import matplotlib.pyplot as plt
-import PM_Communications as PM_Com
 
 plt.switch_backend('TkAgg')
 
@@ -124,9 +123,9 @@ LastRawData = [0 for i in range(GlobalParameters.MusclesNumber)]
 
 def Processing():
     
-    
+    GlobalParameters.projectionMatrix = GlobalParameters.GenerateProjectionMatrix(GlobalParameters.synergy_CursorMap)
     LastNormalizedData = [0 for i in range(GlobalParameters.MusclesNumber)]
-        
+   
     while True:
         print("PM: Processing live")
         PM_DS.stack_lock.acquire()  
@@ -154,7 +153,6 @@ def CalibrationProcessing():
     
     while(GlobalParameters.Initialized == False):
        pass
-
 
     while not GlobalParameters.TerminateCalibration:
         print("PM: Calibration Processing live")
@@ -243,23 +241,16 @@ def CalibrationProcessing():
             (n_components, H, r_squared, vaf), vafs = SD.calculateSynergy(aux_buffer)
             print(n_components, H, r_squared, vaf)
             #SD.BarsGraphic(n_components, H, r_squared, vafs)
+            GlobalParameters.synergiesNumber = n_components
             GlobalParameters.SynergyBase = H
             GlobalParameters.SynergyBaseInverse = np.linalg.pinv(H)   
             PlotSynergiesDetected(vafs, n_components, H)
-            AnglesRecieved = True
-            while not AnglesRecieved:
-                Recieved = PM_Com.Request("Angles")
-                print(Recieved)
-                if Recieved[0] == True:
-                    AnglesRecieved =True
-                    GlobalParameters.synergy_CursorMap = Recieved[1]
-                
-                #/GET angles
-                    #ShowButtons=true
+            GlobalParameters.RequestAngles = True
+            GlobalParameters.AnglesRecieved = False
+            while not GlobalParameters.AnglesRecieved:
+                pass
 
-
-                    
-       
+            print(GlobalParameters.synergy_CursorMap)  
     print("PM: Calibration terminated")          
     # Plot the vectors
     
