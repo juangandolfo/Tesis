@@ -7,9 +7,6 @@ import pickle
 import numpy as np
 from threading import Thread
 
-
-
-
 HOST = "127.0.0.1"  # Standard adress (localhost)
 PORT_Client = 6001  # Port to get data from the File API Server
 PORT_Server = 6002 # The port used by the PM Server
@@ -20,7 +17,7 @@ client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 # Create a socket for the server
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 # Link the socket to the IP and PORT selected: 
-server_socket.bind((HOST, PORT_Server))
+#server_socket.bind((HOST, PORT_Server))
 
 
 # Auxiliar functions -------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -52,12 +49,15 @@ def Dictionary_to_matrix(dictionary):
 # Function to send the request and receive the data from API Server
 def Request(Type):
     request = "GET /"+Type
-    client_socket.sendall(request.encode())
+    try:
+        client_socket.sendall(request.encode())
+    except socket.error as e:
+            print("PM request:", e)
     
     data = b''       
     while True:
         try:
-            client_socket.settimeout(0.5)
+            #client_socket.settimeout(3)
             chunk = client_socket.recv(1024)
             data += chunk
             if b"~" in data:
@@ -81,11 +81,11 @@ def Request(Type):
                 break
             
         except socket.timeout as e:
-            print(e)
+            print("PM Client timeout", e)
             continue
         
         except socket.error as e:
-            print(e)
+            print("PM Client socket error", e)
             continue
 
     serialized_data = data.decode().rstrip("~") # Quit the delimiter and decode the received data
@@ -93,7 +93,8 @@ def Request(Type):
     #print(response_data)  
      
     if response_data == {}:
-        raise Exception("PM:No data received")
+        #raise Exception("PM:No data received")
+        pass
     return response_data
 
 # Function to handle the connection with a client
@@ -144,7 +145,8 @@ def Handle_Client(conn,addr):
              #Connected = False
 
         else:
-            print("Invalid request") 
+            print("Invalid request")
+            pass 
     #conn.close()                        
         
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -152,9 +154,14 @@ def Handle_Client(conn,addr):
 # Threads -------------------------------------------------------------------------------------------------------------------------------------------------------------------------
                
 def Processing_Module_Client():
-    client_socket.connect((HOST, PORT_Client))
-    print("PM Client live")
-    
+    notConnected = True
+    while notConnected:
+        try:
+            client_socket.connect((HOST, PORT_Client))
+            notConnected = False
+        except Exception as e:
+            #print(e)
+            pass
     # Request Number of cahnnels from host
     GlobalParameters.MusclesNumber = Request("SensorsNumber")
     GlobalParameters.sampleRate = Request("SampleRate")
@@ -163,11 +170,7 @@ def Processing_Module_Client():
     except Exception as e:
         print(e)
         return
-        
-    #print(GlobalParameters.MusclesNumber)
     PM_DS.PM_DataStruct.InitializeRawDataBuffer()
-    #finger dance logic for calibration
-    #GlobalParameters.SynergyBase = GetSynergyBase()
 
     # Loop to request data
     while True:
@@ -198,7 +201,7 @@ def Processing_Module_Client():
                     PM_DS.stack_lock.release()  # Release lock after reading the stack
                     
             except Exception as e:
-                #print(e)
+                print("PM Client", e)
                 continue
         except socket.error as e:
             print("Connection error:", e)
@@ -207,7 +210,7 @@ def Processing_Module_Client():
 
 
 def Processing_Module_Server():
-
+    server_socket.bind((HOST, PORT_Server))
     # Listen the inner connections:
     print("Server listening on", HOST, "port", PORT_Server)
     server_socket.listen()
@@ -222,7 +225,6 @@ def Processing_Module_Server():
         #print(Num_Clients)
 
                     
-    
-
-
+PM_Client_thread = Thread(target=Processing_Module_Client,daemon=True)
+PM_Server_thread = Thread(target=Processing_Module_Server,daemon=True)
 

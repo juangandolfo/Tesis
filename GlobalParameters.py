@@ -8,10 +8,9 @@ Initialized = False
 
 
 MusclesNumber = 4
-synergiesNumber = MusclesNumber
+
 RawData_BufferSize = 1000
 sampleRate = 1
-
 SynergyConfigurationFile = 'SynergyConfigurationFromExcel.csv'
 
 #synergy_CursorMap = [0,1,0,1]
@@ -49,8 +48,9 @@ def Initialize():
         raise Exception("The number of muscles in the configuration file is different from the number of muscles in the PM")    '''
     PeakActivation = np.ones(MusclesNumber)*0.1 
     Threshold = np.ones(MusclesNumber) * 0.055
-    
+    synergiesNumber = MusclesNumber
     synergy_CursorMap = np.zeros(MusclesNumber) #pensar en cambiar esto por algo equiespaciado (360*i/musclesunmber)
+    
     for synergy in range(synergiesNumber):
         synergy_CursorMap[synergy] = 360*synergy/synergiesNumber
     projectionMatrix = GenerateProjectionMatrix(synergy_CursorMap)

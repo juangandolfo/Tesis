@@ -23,9 +23,17 @@ from pygame.locals import (K_UP,
 HOST = "127.0.0.1"  # The server's hostname or IP address
 PORT2 = 6002  # The port used by the API server
 
-# Create a socket
-client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-client_socket.connect((HOST, PORT2))
+client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # Create a socket
+
+def Connect():
+    notConnected = True
+    while notConnected:
+        try:
+            client_socket.connect((HOST, PORT2))
+            notConnected = False
+        except Exception as e:
+            #print(e)
+            pass
 
 frequency = 120
 #-----------------------------------------------------------------------------------------------------------
@@ -124,6 +132,7 @@ class Enemy(pygame.sprite.Sprite):
         center=position)
 
 def Cursor():
+    Connect()
     pygame.init()
     Cursor.SCREEN_WIDTH = 600
     Cursor.SCREEN_HEIGHT = 600

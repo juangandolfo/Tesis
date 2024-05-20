@@ -8,29 +8,22 @@ from threading import Thread
 from Plotter.GenericPlot import *
 from AeroPy.TrignoBase import *
 from AeroPy.DataManager import *
-
+from multiprocessing import Process
 
 
 
 import time
 import sys
 #sys.path.append("../")
-
-from API_Server_Nuevo import *    
-import PM_Communications 
-import PM_Processing
+from API_Server_Nuevo import * 
 from Aero_Nuevo import *
 import Delsys_API_Server   
 import API_Parameters
-
-
-
 
 clr.AddReference("System.Collections")
 from System.Collections.Generic import List
 from System import Int32
 
-import random
 
 base = TrignoBase()
 TrigBase = base.BaseInstance
@@ -73,31 +66,11 @@ class PlottingManagement():
         time.sleep(3)
     
         if API_Parameters.DelsysMode:
-            API_server_thread=Thread(target=Delsys_API_Server.API_Server, args=(TrigBase,self.dataStreamIdx))
+            API_server_thread=Thread(target=Delsys_API_Server.API_Server, args=(TrigBase,self.dataStreamIdx), daemon=True)
             API_server_thread.start()
         else: 
             API_server_thread=Thread(target=API_Server.API_Server)  
             API_server_thread.start()
-        #time.sleep(0.5)
-        
-        Processing_Module_Client_thread = Thread(target=PM_Communications.Processing_Module_Client,daemon=True)
-        
-        Processing_Module_Server_thread = Thread(target=PM_Communications.Processing_Module_Server,daemon=True)
-        Processing_Module_Calibration = Thread(target=PM_Processing.CalibrationProcessing,daemon=True)
-        #Processing_Module = Thread(target=PM_Processing.Processing)
-
-        Processing_Module_Client_thread.start()
-        time.sleep(0.2)
-        Processing_Module_Server_thread.start()
-        time.sleep(0.2)
-        Processing_Module_Calibration.start()
-        time.sleep(0.2)
-        #Processing_Module.start()
-        #time.sleep(0.2)
-        #import Cursor_Nuevo 
-        #Cursor_thread=Thread(target=Cursor_Nuevo.Cursor)
-        #Cursor_thread.start()
-
         
         
    
@@ -178,16 +151,7 @@ class PlottingManagement():
         self.threadManager()
 
     def Start_Callback(self): 
-        
-        Processing_Module = Thread(target=PM_Processing.Processing,daemon=True)
-        Processing_Module.start()
-        time.sleep(0.2)
-        import Cursor_Nuevo 
-        Cursor_thread=Thread(target=Cursor_Nuevo.Cursor,daemon=False)
-        Cursor_thread.start()
-
-
-
+        print(1)
 
     def Stop_Callback(self):
         """Callback to stop the data stream"""

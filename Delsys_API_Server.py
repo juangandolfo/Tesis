@@ -20,7 +20,6 @@ def FormattedDictionary_to_PythonDictionary(formatted_dictionary, emgPositionVec
 
     for i in formatted_dictionary.Keys:
         keys.append(i)
-    
     '''for j in range(len(keys)): 
         #outArr[j].append(np.asarray(formatted_dictionary[keys[j]], dtype='object'))
         python_dictionary[str(keys[j])] = np.asarray(formatted_dictionary[keys[j]]).tolist()
@@ -49,12 +48,16 @@ def API_Server(AeroInstance,emgPositionVector):
         with conn:
             print(f"Connected by {addr}")
             while True:
-                DataReceived = conn.recv(1024)
+                #print("API Server live")
+                try:
+                    s.settimeout(5)
+                    DataReceived = conn.recv(1024)
+                except Exception as e:
+                    print("API", e)
                 # Check if the received data is a GET request for "/data"
                 data = DataReceived.decode().strip()
                 if data == "GET /data":
                     dataReady = AeroInstance.CheckDataQueue()
-                    
                     if dataReady: 
                         response_data = FormattedDictionary_to_PythonDictionary(AeroInstance.PollData(),emgPositionVector)
                     else: 
@@ -81,11 +84,10 @@ def API_Server(AeroInstance,emgPositionVector):
                         serialized_data  += "~" # Add a delimiter at the end 
                     try:
                         conn.sendall(serialized_data.encode())
-                        #print(serialized_data)
+                        #print("data sent:", serialized_data)
                     except Exception as e:
-                        print(e)
+                        print("API sending", e)
                            
-                    #print("Data sent:", serialized_data)
                     
                 elif data == "GET /SensorsNumber":
                     serialized_data = json.dumps(API_Parameters.ChannelsNumber)
@@ -118,6 +120,7 @@ def API_Server(AeroInstance,emgPositionVector):
 
                 else:
                    print("Invalid request")
+                   pass
                     
 
 

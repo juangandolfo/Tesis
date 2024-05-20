@@ -7,6 +7,10 @@ import SynergyDetection as SD
 import csv
 import numpy as np
 import matplotlib.pyplot as plt
+from multiprocessing import Process
+import Cursor_Nuevo
+
+
 
 plt.switch_backend('TkAgg')
 
@@ -155,6 +159,7 @@ def CalibrationProcessing():
        pass
 
     while not GlobalParameters.TerminateCalibration:
+        
         print("PM: Calibration Processing live")
         
         if GlobalParameters.CalibrationStage == 1:
@@ -203,6 +208,7 @@ def CalibrationProcessing():
             while(GlobalParameters.CalibrationStage == 2):
                 PM_DS.stack_lock.acquire()  
                 RawData = PM_DS.PM_DataStruct.circular_stack.get_oldest_vector(1)
+                print("                                                                    ",RawData)
                 PM_DS.stack_lock.release()
                 if RawData != []:
                     RectifiedData = DataProcessing.Rectify(RawData)
@@ -251,6 +257,12 @@ def CalibrationProcessing():
                 pass
 
             print(GlobalParameters.synergy_CursorMap)  
-    print("PM: Calibration terminated")          
-    # Plot the vectors
     
+    print("PM: Calibration terminated") 
+    PM_Processing.start()
+    Cursor_process.start()
+    
+
+PM_Calibration = Thread(target=CalibrationProcessing,daemon=True)
+PM_Processing = Thread(target=Processing,daemon=True)
+Cursor_process = Process(target=Cursor_Nuevo.Cursor)

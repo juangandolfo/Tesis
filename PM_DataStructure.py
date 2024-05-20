@@ -10,9 +10,11 @@ class PM_DataStructure:
 
     def InitializeRawDataBuffer(self):
         self.circular_stack = Buffer.CircularBufferVector(GlobalParameters.RawData_BufferSize, GlobalParameters.MusclesNumber)
-
 PM_DataStruct = PM_DataStructure()
 
 stack_lock = Semaphore(1)  # Semaphore for stack access
 PositionOutput_Semaphore =  Semaphore(1) 
 SynergyBase_Semaphore = Semaphore(1)
+
+
+ 
