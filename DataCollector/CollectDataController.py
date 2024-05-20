@@ -64,7 +64,7 @@ class PlottingManagement():
     def threadManager(self):
        
         time.sleep(3)
-    
+        
         if API_Parameters.DelsysMode:
             API_server_thread=Thread(target=Delsys_API_Server.API_Server, args=(TrigBase,self.dataStreamIdx), daemon=True)
             API_server_thread.start()

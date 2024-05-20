@@ -1,6 +1,6 @@
 import numpy as np
 from collections import deque
-def Dictionary_to_matrix(dictionary):
+'''def Dictionary_to_matrix(dictionary):
     
     # Get the keys
     columns = list(dictionary.keys())
@@ -39,7 +39,28 @@ print("proy",projectionMatrix)
 a = np.dot([1,1,1,1],projectionMatrix)
 b = np.ravel(np.matmul([1,1,1,1],projectionMatrix))
 print("a",a)
-print("b",b)
+print("b",b)'''
+
+
+class Buffer:
+    def __init__(self, n_channels, Pts2Display):
+        self.Buffer = np.zeros((Pts2Display, n_channels))
+    
+    def add_point(self, data):
+        self.Buffer = np.roll(self.Buffer, -1, axis=0) # Roll the buffer to make space for the new vector
+        self.Buffer[-1] = data
+        return self.Buffer
+    
+    def add_matrix(self, data):
+        for line in data:
+            self.add_point(line)
+
+buf = Buffer(2, 10)
+
+data = np.array([[1,2],[3,4],[5,6],[7,8],[9,10]])
+print(buf.Buffer)
+buf.add_matrix(data)
+print(buf.Buffer) 
 
 
 

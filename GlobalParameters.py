@@ -12,14 +12,24 @@ MusclesNumber = 4
 RawData_BufferSize = 1000
 sampleRate = 1
 SynergyConfigurationFile = 'SynergyConfigurationFromExcel.csv'
-
-#synergy_CursorMap = [0,1,0,1]
-synergy_CursorMap = []
-CursorMovement_Gain = 150
-SynergyBase = np.identity(4)
+if MusclesNumber == 4:
+    synergy_CursorMap = [30,210,120,300]
+else:
+    synergy_CursorMap = [30,120]
+CursorMovement_Gain = 50
+SynergyBase = np.identity(MusclesNumber)
 SynergyBaseInverse = np.linalg.pinv(SynergyBase)
-
-projectionMatrix = []
+modelsList = []
+output = []
+recommendedModelNumber = 2
+vafs = []
+# Convert angles from degrees to radians
+angles_rad = np.radians(synergy_CursorMap)
+# Calculate the x and y components of each vector
+x = np.cos(angles_rad)
+y = np.sin(angles_rad)
+# Construct the projection matrix
+projectionMatrix = np.column_stack((x, y))   
 
 AnglesRecieved = False
 RequestAngles = False

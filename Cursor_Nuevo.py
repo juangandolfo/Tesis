@@ -49,8 +49,7 @@ def Get_data():
             print(e)
         except socket.error as e:
             print(e)
-            
-
+        
         return response_data
 # ----------------------------------------------------------------------------------------------------------
 
@@ -134,8 +133,8 @@ class Enemy(pygame.sprite.Sprite):
 def Cursor():
     Connect()
     pygame.init()
-    Cursor.SCREEN_WIDTH = 600
-    Cursor.SCREEN_HEIGHT = 600
+    Cursor.SCREEN_WIDTH = 800
+    Cursor.SCREEN_HEIGHT = 800
 
     screen = pygame.display.set_mode((Cursor.SCREEN_WIDTH, Cursor.SCREEN_HEIGHT))
     """
@@ -190,50 +189,50 @@ def Cursor():
     GenerateEnemies()
 
     while running:    
+        print("running")
         #for event in pygame.event.get():
             #if event.type == KEYDOWN:
             # if event.key == K_ESCAPE:
                 #  running=False
         # elif event.type == QUIT:
-                # running=False
-            """elif event.type == ADDENEMY:
-                new_enemy = Enemy()
-                enemies.add(new_enemy)
-                all_sprites.add(new_enemy)"""
-            #surf = pygame.Surface((50, 50))
-            #surf.fill((0, 0, 0))
-            #rect = surf.get_rect()
-            #surf_center = ((Cursor.SCREEN_WIDTH-surf.get_width())/2,(Cursor.SCREEN_HEIGHT-surf.get_height())/2)
-            #screen.blit(surf, surf_center)
+            # running=False
+        """elif event.type == ADDENEMY:
+            new_enemy = Enemy()
+            enemies.add(new_enemy)
+            all_sprites.add(new_enemy)"""
+        #surf = pygame.Surface((50, 50))
+        #surf.fill((0, 0, 0))
+        #rect = surf.get_rect()
+        #surf_center = ((Cursor.SCREEN_WIDTH-surf.get_width())/2,(Cursor.SCREEN_HEIGHT-surf.get_height())/2)
+        #screen.blit(surf, surf_center)
+    
+        screen.fill((0, 0, 0))
+        #pressed_keys = pygame.key.get_pressed()
+        #speed=getSpeedFromKeyboard(pressed_keys)
+        speed=getSpeedFromEMG()
+        player.update(speed)
+        enemies.update()
+        screen.blit(player.surf, player.rect)
+        for entity in all_sprites:
+            screen.blit(entity.surf, entity.rect)
         
-            screen.fill((0, 0, 0))
-            #pressed_keys = pygame.key.get_pressed()
-            #speed=getSpeedFromKeyboard(pressed_keys)
-            speed=getSpeedFromEMG()
-            player.update(speed)
-            enemies.update()
-            screen.blit(player.surf, player.rect)
-            for entity in all_sprites:
-                screen.blit(entity.surf, entity.rect)
+        if pygame.sprite.spritecollideany(player, objectives):
+            messagebox.showerror('You did it!!!!!!!!!!!!!!!','Lograste llegar al objetivo crackkk!!')
+            player.update((Cursor.SCREEN_WIDTH/2-player.rect.center[0],Cursor.SCREEN_HEIGHT/2-player.rect.center[1]))
+            for objective in objectives:
+                objective.kill()
+            enemies.empty()
+
+            GenerateEnemies()
+
+        if pygame.sprite.spritecollideany(player, enemies):
+            print('perdiste')
+            player.update((Cursor.SCREEN_WIDTH/2-player.rect.center[0],Cursor.SCREEN_HEIGHT/2-player.rect.center[1]))
             
-            if pygame.sprite.spritecollideany(player, objectives):
-                messagebox.showerror('You did it!!!!!!!!!!!!!!!','Lograste llegar al objetivo crackkk!!')
-                player.update((Cursor.SCREEN_WIDTH/2-player.rect.center[0],Cursor.SCREEN_HEIGHT/2-player.rect.center[1]))
-                for objective in objectives:
-                    objective.kill()
-                enemies.empty()
-
-                GenerateEnemies()
-
-            if pygame.sprite.spritecollideany(player, enemies):
-                print('perdiste')
-                player.update((Cursor.SCREEN_WIDTH/2-player.rect.center[0],Cursor.SCREEN_HEIGHT/2-player.rect.center[1]))
-                
-                #player.kill()
-                #running = False
-            pygame.display.flip()
-            #clock.tick(60)
-
+            #player.kill()
+            #running = False
+        pygame.display.flip()
+        #clock.tick(60)
 
     
 

@@ -6,6 +6,10 @@ import time
 import pickle
 import numpy as np
 from threading import Thread
+import LocalCircularBufferVector as Buffer
+
+
+
 
 HOST = "127.0.0.1"  # Standard adress (localhost)
 PORT_Client = 6001  # Port to get data from the File API Server
@@ -66,7 +70,6 @@ def Request(Type):
             elif b"TC" in data: 
                 GlobalParameters.TerminateCalibration = True
                 break
-            
             elif b"CS1" in data: 
                 GlobalParameters.CalibrationStage = 1
                 break
@@ -102,15 +105,10 @@ def Handle_Client(conn,addr):
     print(f"Connected by {addr}")
     #Connected = True
     while True:
-        #print("PM Server live")
+        print("                                                      PM Server live")
         data = conn.recv(1024)
         # Check if the received data is a GET request for "/data"
         if  data.decode().strip() == "GET /data1":
-            #PM_DS.stack_lock.acquire()  # Acquire lock before accessing the stack
-            #response_data = PM_DS.PM_DataStruct.circular_stack.get_oldest_vector(1)
-            #print(response_data)
-            #PM_DS.stack_lock.release()  # Release lock after reading the stack
-
             PM_DS.PositionOutput_Semaphore.acquire()
             response_data = GlobalParameters.CursorMovement_Gain*PM_DS.PM_DataStruct.positionOutput
             PM_DS.PM_DataStruct.positionOutput = np.zeros(2)
@@ -126,21 +124,51 @@ def Handle_Client(conn,addr):
             conn.sendall(response_json)
             #print("PM: Data sent:", response_data)
             
-
-        elif  data.decode().strip() == "GET /data2":
-            PM_DS.stack_lock.acquire()  # Acquire lock before accessing the stack
-            response_data = PM_DS.PM_DataStruct.circular_stack.get_oldest_vector(2)
-            #print(response_data)
-            PM_DS.stack_lock.release()  # Release lock after reading the stack
+        elif  data.decode().strip() == "GET /Muscles":
+            
+            PM_DS.ProcessedDataBuffer_Semaphore.acquire()  # Acquire lock before accessing the stack
+            response_data = PM_DS.ProcessedDataBuffer.get_vectors(1)
+            PM_DS.ProcessedDataBuffer_Semaphore.release()  # Release lock after reading the stack
             
             if response_data == []:
-                response_data = [0 for i in range(GlobalParameters.MusclesNumber)]
+                print("Empty data")
+                response_data = []
+
 
             response_data = np.array(response_data).tolist()
-            response_json = json.dumps(response_data).encode()  # Convert the dictionary to JSON and enconde intio bytes
-            conn.sendall(response_json)
+            response_json = json.dumps(response_data)
+            response_json  += "~" # Add a delimiter at the end 
+            # Convert the dictionary to JSON and enconde intio bytes
+            conn.sendall(response_json.encode())
             #print("Data sent:", response_data)
         
+        elif data.decode().strip() == "GET /Synergies":
+                
+                PM_DS.SynergiesBuffer_Semaphore.acquire()  # Acquire lock before accessing the stack
+                response_data = PM_DS.SynergiesBuffer.get_vectors(1) #PM_DS.PM_DataStruct.circular_stack.get_vectors(3)
+                PM_DS.SynergiesBuffer_Semaphore.release()  # Release lock after reading the stack
+
+                if response_data == []:
+                    print("Empty data")
+                    response_data = []
+
+                response_data = np.array(response_data).tolist()
+                response_json = json.dumps(response_data)
+                response_json  += "~"
+                conn.sendall(response_json.encode())
+        
+        elif data.decode().strip() == "GET /Parameters":
+                
+                response_data = [GlobalParameters.MusclesNumber,GlobalParameters.synergysNumber] #PM_DS.PM_DataStruct.circular_stack.get_vectors(3)
+
+                if response_data == []:
+                    print("Empty data")
+                    response_data = []
+
+                response_data = np.array(response_data).tolist()
+                response_json = json.dumps(response_data)
+                response_json  += "~"
+                conn.sendall(response_json.encode())
         #if data.decode().strip() == "DISCONNECT":
              #Connected = False
 
@@ -163,6 +191,7 @@ def Processing_Module_Client():
             #print(e)
             pass
     # Request Number of cahnnels from host
+
     GlobalParameters.MusclesNumber = Request("SensorsNumber")
     GlobalParameters.sampleRate = Request("SampleRate")
     try:
@@ -172,9 +201,12 @@ def Processing_Module_Client():
         return
     PM_DS.PM_DataStruct.InitializeRawDataBuffer()
 
+    '''recieved = Request("StartDataStreaming")
+    if recieved == "[1]":
+        print("Data streaming started")'''
     # Loop to request data
     while True:
-        #print("PM Client live")
+        #print("                           PM Client live")
         try:
             try:
                 if GlobalParameters.RequestAngles == True:
@@ -207,6 +239,7 @@ def Processing_Module_Client():
             print("Connection error:", e)
             continue
             # Manage a connection error 
+        #time.sleep(0.001)
 
 
 def Processing_Module_Server():
