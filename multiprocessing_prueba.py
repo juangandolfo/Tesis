@@ -8,10 +8,10 @@ import time
 import subprocess
 
 
-def API(name):
+def API():
     subprocess.run(['python', 'DelsysPythonDemo.py'])
 
-def PM(name):
+def PM():
     PM_Client_thread = Thread(target=PM_Communications.Processing_Module_Client,daemon=True)
     PM_Server_thread = Thread(target=PM_Communications.Processing_Module_Server,daemon=True)
     PM_Calibration = Thread(target=PM_Processing.CalibrationProcessing,daemon=True)
@@ -26,7 +26,7 @@ def PM(name):
     if GlobalParameters.TerminateCalibration == True:
         PM_Processing.start()
 
-def Cursor(name):
+def Cursor():
     Cursor_thread=Thread(target=Cursor_Nuevo.Cursor,daemon=True)
     Cursor_thread.start()
 

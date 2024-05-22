@@ -18,7 +18,7 @@ ProcessedDataBuffer = []
 def InitializeVisualizationBuffers():
     global SynergiesBuffer
     global ProcessedDataBuffer
-    SynergiesBuffer = Buffer.CircularBufferVector(1000,GlobalParameters.synergysNumber)   
+    SynergiesBuffer = Buffer.CircularBufferVector(1000,GlobalParameters.synergiesNumber)   
     ProcessedDataBuffer = Buffer.CircularBufferVector(1000,GlobalParameters.MusclesNumber)
 
 stack_lock = Semaphore(1)  # Semaphore for stack access

@@ -5,7 +5,7 @@ import time
 import json
 from collections import deque
 from threading import Thread, Semaphore
-
+from multiprocessing import Process
 import pygame   
 import random   
 from tkinter import messagebox
@@ -234,6 +234,6 @@ def Cursor():
         pygame.display.flip()
         #clock.tick(60)
 
-    
+Cursor_process = Process(target=Cursor)
 
 

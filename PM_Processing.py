@@ -132,7 +132,7 @@ def Processing():
     LastNormalizedData = [0 for i in range(GlobalParameters.MusclesNumber)]
        
     while True:
-        #print("PM: Processing live")
+        print("PM: Processing live")
         PM_DS.stack_lock.acquire()  
         RawData = PM_DS.PM_DataStruct.circular_stack.get_oldest_vector(1)
         PM_DS.stack_lock.release()
@@ -276,12 +276,15 @@ def CalibrationProcessing():
             #GlobalParameters.SynergyBase = GlobalParameters.modelsList[GlobalParameters.MusclesNumber-2][1]
             GlobalParameters.SynergyBase = GlobalParameters.output[1]
             GlobalParameters.SynergyBaseInverse = np.linalg.pinv(GlobalParameters.SynergyBase)
-            GlobalParameters.synergysNumber = GlobalParameters.output[0]
+            GlobalParameters.synergiesNumber = GlobalParameters.output[0]
+            GlobalParameters.AnglesRecieved = False
+            GlobalParameters.RequestAngles = True
         #time.sleep(0.001)
-    print("PM: Calibration terminated")          
+    print("PM: Calibration terminated")
+    PM_Processing.start()
+    Cursor_Nuevo.Cursor_process.start()           
     # Plot the vectors
     
 
 PM_Calibration = Thread(target=CalibrationProcessing,daemon=True)
 PM_Processing = Thread(target=Processing,daemon=True)
-Cursor_process = Process(target=Cursor_Nuevo.Cursor)

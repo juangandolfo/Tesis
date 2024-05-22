@@ -159,7 +159,7 @@ def Handle_Client(conn,addr):
         
         elif data.decode().strip() == "GET /Parameters":
                 
-                response_data = [GlobalParameters.MusclesNumber,GlobalParameters.synergysNumber] #PM_DS.PM_DataStruct.circular_stack.get_vectors(3)
+                response_data = [GlobalParameters.MusclesNumber,GlobalParameters.synergiesNumber] #PM_DS.PM_DataStruct.circular_stack.get_vectors(3)
 
                 if response_data == []:
                     print("Empty data")
