@@ -189,7 +189,7 @@ def Cursor():
     GenerateEnemies()
 
     while running:    
-        print("running")
+        #print("running")
         #for event in pygame.event.get():
             #if event.type == KEYDOWN:
             # if event.key == K_ESCAPE:

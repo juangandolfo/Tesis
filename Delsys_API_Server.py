@@ -48,7 +48,7 @@ def API_Server(AeroInstance,emgPositionVector):
         with conn:
             print(f"Connected by {addr}")
             while True:
-                #print("API Server live")
+                print("                                                 API Server live")
                 try:
                     s.settimeout(5)
                     DataReceived = conn.recv(1024)
@@ -82,7 +82,7 @@ def API_Server(AeroInstance,emgPositionVector):
                             API_Parameters.CalibrationStageInitialized = False 
                             
                             if API_Parameters.CalibrationStage == 1:
-                                serialized_data  += "  CS1" # Add a delimiter at the end     
+                                serialized_data  += "CS1" # Add a delimiter at the end     
                             elif API_Parameters.CalibrationStage == 2:
                                 serialized_data  += "CS2" # Add a delimiter at the end   
                             elif API_Parameters.CalibrationStage == 3: 
@@ -126,9 +126,7 @@ def API_Server(AeroInstance,emgPositionVector):
                     except Exception as e:
                         print(e)
                 #elif data == "GET /Erase data":
-                    #dataReady = AeroInstance.CheckDataQueue()
-                    
-                    
+                    #dataReady = AeroInstance.CheckDataQueue()     
 
                 else:
                    print("Invalid request")

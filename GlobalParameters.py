@@ -16,7 +16,7 @@ if MusclesNumber == 4:
     synergy_CursorMap = [30,210,120,300]
 else:
     synergy_CursorMap = [30,120]
-CursorMovement_Gain = 50
+CursorMovement_Gain = 150
 SynergyBase = np.identity(MusclesNumber)
 SynergyBaseInverse = np.linalg.pinv(SynergyBase)
 modelsList = []
