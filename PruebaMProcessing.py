@@ -13,6 +13,7 @@ def API_Server():
     app = QApplication(sys.argv)
     controller = FrameController() 
     sys.exit(app.exec_())
+    
 
 def PM():
     PM_Communications.PM_Client_thread.start()

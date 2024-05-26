@@ -7,8 +7,7 @@ import pickle
 import numpy as np
 from threading import Thread
 import LocalCircularBufferVector as Buffer
-
-
+import pymsgbox as msgbox
 
 
 HOST = "127.0.0.1"  # Standard adress (localhost)
@@ -53,6 +52,9 @@ def Dictionary_to_matrix(dictionary):
 # Function to send the request and receive the data from API Server
 def Request(Type):
     request = "GET /"+Type
+    print("                                                                     Request:", request)
+    if GlobalParameters.AnglesRecieved and Type == "Angles":
+        msgbox("angles")
     try:
         client_socket.sendall(request.encode())
     except socket.error as e:
@@ -69,6 +71,7 @@ def Request(Type):
                 break  # Delimiter found
             elif b"TC" in data: 
                 GlobalParameters.TerminateCalibration = True
+                #msgbox.alert(text = "The calibration has been terminated")
                 break
             elif b"CS1" in data: 
                 GlobalParameters.CalibrationStage = 1
@@ -206,7 +209,7 @@ def Processing_Module_Client():
         print("Data streaming started")'''
     # Loop to request data
     while True:
-        #print("                           PM Client live")
+        print("                           PM Client live")
         try:
             try:
                 if GlobalParameters.RequestAngles == True:
@@ -215,15 +218,14 @@ def Processing_Module_Client():
                     angles = []
                     if data != []:
                         for element in data:
-                             # Check if the element is not '0'
                             if element != '':
-                                # If it's not '0', add it to the result
                                 angles.append(int(element))
+                        #msgbox.alert(text = "The angles are: " + str(angles), title = "Angles", button = "OK")
                         GlobalParameters.synergy_CursorMap = angles
                         GlobalParameters.AnglesRecieved = True
                         GlobalParameters.RequestAngles = False
-                        Request("data")
-                        #Request("Erase stack")
+                        GlobalParameters.CalibrationStage = 0
+                        print("Angles recieved", angles)
 
                 else:
                     data = Request("data")

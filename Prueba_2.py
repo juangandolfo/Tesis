@@ -1,4 +1,4 @@
-import PM_Communications
+'''import PM_Communications
 import PM_Processing
 import GlobalParameters
 import threading
@@ -24,6 +24,11 @@ while True:
         #calibrationThread.stop()
         time.sleep(0.2)
         processingThread.start()
-        break
+        break'''
         
-
+import pymsgbox as msgbox
+import API_Parameters as params
+# i want to create an alert that asks if the angles output variable is correct, for that i need to show it in the alert
+# i will use the msgbox.alert function to show the angles in the alert
+params.AnglesOutput = [1,2,3,4]
+msgbox.alert(text = "The angles are: " + str(params.AnglesOutput), title = "Angles", button = "OK")

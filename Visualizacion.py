@@ -74,15 +74,45 @@ params.SynergiesNumber = Parameters[1]
 fig = plt.figure()
 gs = GridSpec.GridSpec(nrows=3, ncols=2, width_ratios=[1, 1], height_ratios=[3, 1, 3])
 
-ax = fig.add_subplot(gs[0, 0])
-bx = fig.add_subplot(gs[2, 0])
-cx = fig.add_subplot(gs[0, 1])
-dx = fig.add_subplot(gs[2, 1])
+#configure muscles plot
+DotsMuscles = fig.add_subplot(gs[0, 0])
+DotsMuscles.set_xlabel('Muscles')
+DotsMuscles.set_ylabel('Activation')
+DotsMuscles.set_title('Last 5 seconds of muscle activation')
+DotsMuscles.legend() 
 
-ax.set_ylim([0, 2])
-bx.set_ylim([0, 2])
-cx.set_ylim([0, 2])
-dx.set_ylim([0, 2])
+#configure synergies plot
+DotsSynergies = fig.add_subplot(gs[2, 0])
+DotsSynergies.set_xlabel('synergies')
+DotsSynergies.set_ylabel('Activation')
+DotsSynergies.set_title('Last 5 seconds of synergies activation')
+DotsSynergies.legend()
+
+BarsMusculos = fig.add_subplot(gs[0, 1])
+BarsMusculos.set_xticks(np.linspace(0, params.MusclesNumber, params.MusclesNumber))
+musclesList = ['Muscle {}'.format(i+1) for i in range(params.MusclesNumber)]
+BarsMusculos.set_xticklabels(musclesList)
+BarsMusculos.set_xlabel('Muscles')
+BarsMusculos.set_ylabel('Activation')
+BarsMusculos.set_title('Muscle Activation')
+for tick in BarsMusculos.get_xticklabels():
+    tick.set_rotation(30)
+
+BarsSynergies = fig.add_subplot(gs[2, 1])
+BarsSynergies.set_xticks(np.linspace(0, params.SynergiesNumber, params.SynergiesNumber))
+synergiesList = ['Synergy {}'.format(i+1) for i in range(params.SynergiesNumber)]
+BarsSynergies.set_xticklabels(synergiesList)
+BarsSynergies.set_xlabel('Synergies')
+BarsSynergies.set_ylabel('Activation')
+BarsSynergies.set_title('Synergies Activation')
+for tick in BarsSynergies.get_xticklabels():
+    tick.set_rotation(30)
+
+
+DotsMuscles.set_ylim([0, 2])
+DotsSynergies.set_ylim([0, 2])
+BarsMusculos.set_ylim([0, 2])
+BarsSynergies.set_ylim([0, 2])
 
 # Create empty buffers
 MusclesBuffer = Buffer(params.MusclesNumber, params.Pts2Display)
@@ -91,20 +121,21 @@ x = Buffer(params.Pts2Display, 1)
 x.Buffer = np.linspace(params.current_x - params.Pts2Display, params.current_x, params.Pts2Display)
 MusclesLines = []
 for i in range(params.MusclesNumber):
-    line, = ax.plot(x.Buffer, MusclesBuffer.Buffer[:, i], color=params.MusclesColors[i])
+    line, = DotsMuscles.plot(x.Buffer, MusclesBuffer.Buffer[:, i], color=params.MusclesColors[i])
     MusclesLines.append(line)
 SynergiesLines = []
 for i in range(params.MusclesNumber):
-    line, = bx.plot(x.Buffer, MusclesBuffer.Buffer[:, i], color=params.SynergiesColors[i])
+    line, = DotsSynergies.plot(x.Buffer, SynergiesBuffer.Buffer[:, i], color=params.SynergiesColors[i])
     SynergiesLines.append(line)
 
-bar1 = cx.bar(range(params.MusclesNumber),range(params.MusclesNumber))
-bar2 = dx.bar(range(params.MusclesNumber),range(params.MusclesNumber))
+bar1 = BarsMusculos.bar(range(params.MusclesNumber),range(params.MusclesNumber))
+bar2 = BarsSynergies.bar(range(params.SynergiesNumber),range(params.SynergiesNumber))
 
 # Update function for FuncAnimation
 def update(frame):
     print(params.current_x)
     global MusclesBuffer
+    global SynergiesBuffer
 
     MusclesActivation = Request("Muscles")
     #SynergiesActivation = Request("Synergies")
@@ -112,6 +143,7 @@ def update(frame):
     stack_lock.acquire()
     MusclesBuffer.add_matrix(MusclesActivation)
     stack_lock.release()
+    
 
     for line in MusclesLines:
         line.set_data(x.Buffer, MusclesBuffer.Buffer[:, MusclesLines.index(line)])
@@ -119,8 +151,8 @@ def update(frame):
         #line.set_data(x.Buffer, MusclesBuffer.Buffer[:, SynergiesLines.index(line)])
         line.set_data(x.Buffer, SynergiesBuffer.Buffer[:, SynergiesLines.index(line)])
 
-    ax.set_xlim([params.current_x- params.Pts2Display, params.current_x])
-    bx.set_xlim([params.current_x- params.Pts2Display, params.current_x])
+    DotsMuscles.set_xlim([params.current_x- params.Pts2Display, params.current_x])
+    DotsSynergies.set_xlim([params.current_x- params.Pts2Display, params.current_x])
     
     # in the next line i will update the bar plot
     for bar, line in zip(bar1, MusclesActivation[-1]):
