@@ -10,15 +10,35 @@ import json
 import time
 import scipy
 
-#a, b = scipy.signal.iirfilter(4, 0.1, 'low', analog=True)
+class LPF:
+    def __init__(self):
+        self.a, self.b = scipy.signal.iirfilter(N = 2, Wn = [2*np.pi*0.00001,2*np.pi*0.01], ftype = 'butter',fs=2*np.pi*1) 
+        self.signal = np.zeros((len(self.b),params.MusclesNumber))
+        self.filtered_signal = np.zeros((len(self.a)-1,params.MusclesNumber))
+        print(self.a)
+        print(self.b)
+        print(sum(self.a)+sum(self.b))   
 
-#def LPF(signal,a,b):
-#    return scipy.signal.lfilter(a,b,signal)
+    def lpf(self,signal):
+        self.signal = np.roll(self.signal,1,axis=0)
+        self.signal[0] = signal
+        # for i in range(params.MusclesNumber):
+        #     self.filtered_signal[:,i] = scipy.signal.lfilter(a =self.a, b = self.b, x= self.signal[:,i])
+        y = np.dot(self.b,self.signal)
+        y = y - np.dot(self.a[1:],self.filtered_signal)
+        y = y/self.a[0]
+        
+        self.filtered_signal = np.roll(self.filtered_signal,1,axis=0)
+        self.filtered_signal[0] = y
+        return y
 
+    #return scipy.signal.lfilter(a,b,signal)
+lpf = LPF()
 
 # Function to send the request and receive the data from MP
-def Request(type):
-    return np.random.rand(params.MusclesNumber)
+def Request(type,current_x):
+    y = 10 * np.sin(current_x*2*np.pi/200) + 5* np.random.rand(params.MusclesNumber)
+    return y
 
 # Semaphore to lock the stack
 MusclesStackSemaphore = threading.Semaphore(1)
@@ -36,11 +56,6 @@ class Buffer:
     def add_matrix(self, data):
         for line in data:
             self.add_point(line)
-
-# Request parameters
-# Parameters = Request("Parameters")
-# params.MusclesNumber = Parameters[0]
-# params.SynergiesNumber = Parameters[1]
 
 # Create the figure and axis objects
 fig = plt.figure()
@@ -60,33 +75,10 @@ DotsSynergies.set_ylabel('Activation')
 DotsSynergies.set_title('Last 5 seconds of synergies activation')
 DotsSynergies.legend()
 
-# BarsMusculos = fig.add_subplot(gs[0, 1])
-# BarsMusculos.set_xticks(np.linspace(0, params.MusclesNumber, params.MusclesNumber))
-# musclesList = ['Muscle {}'.format(i+1) for i in range(params.MusclesNumber)]
-# BarsMusculos.set_xticklabels(musclesList)
-# BarsMusculos.set_xlabel('Muscles')
-# BarsMusculos.set_ylabel('Activation')
-# BarsMusculos.set_title('Muscle Activation')
-# for tick in BarsMusculos.get_xticklabels():
-#     tick.set_rotation(30)
 
-# BarsSynergies = fig.add_subplot(gs[2, 1])
-# BarsSynergies.set_xticks(np.linspace(0, params.SynergiesNumber, params.SynergiesNumber))
-# synergiesList = ['Synergy {}'.format(i+1) for i in range(params.SynergiesNumber)]
-# BarsSynergies.set_xticklabels(synergiesList)
-# BarsSynergies.set_xlabel('Synergies')
-# BarsSynergies.set_ylabel('Activation')
-# BarsSynergies.set_title('Synergies Activation')
-# for tick in BarsSynergies.get_xticklabels():
-#     tick.set_rotation(30)
+DotsMuscles.set_ylim([-15, 15])
+DotsSynergies.set_ylim([-15, 15])
 
-
-DotsMuscles.set_ylim([0, 1.5])
-DotsSynergies.set_ylim([0, 1.5])
-# BarsMusculos.set_ylim([0, 1.5])
-# BarsSynergies.set_ylim([0, 1.5])
-
-# Create empty buffers
 MusclesBuffer = Buffer(params.MusclesNumber, params.Pts2Display)
 SynergiesBuffer = Buffer(params.MusclesNumber, params.Pts2Display)
 x = Buffer(params.Pts2Display, 1)
@@ -100,18 +92,16 @@ for i in range(params.MusclesNumber):
     line, = DotsSynergies.plot(x.Buffer, SynergiesBuffer.Buffer[:, i], color=params.SynergiesColors[i])
     SynergiesLines.append(line)
 
-# bar1 = BarsMusculos.bar(range(params.MusclesNumber),range(params.MusclesNumber))
-# bar2 = BarsSynergies.bar(range(params.SynergiesNumber),range(params.SynergiesNumber))
 
 # Update function for FuncAnimation
 def update(frame):
-    print(params.current_x)
+    
     global MusclesBuffer
     global SynergiesBuffer
 
-    MusclesActivation = Request("Muscles")
-    SynergiesActivation = Request("Synergies")
-    
+    MusclesActivation = Request("Muscles",current_x= params.current_x)
+    SynergiesActivation = lpf.lpf(MusclesActivation)
+
     MusclesStackSemaphore.acquire()
     MusclesBuffer.add_matrix(MusclesActivation)
     MusclesStackSemaphore.release()
@@ -127,20 +117,13 @@ def update(frame):
 
     DotsMuscles.set_xlim([params.current_x- params.Pts2Display, params.current_x])
     DotsSynergies.set_xlim([params.current_x- params.Pts2Display, params.current_x])
-    
-    # in the next line i will update the bar plot
-    # for bar, line in zip(bar1, MusclesActivation[-1]):
-    #     bar.set_height(line)
-    
-    # for bar, line in zip(bar2, MusclesActivation[-1]):
-    #     bar.set_height(line)
-    
+   
     counter = 0
     for line in MusclesActivation:
         params.current_x = params.current_x + 1 #len(MusclesActivation)
         x.add_point(params.current_x)
         counter += 1
-    print("Counter: ", counter)
+
 
 # Create FuncAnimation instance
 ani = animation.FuncAnimation(fig, update, interval=1,cache_frame_data= False)#/update_freq)
