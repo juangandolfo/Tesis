@@ -12,7 +12,7 @@ import scipy
 
 class LPF:
     def __init__(self):
-        self.a, self.b = scipy.signal.iirfilter(N = 2, Wn = [2*np.pi*0.00001,2*np.pi*0.01], ftype = 'butter',fs=2*np.pi*1) 
+        self.b, self.a = scipy.signal.iirfilter(N = 2, Wn = [40], ftype = 'butter', fs=1/params.definition, btype='Lowpass') 
         self.signal = np.zeros((len(self.b),params.MusclesNumber))
         self.filtered_signal = np.zeros((len(self.a)-1,params.MusclesNumber))
         print(self.a)
@@ -37,7 +37,10 @@ lpf = LPF()
 
 # Function to send the request and receive the data from MP
 def Request(type,current_x):
-    y = 10 * np.sin(current_x*2*np.pi/200) + 5* np.random.rand(params.MusclesNumber)
+    
+    y = [0,0] + 10 * np.sin(current_x*2*np.pi*20) + 5 * np.sin(current_x*2*np.pi*50) + 3 * np.sin(current_x*2*np.pi*100) + 1 * np.sin(current_x*2*np.pi*200) 
+    
+    
     return y
 
 # Semaphore to lock the stack
@@ -115,12 +118,12 @@ def update(frame):
     for line in SynergiesLines:
         line.set_data(x.Buffer, SynergiesBuffer.Buffer[:, SynergiesLines.index(line)])
 
-    DotsMuscles.set_xlim([params.current_x- params.Pts2Display, params.current_x])
-    DotsSynergies.set_xlim([params.current_x- params.Pts2Display, params.current_x])
+    DotsMuscles.set_xlim([params.current_x- params.Pts2Display*params.definition, params.current_x])
+    DotsSynergies.set_xlim([params.current_x- params.Pts2Display*params.definition, params.current_x])
    
     counter = 0
     for line in MusclesActivation:
-        params.current_x = params.current_x + 1 #len(MusclesActivation)
+        params.current_x = params.current_x + params.definition #len(MusclesActivation)
         x.add_point(params.current_x)
         counter += 1
 
