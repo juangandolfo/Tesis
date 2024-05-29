@@ -9,8 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from multiprocessing import Process
 import Cursor_Nuevo
-
-
+import pymsgbox as msgbox
 
 plt.switch_backend('TkAgg')
 
@@ -130,7 +129,8 @@ def Processing():
     PM_DS.InitializeVisualizationBuffers()
     GlobalParameters.projectionMatrix = GlobalParameters.GenerateProjectionMatrix(GlobalParameters.synergy_CursorMap)
     LastNormalizedData = [0 for i in range(GlobalParameters.MusclesNumber)]
-       
+    processedSum = 0
+    counter = 0
     while True:
         print("PM: Processing live")
         PM_DS.stack_lock.acquire()  
@@ -143,10 +143,17 @@ def Processing():
             ProcessedData = DataProcessing.DummyLowPassFilter(NormalizedData, LastNormalizedData)
             reshapedData = ProcessedData.reshape(-1,1)
             LastNormalizedData = NormalizedData
-            PM_DS.ProcessedDataBuffer_Semaphore.acquire()
-            PM_DS.ProcessedDataBuffer.add_vector(ProcessedData)
-            PM_DS.ProcessedDataBuffer_Semaphore.release()
-
+            for row in ProcessedData:
+                processedSum += row
+                counter += 1
+            if counter > GlobalParameters.sampleRate/60:
+                average = processedSum/counter
+                print(average)
+                PM_DS.ProcessedDataBuffer_Semaphore.acquire()
+                PM_DS.ProcessedDataBuffer.add_vector(average)
+                PM_DS.ProcessedDataBuffer_Semaphore.release()
+                counter = 0
+                processedSum = 0
             PM_DS.SynergyBase_Semaphore.acquire()
             SynergyActivations = np.array(DataProcessing.MapActivation(GlobalParameters.SynergyBaseInverse,reshapedData).T)
             PM_DS.SynergyBase_Semaphore.release()
@@ -279,6 +286,7 @@ def CalibrationProcessing():
             GlobalParameters.synergiesNumber = GlobalParameters.output[0]
             GlobalParameters.AnglesRecieved = False
             GlobalParameters.RequestAngles = True
+            #msgbox.alert("Synergies detected")
 
     print("PM: Calibration terminated")
     PM_Processing.start()

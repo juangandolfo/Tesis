@@ -40,7 +40,7 @@ def Request(type):
             print(e)
             continue
     end = time.time()
-    print("Time elapsed: ", end - start)
+    #print("Time elapsed: ", end - start)
 
     serialized_data = data.decode().rstrip("~") # Quit the delimiter and decode the received data
     response_data = json.loads(serialized_data) # Get the original data 
@@ -50,7 +50,8 @@ def Request(type):
     return response_data
 
 # Semaphore to lock the stack
-stack_lock = threading.Semaphore(1)
+MusclesStackSemaphore = threading.Semaphore(1)
+SinergiesStackSemaphore = threading.Semaphore(1)
 
 class Buffer:
     def __init__(self, MusclesNumber, Pts2Display):
@@ -109,10 +110,10 @@ for tick in BarsSynergies.get_xticklabels():
     tick.set_rotation(30)
 
 
-DotsMuscles.set_ylim([0, 2])
-DotsSynergies.set_ylim([0, 2])
-BarsMusculos.set_ylim([0, 2])
-BarsSynergies.set_ylim([0, 2])
+DotsMuscles.set_ylim([0, 1.5])
+DotsSynergies.set_ylim([0, 1.5])
+BarsMusculos.set_ylim([0, 1.5])
+BarsSynergies.set_ylim([0, 1.5])
 
 # Create empty buffers
 MusclesBuffer = Buffer(params.MusclesNumber, params.Pts2Display)
@@ -138,17 +139,19 @@ def update(frame):
     global SynergiesBuffer
 
     MusclesActivation = Request("Muscles")
-    #SynergiesActivation = Request("Synergies")
+    SynergiesActivation = Request("Synergies")
     
-    stack_lock.acquire()
+    MusclesStackSemaphore.acquire()
     MusclesBuffer.add_matrix(MusclesActivation)
-    stack_lock.release()
-    
+    MusclesStackSemaphore.release()
+
+    SinergiesStackSemaphore.acquire()
+    SynergiesBuffer.add_matrix(SynergiesActivation)
+    SinergiesStackSemaphore.release()
 
     for line in MusclesLines:
         line.set_data(x.Buffer, MusclesBuffer.Buffer[:, MusclesLines.index(line)])
     for line in SynergiesLines:
-        #line.set_data(x.Buffer, MusclesBuffer.Buffer[:, SynergiesLines.index(line)])
         line.set_data(x.Buffer, SynergiesBuffer.Buffer[:, SynergiesLines.index(line)])
 
     DotsMuscles.set_xlim([params.current_x- params.Pts2Display, params.current_x])
@@ -161,9 +164,12 @@ def update(frame):
     for bar, line in zip(bar2, MusclesActivation[-1]):
         bar.set_height(line)
     
+    counter = 0
     for line in MusclesActivation:
         params.current_x = params.current_x + 1 #len(MusclesActivation)
         x.add_point(params.current_x)
+        counter += 1
+    print("Counter: ", counter)
 
 # Create FuncAnimation instance
 ani = animation.FuncAnimation(fig, update, interval=1,cache_frame_data= False)#/update_freq)

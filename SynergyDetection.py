@@ -50,7 +50,7 @@ def calculateSynergy(matrix):
     outputDefined = False
     # Perform NMF
     for n_components in range(2, GlobalParameters.MusclesNumber+1): 
-                
+        print("processing synergy detection")
         #nndsvd is the initialization method that returns  a matrix with the largest dispersion.
         #cd is the solver used because is compatible with nndsvd
         model = NMF(n_components=n_components, init='nndsvd', tol= 1e-5,max_iter=20000, solver='cd')

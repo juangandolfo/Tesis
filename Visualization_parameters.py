@@ -2,12 +2,12 @@
 
 update_freq = 1000
 # Define the number of points to display
-Time2Display = 5 # in seconds
-definition = 1 /2000
+Time2Display = 1 # in seconds
+definition = 1 / 1000
 Pts2Display = round(Time2Display / definition)
 
 # Define the number of channels
-MusclesNumber = 8
+MusclesNumber = 2
 SynergiesNumber = 5
 current_x = 0
 

@@ -225,7 +225,12 @@ def Processing_Module_Client():
                         GlobalParameters.AnglesRecieved = True
                         GlobalParameters.RequestAngles = False
                         GlobalParameters.CalibrationStage = 0
+                        GlobalParameters.synergiesNumber = len(angles)
+                        GlobalParameters.SynergyBase = GlobalParameters.modelsList[GlobalParameters.synergiesNumber][1]
+                        GlobalParameters.SynergyBaseInverse = np.linalg.pinv(GlobalParameters.SynergyBase)
+                        GlobalParameters.synergiesNumber = GlobalParameters.modelsList[GlobalParameters.synergiesNumber][0]
                         print("Angles recieved", angles)
+                        msgbox.alert(text = str(GlobalParameters.SynergyBase), title = "Angles", button = "OK")
 
                 else:
                     data = Request("data")
