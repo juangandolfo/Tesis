@@ -120,6 +120,8 @@ def API_Server(AeroInstance,emgPositionVector):
 
                 elif data == "GET /Angles":
                     serialized_data = json.dumps(API_Parameters.AnglesOutput)
+                    API_Parameters.AnglesOutputSemaphore.release()
+                    #msgbox.alert(text = "The angles are: " + serialized_data, title = "Angles", button = "OK")
                     serialized_data  += "~"
                     try:
                         conn.sendall(serialized_data.encode())

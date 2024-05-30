@@ -297,7 +297,9 @@ class AngleWindow(QDialog, QObject):
     def process_angles(self, angles):
         print("Received angles:", angles)
         API_Parameters.AnglesReady = 1
+        API_Parameters.AnglesOutputSemaphore.acquire()
         API_Parameters.AnglesOutput = angles
+        API_Parameters.AnglesOutputSemaphore.release()
         # Do something with the angle values
 
 

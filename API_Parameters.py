@@ -1,5 +1,5 @@
-
 import numpy as np
+import threading
 
 ChannelsNumber = 0
 DelsysMode = True
@@ -13,5 +13,6 @@ CalibrationStage = 0
 AnglesReady = 0
 #Angles = [1,1]
 AnglesOutput = []
+AnglesOutputSemaphore = threading.Semaphore(1)
 
 
