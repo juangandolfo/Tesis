@@ -11,9 +11,9 @@ from threading import Thread
 
 def API_Server():
     app = QApplication(sys.argv)
-    controller = FrameController() 
+    controller = FrameController()
     sys.exit(app.exec_())
-    
+
 
 def PM():
     PM_Communications.PM_Client_thread.start()
@@ -25,11 +25,9 @@ def PM():
 
 
 if __name__ == "__main__":
-    
+
     API_Server_process = Process(target=API_Server)
     PM_process = Process(target=PM)
-    
+
     API_Server_process.start()
     PM_process.start()
-    
-    

@@ -23,8 +23,8 @@ def Request(type):
     start = time.time()
     request = "GET /" + type
     client_socket.sendall(request.encode())
-    
-    data = b''       
+
+    data = b''
     while True:
         try:
             #client_socket.settimeout(0.5)
@@ -43,8 +43,8 @@ def Request(type):
     print("Time elapsed: ", end - start)
 
     serialized_data = data.decode().rstrip("~") # Quit the delimiter and decode the received data
-    response_data = json.loads(serialized_data) # Get the original data 
-     
+    response_data = json.loads(serialized_data) # Get the original data
+
     if response_data == []:
         raise Exception("PM:No data received")
     return response_data
@@ -55,12 +55,12 @@ stack_lock = threading.Semaphore(1)
 class Buffer:
     def __init__(self, MusclesNumber, Pts2Display):
         self.Buffer = np.zeros((Pts2Display, MusclesNumber))
-    
+
     def add_point(self, data):
         self.Buffer = np.roll(self.Buffer, -1, axis=0) # Roll the buffer to make space for the new vector
         self.Buffer[-1] = data
         return self.Buffer
-    
+
     def add_matrix(self, data):
         for line in data:
             self.add_point(line)
@@ -79,7 +79,7 @@ DotsMuscles = fig.add_subplot(gs[0, 0])
 DotsMuscles.set_xlabel('Muscles')
 DotsMuscles.set_ylabel('Activation')
 DotsMuscles.set_title('Last 5 seconds of muscle activation')
-DotsMuscles.legend() 
+DotsMuscles.legend()
 
 #configure synergies plot
 DotsSynergies = fig.add_subplot(gs[2, 0])
@@ -109,10 +109,10 @@ for tick in BarsSynergies.get_xticklabels():
     tick.set_rotation(30)
 
 
-DotsMuscles.set_ylim([0, 2])
-DotsSynergies.set_ylim([0, 2])
-BarsMusculos.set_ylim([0, 2])
-BarsSynergies.set_ylim([0, 2])
+DotsMuscles.set_ylim([0, 0.5])
+DotsSynergies.set_ylim([0, 0.5])
+BarsMusculos.set_ylim([0, 0.5])
+BarsSynergies.set_ylim([0, 0.5])
 
 # Create empty buffers
 MusclesBuffer = Buffer(params.MusclesNumber, params.Pts2Display)
@@ -139,11 +139,11 @@ def update(frame):
 
     MusclesActivation = Request("Muscles")
     #SynergiesActivation = Request("Synergies")
-    
+
     stack_lock.acquire()
     MusclesBuffer.add_matrix(MusclesActivation)
     stack_lock.release()
-    
+
 
     for line in MusclesLines:
         line.set_data(x.Buffer, MusclesBuffer.Buffer[:, MusclesLines.index(line)])
@@ -153,14 +153,14 @@ def update(frame):
 
     DotsMuscles.set_xlim([params.current_x- params.Pts2Display, params.current_x])
     DotsSynergies.set_xlim([params.current_x- params.Pts2Display, params.current_x])
-    
+
     # in the next line i will update the bar plot
     for bar, line in zip(bar1, MusclesActivation[-1]):
         bar.set_height(line)
-    
+
     for bar, line in zip(bar2, MusclesActivation[-1]):
         bar.set_height(line)
-    
+
     for line in MusclesActivation:
         params.current_x = params.current_x + 1 #len(MusclesActivation)
         x.add_point(params.current_x)
