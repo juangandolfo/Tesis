@@ -161,7 +161,7 @@ def Processing():
             ProcessedData = DataProcessing.LowPassFilter(NormalizedData)
             reshapedData = ProcessedData.reshape(-1,1)
             LastNormalizedData = NormalizedData
-            for row in ProcessedData:
+            '''for row in ProcessedData:
                 processedSum += row
                 counter += 1
             if counter > GlobalParameters.sampleRate/60:
@@ -171,7 +171,10 @@ def Processing():
                 PM_DS.ProcessedDataBuffer.add_vector(average)
                 PM_DS.ProcessedDataBuffer_Semaphore.release()
                 counter = 0
-                processedSum = 0
+                processedSum = 0'''
+            PM_DS.ProcessedDataBuffer_Semaphore.acquire()
+            PM_DS.ProcessedDataBuffer.add_vector(ProcessedData)
+            PM_DS.ProcessedDataBuffer_Semaphore.release()
             PM_DS.SynergyBase_Semaphore.acquire()
             SynergyActivations = np.array(DataProcessing.MapActivation(GlobalParameters.SynergyBaseInverse,reshapedData).T)
             PM_DS.SynergyBase_Semaphore.release()
