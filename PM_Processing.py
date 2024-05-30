@@ -117,7 +117,7 @@ class DataProcessing:
         return y
 
     def CreateLPF(self, fs, MusclesNumber):
-        self.b, self.a = scipy.signal.iirfilter(N = 4, Wn = [40], ftype = 'butter',fs= fs, btype='Lowpass')
+        self.b, self.a = scipy.signal.iirfilter(N = 2, Wn = [25], ftype = 'butter',fs= fs, btype='Lowpass')
         self.signal = np.zeros((len(self.b), MusclesNumber))
         self.filtered_signal = np.zeros((len(self.a)-1, MusclesNumber))
 
@@ -161,20 +161,11 @@ def Processing():
             ProcessedData = DataProcessing.LowPassFilter(NormalizedData)
             reshapedData = ProcessedData.reshape(-1,1)
             LastNormalizedData = NormalizedData
-            '''for row in ProcessedData:
-                processedSum += row
-                counter += 1
-            if counter > GlobalParameters.sampleRate/60:
-                average = processedSum/counter
-                print(average)
-                PM_DS.ProcessedDataBuffer_Semaphore.acquire()
-                PM_DS.ProcessedDataBuffer.add_vector(average)
-                PM_DS.ProcessedDataBuffer_Semaphore.release()
-                counter = 0
-                processedSum = 0'''
+
             PM_DS.ProcessedDataBuffer_Semaphore.acquire()
             PM_DS.ProcessedDataBuffer.add_vector(ProcessedData)
             PM_DS.ProcessedDataBuffer_Semaphore.release()
+            
             PM_DS.SynergyBase_Semaphore.acquire()
             SynergyActivations = np.array(DataProcessing.MapActivation(GlobalParameters.SynergyBaseInverse,reshapedData).T)
             PM_DS.SynergyBase_Semaphore.release()
@@ -183,9 +174,8 @@ def Processing():
             PM_DS.SynergiesBuffer.add_vector(SynergyActivations)
             PM_DS.SynergiesBuffer_Semaphore.release()
 
-            #NewMovement = DataProcessing.UpdatePosition(SynergyActivations, GlobalParameters.synergy_CursorMap)
             NewMovement = DataProcessing.UpdatePosition(SynergyActivations, GlobalParameters.projectionMatrix).reshape(2,)
-            #print(NewMovement)
+            
             PM_DS.PositionOutput_Semaphore.acquire()
             PM_DS.PM_DataStruct.positionOutput = PM_DS.PM_DataStruct.positionOutput + GlobalParameters.CursorMovement_Gain*NewMovement/GlobalParameters.sampleRate
             PM_DS.PositionOutput_Semaphore.release()

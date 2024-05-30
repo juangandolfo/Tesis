@@ -10,6 +10,7 @@ import json
 import time
 import scipy
 
+
 class LPF:
     def __init__(self):
         self.b, self.a = scipy.signal.iirfilter(N = 2, Wn = [40], ftype = 'butter', fs=1/params.definition, btype='Lowpass') 
@@ -40,7 +41,6 @@ def Request(type,current_x):
     
     y = [0,0] + 10 * np.sin(current_x*2*np.pi*20) + 5 * np.sin(current_x*2*np.pi*50) + 3 * np.sin(current_x*2*np.pi*100) + 1 * np.sin(current_x*2*np.pi*200) 
     
-    
     return y
 
 # Semaphore to lock the stack
@@ -59,6 +59,36 @@ class Buffer:
     def add_matrix(self, data):
         for line in data:
             self.add_point(line)
+
+def plot_z_transform(b, a, fs, cutoff):
+    w, h = scipy.signal.freqz(b, a, worN=8000)
+    w = w * fs / (2 * np.pi)  # Convert from rad/sample to Hz
+
+    plt.figure(figsize=(12, 6))
+
+    # Magnitude plot
+    plt.subplot(2, 1, 1)
+    plt.plot(w, 20 * np.log10(abs(h)), 'b')
+    plt.axvline(cutoff, color='r', linestyle='--')  # Mark the cutoff frequency
+    plt.title('Digital Filter Frequency Response')
+    plt.xlabel('Frequency [Hz]')
+    plt.ylabel('Magnitude [dB]')
+    plt.grid()
+    plt.legend(['Frequency Response', f'Cutoff Frequency: {cutoff} Hz'])
+
+    # Phase plot
+    plt.subplot(2, 1, 2)
+    plt.plot(w, np.angle(h), 'r')
+    plt.axvline(cutoff, color='r', linestyle='--')  # Mark the cutoff frequency
+    plt.xlabel('Frequency [Hz]')
+    plt.ylabel('Phase [radians]')
+    plt.grid()
+    plt.legend(['Phase Response', f'Cutoff Frequency: {cutoff} Hz'])
+
+    plt.tight_layout()
+    plt.show()
+
+plot_z_transform(lpf.b,lpf.a,1/params.definition,40)
 
 # Create the figure and axis objects
 fig = plt.figure()
@@ -123,7 +153,7 @@ def update(frame):
    
     counter = 0
     for line in MusclesActivation:
-        params.current_x = params.current_x + params.definition #len(MusclesActivation)
+        params.current_x = params.current_x + 1/params.SampleRate #params.definition #len(MusclesActivation)
         x.add_point(params.current_x)
         counter += 1
 

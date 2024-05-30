@@ -53,8 +53,7 @@ def Dictionary_to_matrix(dictionary):
 def Request(Type):
     request = "GET /"+Type
     print("                                                                     Request:", request)
-    if GlobalParameters.AnglesRecieved and Type == "Angles":
-        msgbox("angles")
+    
     try:
         client_socket.sendall(request.encode())
     except socket.error as e:
@@ -162,7 +161,7 @@ def Handle_Client(conn,addr):
         
         elif data.decode().strip() == "GET /Parameters":
                 
-                response_data = [GlobalParameters.MusclesNumber,GlobalParameters.synergiesNumber] #PM_DS.PM_DataStruct.circular_stack.get_vectors(3)
+                response_data = [GlobalParameters.MusclesNumber,GlobalParameters.synergiesNumber,GlobalParameters.sampleRate] #PM_DS.PM_DataStruct.circular_stack.get_vectors(3)
 
                 if response_data == []:
                     print("Empty data")

@@ -218,7 +218,7 @@ def Cursor():
         
         if pygame.sprite.spritecollideany(player, objectives):
             messagebox.showerror('You did it!!!!!!!!!!!!!!!','Lograste llegar al objetivo crackkk!!')
-            player.update((Cursor.SCREEN_WIDTH/2-player.rect.center[0],Cursor.SCREEN_HEIGHT/2-player.rect.center[1]))
+            player.update((Cursor.SCREEN_WIDTH/2-player.rect.center[1],Cursor.SCREEN_HEIGHT/2-player.rect.center[0]))
             for objective in objectives:
                 objective.kill()
             enemies.empty()

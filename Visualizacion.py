@@ -7,6 +7,7 @@ import socket
 import threading
 import json
 import time
+import pymsgbox as msgbox
 
 
 # TCP/IP visualization client ------------------------------------------------------------------------------
@@ -68,8 +69,11 @@ class Buffer:
 
 # Request parameters
 Parameters = Request("Parameters")
-params.MusclesNumber = Parameters[0]
-params.SynergiesNumber = Parameters[1]
+params.MusclesNumber = int(Parameters[0])
+params.SynergiesNumber = int(Parameters[1])
+params.SampleRate = Parameters[2]
+params.Pts2Display = round(params.Time2Display * params.SampleRate)
+params.TimeStep = 1 / params.SampleRate
 
 # Create the figure and axis objects
 fig = plt.figure()
@@ -90,7 +94,7 @@ DotsSynergies.set_title('Last 5 seconds of synergies activation')
 DotsSynergies.legend()
 
 BarsMusculos = fig.add_subplot(gs[0, 1])
-BarsMusculos.set_xticks(np.linspace(0, params.MusclesNumber, params.MusclesNumber))
+BarsMusculos.set_xticks(np.linspace(0, params.MusclesNumber-1, params.MusclesNumber))
 musclesList = ['Muscle {}'.format(i+1) for i in range(params.MusclesNumber)]
 BarsMusculos.set_xticklabels(musclesList)
 BarsMusculos.set_xlabel('Muscles')
@@ -100,7 +104,7 @@ for tick in BarsMusculos.get_xticklabels():
     tick.set_rotation(30)
 
 BarsSynergies = fig.add_subplot(gs[2, 1])
-BarsSynergies.set_xticks(np.linspace(0, params.SynergiesNumber, params.SynergiesNumber))
+BarsSynergies.set_xticks(np.linspace(0, params.SynergiesNumber-1, params.SynergiesNumber))
 synergiesList = ['Synergy {}'.format(i+1) for i in range(params.SynergiesNumber)]
 BarsSynergies.set_xticklabels(synergiesList)
 BarsSynergies.set_xlabel('Synergies')
@@ -119,7 +123,8 @@ BarsSynergies.set_ylim([0, 0.5])
 MusclesBuffer = Buffer(params.MusclesNumber, params.Pts2Display)
 SynergiesBuffer = Buffer(params.MusclesNumber, params.Pts2Display)
 x = Buffer(params.Pts2Display, 1)
-x.Buffer = np.linspace(params.current_x - params.Pts2Display, params.current_x, params.Pts2Display)
+#x.Buffer = np.linspace((params.current_x - params.Pts2Display)/params.SampleRate, params.current_x/params.SampleRate, params.Pts2Display)
+x.Buffer = np.linspace(params.current_x - params.Time2Display, params.current_x, params.Pts2Display)
 MusclesLines = []
 for i in range(params.MusclesNumber):
     line, = DotsMuscles.plot(x.Buffer, MusclesBuffer.Buffer[:, i], color=params.MusclesColors[i])
@@ -154,25 +159,25 @@ def update(frame):
     for line in SynergiesLines:
         line.set_data(x.Buffer, SynergiesBuffer.Buffer[:, SynergiesLines.index(line)])
 
-    DotsMuscles.set_xlim([params.current_x- params.Pts2Display, params.current_x])
-    DotsSynergies.set_xlim([params.current_x- params.Pts2Display, params.current_x])
+    DotsMuscles.set_xlim([params.current_x - params.Time2Display, params.current_x])
+    DotsSynergies.set_xlim([params.current_x - params.Time2Display, params.current_x])
 
     # in the next line i will update the bar plot
     for bar, line in zip(bar1, MusclesActivation[-1]):
         bar.set_height(line)
 
-    for bar, line in zip(bar2, MusclesActivation[-1]):
+    for bar, line in zip(bar2, SynergiesActivation[-1]):
         bar.set_height(line)
 
     counter = 0
     for line in MusclesActivation:
-        params.current_x = params.current_x + 1 #len(MusclesActivation)
+        params.current_x += params.TimeStep
         x.add_point(params.current_x)
         counter += 1
     print("Counter: ", counter)
 
 # Create FuncAnimation instance
-ani = animation.FuncAnimation(fig, update, interval=1,cache_frame_data= False)#/update_freq)
+ani = animation.FuncAnimation(fig, update, interval=1,cache_frame_data= False) #/params.update_freq
 
 # Show the plot
 plt.show()

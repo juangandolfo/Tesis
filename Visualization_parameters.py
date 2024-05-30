@@ -1,10 +1,13 @@
 # Visualization parameters
 
-update_freq = 1000
+update_freq = 100
 # Define the number of points to display
-Time2Display = 1 # in seconds
+Time2Display = 2 # in seconds
+SampleRate = 2000
 definition = 1 / 1000
-Pts2Display = round(Time2Display / definition)
+TimeStep = 1 / SampleRate
+Pts2Display = round(Time2Display * SampleRate)
+
 
 # Define the number of channels
 MusclesNumber = 2
