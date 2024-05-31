@@ -70,7 +70,6 @@ def Request(Type):
                 break  # Delimiter found
             elif b"TC" in data: 
                 GlobalParameters.TerminateCalibration = True
-                #msgbox.alert(text = "The calibration has been terminated")
                 break
             elif b"CS1" in data: 
                 GlobalParameters.CalibrationStage = 1
@@ -213,7 +212,7 @@ def Processing_Module_Client():
             try:
                 if GlobalParameters.RequestAngles == True:
                     data = Request("Angles")
-                    print("Angles")
+                    #print("Angles")
                     angles = []
                     if data != []:
                         for element in data:
@@ -221,15 +220,18 @@ def Processing_Module_Client():
                                 angles.append(int(element))
                         #msgbox.alert(text = "The angles are: " + str(angles), title = "Angles", button = "OK")
                         GlobalParameters.synergy_CursorMap = angles
-                        GlobalParameters.AnglesRecieved = True
-                        GlobalParameters.RequestAngles = False
                         GlobalParameters.CalibrationStage = 0
                         GlobalParameters.synergiesNumber = len(angles)
                         GlobalParameters.SynergyBase = GlobalParameters.modelsList[GlobalParameters.synergiesNumber][1]
                         GlobalParameters.SynergyBaseInverse = np.linalg.pinv(GlobalParameters.SynergyBase)
                         GlobalParameters.synergiesNumber = GlobalParameters.modelsList[GlobalParameters.synergiesNumber][0]
-                        print("Angles recieved", angles)
-                        msgbox.alert(text = str(GlobalParameters.SynergyBase), title = "Angles", button = "OK")
+                        # print("Angles recieved", angles)
+                        #msgbox.alert(text = str(GlobalParameters.SynergyBase), title = "Angles", button = "OK")
+                        GlobalParameters.AnglesRecieved = True
+                        GlobalParameters.RequestAngles = False
+                    Request("data")
+                    
+                         
 
                 else:
                     data = Request("data")

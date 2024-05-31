@@ -298,7 +298,6 @@ def CalibrationProcessing():
             GlobalParameters.AnglesRecieved = False
             GlobalParameters.RequestAngles = True
             #msgbox.alert("Synergies detected")
-
     print("PM: Calibration terminated")
     PM_Processing.start()
     Cursor_Nuevo.Cursor_process.start()

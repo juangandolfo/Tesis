@@ -5,6 +5,7 @@ import time
 import pickle
 import numpy as np
 import clr
+import pymsgbox as msgbox
 clr.AddReference("System")
 from System import Guid
 import API_Parameters
@@ -57,7 +58,6 @@ def API_Server(AeroInstance,emgPositionVector):
                 # Check if the received data is a GET request for "/data"
                 data = DataReceived.decode().strip()
                 if data == "GET /StartDataStreaming":
-                    #AeroInstance.Start()
                     serialized_data = json.dumps(1) # Serialize the object using json
                     serialized_data  += "~"
                     try:
@@ -119,6 +119,7 @@ def API_Server(AeroInstance,emgPositionVector):
                         print(e)
 
                 elif data == "GET /Angles":
+                    API_Parameters.AnglesOutputSemaphore.acquire()
                     serialized_data = json.dumps(API_Parameters.AnglesOutput)
                     API_Parameters.AnglesOutputSemaphore.release()
                     #msgbox.alert(text = "The angles are: " + serialized_data, title = "Angles", button = "OK")
