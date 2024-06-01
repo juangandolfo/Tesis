@@ -2,14 +2,14 @@ from sklearn.decomposition import NMF
 import sklearn.metrics as skm
 import numpy as np
 import csv
-import itertools 
+import itertools
 import matplotlib.pyplot as plt
 import GlobalParameters
 import kneed
 
 def plot_bars(H, s, m):
     # Ensure that H and Model_H have the same shape
-    
+
     for i in range(s):
         # Create a new figure for each row
         plt.figure()
@@ -27,7 +27,7 @@ def ReadCSV(csv_file):
     with open(csv_file, 'r') as file:
         #create a matrix of 8 columns and 1 row
         matrix = np.matrix([[0,0,0,0,0,0,0,0]])
-        
+
         csv_reader = csv.reader(file, delimiter=';')
         # Skip the headers row
         next(csv_reader)
@@ -35,7 +35,7 @@ def ReadCSV(csv_file):
         for row in csv_reader:
             row = np.array(row, dtype=np.float64)  # Convert the row to numpy array
             matrix = np.vstack([matrix, row[1:9]]) # Add the row to a matrix
-            
+
     return matrix
 
 def calculateSynergy(matrix):
@@ -44,32 +44,32 @@ def calculateSynergy(matrix):
     H = []
     numpy_H_pinv = []
     H_Normalized = []
-    
+
     output = []
-    vafs = []	
+    vafs = []
     outputDefined = False
     # Perform NMF
-    for n_components in range(2, GlobalParameters.MusclesNumber+1): 
-        print("processing synergy detection")
+    for n_components in range(2, GlobalParameters.MusclesNumber+1):
+        #print("processing synergy detection")
         #nndsvd is the initialization method that returns  a matrix with the largest dispersion.
         #cd is the solver used because is compatible with nndsvd
         model = NMF(n_components=n_components, init='nndsvd', tol= 1e-5,max_iter=20000, solver='cd')
         #model = NMF(n_components=n_components, init='random', tol= 1e-5, max_iter=200000, solver='mu')
-        print("Fitting model with ", n_components, " components")
+        #print("Fitting model with ", n_components, " components")
         W = model.fit_transform(matrix)
-        
+
         #H.append(model.components_)
         H = np.matrix(model.components_)
 
         #H_Max = np.max(H[n_components-2])
         #H_Normalized.append(H[n_components-2] / H_Max)
         Reconstructed_matrix = model.inverse_transform(W)
-        
-        # pseudo inverse matrix of H 
+
+        # pseudo inverse matrix of H
         #numpy_H_pinv.append(np.linalg.pinv(H_Normalized[n_components-2]))
-        
+
         r_squared = skm.r2_score(np.asarray(matrix), np.asarray(Reconstructed_matrix) )
-        
+
         # i want to calculate the VAF
         # the vaf is calculated as the sum of the squares of the difference between the original matrix and the reconstructed matrix for each element
         vaf = 1 - (np.sum((matrix - Reconstructed_matrix) ** 2) / np.sum(matrix ** 2))
@@ -90,14 +90,14 @@ def calculateSynergy(matrix):
             if vaf>0.9 and outputDefined==False:
                 output = (n_components, H, r_squared, vafs)
                 outputDefined = True'''
-    
-    #deteccion de codo    
+
+    #deteccion de codo
     ''' x = range(2, GlobalParameters.MusclesNumber+1)
     y = vafs
-    
+
     # calculate and show knee/elbow
     kneedle = kneed.KneeLocator(x,y,curve='concave',direction='increasing')
-    knee_point = kneedle.knee 
+    knee_point = kneedle.knee
     print('Knee: ', knee_point)
     if knee_point == None:
         knee_point = 2
@@ -115,13 +115,13 @@ def BarsGraphic(n, H, R2, vafs):
     plt.plot(range(2,9), vafs)
     plt.figure()
 
-    for j in range(0, n):   
+    for j in range(0, n):
         plt.subplot(100*n+10+j+1)
         for i in range(0, H.shape[1]):
             aux.append(np.max(H[j,i]))
         plt.bar(range(0,8), aux)
         aux = []
-    
+
     plt.show()
 
 def execute():
@@ -154,13 +154,13 @@ def execute():
     # Create a random matrix with high dispersion
     W = np.random.rand(cantidadDeDatos,numeroDeSinergias)
     W = np.maximum(W, 0)
-    print ("W: ", W)    
+    print ("W: ", W)
     '''#H = np.random.rand(numeroDeSinergias,numeroDeMusculos)
 
     H = np.maximum(H, 0)
-    print ("H: ", H)    
+    print ("H: ", H)
     for i in range(H.shape[0]):
-        H[i,i] = 0 
+        H[i,i] = 0
     '''
     H = np.array([[1,0,0,0,0,0,0,0],[0,1,0,0,0,0,0,0],[0,0,1,0,0,0,0,0],[0,0,0,1,0,0,0,0]])
     M = np.dot(W,H)
@@ -175,14 +175,14 @@ def execute():
     plt.plot(range(2,9), vafs)
     plt.figure()
 
-    for j in range(0, Model.n):   
+    for j in range(0, Model.n):
         plt.subplot(100*Model.n+10+j+1)
         for i in range(0, Model.H.shape[1]):
             aux.append(np.max(Model.H[j,i]))
         plt.bar(range(0,8), aux)
         aux = []
     plt.figure()
-    for j in range(0, numeroDeSinergias):   
+    for j in range(0, numeroDeSinergias):
         plt.subplot(100*numeroDeSinergias+10+j+1)
         for i in range(0, H.shape[1]):
             aux.append(np.max(H[j,i]))
@@ -199,8 +199,8 @@ def execute():
 
     # calculate and show knee/elbow
     kneedle = kneed.KneeLocator(x,y,curve='concave',direction='increasing')
-    knee_point = kneedle.knee 
-    print('Knee: ', knee_point) 
+    knee_point = kneedle.knee
+    print('Knee: ', knee_point)
 
     # Plot VAF data
     x = list(range(2, 9))  # Number of synergies
@@ -219,7 +219,7 @@ def execute():
     # Show plot
     plt.show()
 
-        
+
     print("original model: ", numeroDeSinergias, "\n", H, "\n", Model.R2, "\n", Model.vaf)
     print ("Best number of components: ", Model.n, "\n", Model.H,"\n", Model.R2,"\n", Model.vaf)
     #plot_bars(H, H.shape[0], H.shape[1])
@@ -230,13 +230,13 @@ def execute():
 
 
 
-    #i will calculate the correlation between the original matrix and the reconstructed matrix 
-    #for this i will permutate in all posible combinations the rows of the reconstructed matrix and calculate the correlation 
+    #i will calculate the correlation between the original matrix and the reconstructed matrix
+    #for this i will permutate in all posible combinations the rows of the reconstructed matrix and calculate the correlation
     #using np.corrcoef function
     # Calculate correlation between original matrix and reconstructed matrix
     correlations = []
     vaf = 0
-    rsquared =0 
+    rsquared =0
     a = np.sum(H ** 2)
     for permutation in itertools.permutations(Model.H):
         vaf = max(vaf, 1 - (np.sum((H - (np.asarray(permutation))) ** 2) / a))
@@ -294,13 +294,13 @@ def execute():
     #traza = np.trace(product)
 
 
-    # VAF en funcion de numeros de sinergias 
+    # VAF en funcion de numeros de sinergias
     #print("product: ", product)
     #print("traza: ", traza)
     #print("Model.n : ", Model.n)
     #print("model.H: ", Model.H)
     #print("H: ", H)
-        
+
 
 
 
@@ -342,22 +342,22 @@ def execute():
         H_Max = np.max(H[n_components-2])
         H_Normalized.append(H[n_components-2] / H_Max)
         #Reconstructed_matrix = model.inverse_transform(W)
-        # pseudo inverse matrix of H 
+        # pseudo inverse matrix of H
         numpy_H_pinv.append(np.linalg.pinv(H_Normalized[n_components-2]))
         #print("Pseudo inverse of H: ", numpy_H_pinv)
-        
+
         #print(matrix.shape, Reconstructed_matrix.shape)
 
         #r_squared = skm.r2_score( np.asarray(matrix), np.asarray(Reconstructed_matrix) )
         #print("R^2: ", r_squared)
-        
+
         #print("err: ", 1 - (model.reconstruction_err_ / total_energy))
         vaf = 0
         # i want to calculate the VAF
         # the vaf is calculated as the sum of the squares of the difference between the original matrix and the reconstructed matrix for each element
         #vaf = 1 - (np.sum((matrix - Reconstructed_matrix) ** 2) / np.sum(matrix ** 2))
         print("VAF: ", vaf)
-        
+
 
         # Print the factorized matrices
         #print("Matrix W (Basis Vectors):")
@@ -406,8 +406,8 @@ def execute():
 
 
     # Las sinergias elegidas deben tener al menos un 0 en lugares distintos para garantizar que haya una unica solucion.
-    # Revisar VAFS 
-    # Encontrar un codo y dar la opcion de mostrar 
+    # Revisar VAFS
+    # Encontrar un codo y dar la opcion de mostrar
     # Venir a la proxima reunion con un control a partir de eleccion de sinergias arbitrarias
 
 #execute()

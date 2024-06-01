@@ -49,7 +49,7 @@ def API_Server(AeroInstance,emgPositionVector):
         with conn:
             print(f"Connected by {addr}")
             while True:
-                print("                                                 API Server live")
+                #print("                                                 API Server live")
                 try:
                     s.settimeout(5)
                     DataReceived = conn.recv(1024)

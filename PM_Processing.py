@@ -149,8 +149,9 @@ def Processing():
     LastNormalizedData = [0 for i in range(GlobalParameters.MusclesNumber)]
     processedSum = 0
     counter = 0
+    print("PM: Processing live")
     while True:
-        print("PM: Processing live")
+        #print("PM: Processing live")
         PM_DS.stack_lock.acquire()
         RawData = PM_DS.PM_DataStruct.circular_stack.get_oldest_vector(1)
         PM_DS.stack_lock.release()
@@ -165,7 +166,7 @@ def Processing():
             PM_DS.ProcessedDataBuffer_Semaphore.acquire()
             PM_DS.ProcessedDataBuffer.add_vector(ProcessedData)
             PM_DS.ProcessedDataBuffer_Semaphore.release()
-            
+
             PM_DS.SynergyBase_Semaphore.acquire()
             SynergyActivations = np.array(DataProcessing.MapActivation(GlobalParameters.SynergyBaseInverse,reshapedData).T)
             PM_DS.SynergyBase_Semaphore.release()
@@ -175,7 +176,7 @@ def Processing():
             PM_DS.SynergiesBuffer_Semaphore.release()
 
             NewMovement = DataProcessing.UpdatePosition(SynergyActivations, GlobalParameters.projectionMatrix).reshape(2,)
-            
+
             PM_DS.PositionOutput_Semaphore.acquire()
             PM_DS.PM_DataStruct.positionOutput = PM_DS.PM_DataStruct.positionOutput + GlobalParameters.CursorMovement_Gain*NewMovement/GlobalParameters.sampleRate
             PM_DS.PositionOutput_Semaphore.release()
@@ -186,10 +187,10 @@ def CalibrationProcessing():
 
     while(GlobalParameters.Initialized == False):
        pass
-
+    print("PM: Calibration Processing live")
     while not GlobalParameters.TerminateCalibration:
 
-        print("PM: Calibration Processing live")
+        #print("PM: Calibration Processing live")
 
         if GlobalParameters.CalibrationStage == 1:
             print("Detecting Thresholds...")
@@ -238,7 +239,7 @@ def CalibrationProcessing():
             while(GlobalParameters.CalibrationStage == 2):
                 PM_DS.stack_lock.acquire()
                 RawData = PM_DS.PM_DataStruct.circular_stack.get_oldest_vector(1)
-                print("                                                                    ",RawData)
+                #print("                                                                    ",RawData)
                 PM_DS.stack_lock.release()
                 if RawData != []:
                     RectifiedData = DataProcessing.Rectify(RawData)
@@ -283,13 +284,13 @@ def CalibrationProcessing():
             GlobalParameters.SynergyBaseInverse = np.linalg.pinv(H)
             PlotSynergiesDetected(vafs, n_components, H)'''
             GlobalParameters.modelsList, GlobalParameters.vafs, GlobalParameters.output= SD.calculateSynergy(aux_buffer)
-            '''for model in GlobalParameters.modelsList:
+            for model in GlobalParameters.modelsList:
                 print(model[0])
                 print(model[1])
                 print(model[2])
                 print(model[3])
                 print(GlobalParameters.vafs)
-                PlotSynergiesDetected(GlobalParameters.vafs,model[0],model[1])'''
+                PlotSynergiesDetected(GlobalParameters.vafs,model[0],model[1])
 
             #GlobalParameters.SynergyBase = GlobalParameters.modelsList[GlobalParameters.MusclesNumber-2][1]
             GlobalParameters.SynergyBase = GlobalParameters.output[1]
@@ -298,6 +299,7 @@ def CalibrationProcessing():
             GlobalParameters.AnglesRecieved = False
             GlobalParameters.RequestAngles = True
             #msgbox.alert("Synergies detected")
+
     print("PM: Calibration terminated")
     PM_Processing.start()
     Cursor_Nuevo.Cursor_process.start()
