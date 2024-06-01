@@ -11,14 +11,15 @@ from AeroPy.DataManager import *
 from multiprocessing import Process
 
 
-
 import time
 import sys
 #sys.path.append("../")
-from API_Server_Nuevo import * 
+from API_Server_Nuevo import *
 from Aero_Nuevo import *
-import Delsys_API_Server   
+import Delsys_API_Server
 import API_Parameters
+import Cursor_Nuevo
+import Visualizacion
 
 clr.AddReference("System.Collections")
 from System.Collections.Generic import List
@@ -62,19 +63,19 @@ class PlottingManagement():
 
 
     def threadManager(self):
-       
+
         time.sleep(3)
-        
+
         if API_Parameters.DelsysMode:
             API_server_thread=Thread(target=Delsys_API_Server.API_Server, args=(TrigBase,self.dataStreamIdx), daemon=True)
             API_server_thread.start()
-        else: 
-            API_server_thread=Thread(target=API_Server.API_Server)  
+        else:
+            API_server_thread=Thread(target=API_Server.API_Server)
             API_server_thread.start()
-        
-        
-   
-        
+
+
+
+
     #---------------------------------------------------------------------------------
     #---- Callback Functions
     def PipelineState_Callback(self):
@@ -126,7 +127,7 @@ class PlottingManagement():
                         self.samplesPerFrame[i].append(selectedSensor.TrignoChannels[channel].SamplesPerFrame)
                         # ---- Collect the EMG channels for visualization, excluding skin check channels
                         if "EMG" in selectedSensor.TrignoChannels[channel].Name:
-                             
+
                             if "TrignoAvanti" in str(selectedSensor) and "RMS 2" in selectedSensor.TrignoChannels[
                                 channel].Name:  # Avanti skin check
                                 pass
@@ -139,18 +140,18 @@ class PlottingManagement():
                             else:
                                 self.dataStreamIdx.append(idxVal)
                                 plotCount += 1
-                                                    
+
                         idxVal += 1
-            print(self.dataStreamIdx) 
+            print(self.dataStreamIdx)
             API_Parameters.ChannelsNumber = len(self.dataStreamIdx)
-            API_Parameters.SampleRate = max(self.sampleRates, key=lambda x: x[0])[0][0]      
+            API_Parameters.SampleRate = max(self.sampleRates, key=lambda x: x[0])[0][0]
             # ---- Create the plotting canvas and begin visualization
             #self.EMGplot.initiateCanvas(None, None, plotCount, 1, self.numSamples)
 
         TrigBase.Start()
         self.threadManager()
 
-    def Start_Callback(self): 
+    def Start_Callback(self):
         print(1)
 
     def Stop_Callback(self):
@@ -162,6 +163,12 @@ class PlottingManagement():
     def Reset_Callback(self):
         TrigBase.ResetPipeline()
 
+    def StartVisualization_Callback(self):
+        Visualizacion.Animation_Process.start()
+
+    def StartCursor_Callback(self):
+        Cursor_Nuevo.Cursor_process.start()
+
     #---------------------------------------------------------------------------------
     #---- Helper Functions
     def getSampleModes(self,sensorIdx):
@@ -169,7 +176,7 @@ class PlottingManagement():
         sampleModes = TrigBase.AvailibleSensorModes(sensorIdx)
         return sampleModes
 
-    def getCurMode(self): 
+    def getCurMode(self):
         """Gets the current mode of the sensors"""
         curModes = TrigBase.GetAllSampleModes()
         return curModes
@@ -177,13 +184,13 @@ class PlottingManagement():
     def setSampleMode(self,curSensor,setMode):
         """Sets the sample mode for the selected sensor"""
         TrigBase.SetSampleMode(curSensor,setMode)
-          
+
     def setSampleMode_allSensors(self,setMode):
         """Sets the same sample mode for all the sensors (it works for the same model)"""
         for i in range(self.SensorsFound):
             self.setSampleMode(i,setMode)
-            
-    def setSampleMode_hardcoded(self):        
+
+    def setSampleMode_hardcoded(self):
         """For different sensors models. It sets a hardcoded sample mode with the same frequency"""
         for i in range(self.SensorsFound):
             selectedSensor = TrigBase.GetSensorObject(i)
@@ -191,9 +198,5 @@ class PlottingManagement():
                 self.setSampleMode(i,"EMG raw (2148 Hz), skin check (74 Hz), +/-11mv, 10-850Hz")
                 #self.setSampleMode(i,"EMG raw (4370 Hz), skin check (74 Hz), +/-11mv, 20-450Hz")
             elif "AvantiDoubleMini" in str(selectedSensor):
-                self.setSampleMode(i, "EMG raw x2 (2148Hz), +/-11mv, 10-850Hz") 
-            print("AllSampleModes", TrigBase.GetAllSampleModes()[i])                
-                             
-        
-        
-       
+                self.setSampleMode(i, "EMG raw x2 (2148Hz), +/-11mv, 10-850Hz")
+            print("AllSampleModes", TrigBase.GetAllSampleModes()[i])

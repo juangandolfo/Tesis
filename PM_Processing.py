@@ -8,7 +8,6 @@ import csv
 import numpy as np
 import matplotlib.pyplot as plt
 from multiprocessing import Process
-import Cursor_Nuevo
 import scipy
 import pymsgbox as msgbox
 
@@ -117,7 +116,7 @@ class DataProcessing:
         return y
 
     def CreateLPF(self, fs, MusclesNumber):
-        self.b, self.a = scipy.signal.iirfilter(N = 2, Wn = [25], ftype = 'butter',fs= fs, btype='Lowpass')
+        self.b, self.a = scipy.signal.iirfilter(N = 2, Wn = [10], ftype = 'butter',fs= fs, btype='Lowpass')
         self.signal = np.zeros((len(self.b), MusclesNumber))
         self.filtered_signal = np.zeros((len(self.a)-1, MusclesNumber))
 
@@ -146,7 +145,7 @@ def Processing():
     PM_DS.InitializeVisualizationBuffers()
     GlobalParameters.projectionMatrix = GlobalParameters.GenerateProjectionMatrix(GlobalParameters.synergy_CursorMap)
     DataProcessing.CreateLPF(GlobalParameters.sampleRate, GlobalParameters.MusclesNumber)
-    LastNormalizedData = [0 for i in range(GlobalParameters.MusclesNumber)]
+    #LastNormalizedData = [0 for i in range(GlobalParameters.MusclesNumber)]
     processedSum = 0
     counter = 0
     print("PM: Processing live")
@@ -157,11 +156,11 @@ def Processing():
         PM_DS.stack_lock.release()
         if RawData != []:
             RectifiedData = DataProcessing.Rectify(RawData)
-            NormalizedData = DataProcessing.Normalize(RectifiedData, GlobalParameters.PeakActivation, GlobalParameters.MusclesNumber, GlobalParameters.Threshold)
+            ProcessedData = DataProcessing.LowPassFilter(RectifiedData)
+            NormalizedData = DataProcessing.Normalize(ProcessedData, GlobalParameters.PeakActivation, GlobalParameters.MusclesNumber, GlobalParameters.Threshold)
             #ProcessedData = DataProcessing.DummyLowPassFilter(NormalizedData, LastNormalizedData)
-            ProcessedData = DataProcessing.LowPassFilter(NormalizedData)
-            reshapedData = ProcessedData.reshape(-1,1)
-            LastNormalizedData = NormalizedData
+            reshapedData = NormalizedData.reshape(-1,1)
+            #LastNormalizedData = NormalizedData
 
             PM_DS.ProcessedDataBuffer_Semaphore.acquire()
             PM_DS.ProcessedDataBuffer.add_vector(ProcessedData)
@@ -302,8 +301,6 @@ def CalibrationProcessing():
 
     print("PM: Calibration terminated")
     PM_Processing.start()
-    Cursor_Nuevo.Cursor_process.start()
-    # Plot the vectors
 
 PM_Calibration = Thread(target=CalibrationProcessing,daemon=True)
 PM_Processing = Thread(target=Processing,daemon=True)

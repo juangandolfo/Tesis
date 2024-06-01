@@ -172,7 +172,7 @@ def Handle_Client(conn,addr):
              #Connected = False
 
         else:
-            print("Invalid request")
+            #print("Invalid request")
             pass
     #conn.close()
 

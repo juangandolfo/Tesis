@@ -11,7 +11,7 @@ from DataCollector.CollectDataController import *
 import tkinter as tk
 from tkinter import filedialog
 from Plotter import GenericPlot as gp
-import API_Parameters 
+import API_Parameters
 
 class CollectDataWindow(QWidget):
     def __init__(self,controller):
@@ -83,7 +83,7 @@ class CollectDataWindow(QWidget):
 
         buttonLayout.addLayout(findSensor_layout)
 
-        #---- Start Button
+        ''' #---- Start Button
         self.start_button = QPushButton('Start', self)
         self.start_button.setToolTip('Start Sensor Stream')
         self.start_button.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
@@ -91,9 +91,9 @@ class CollectDataWindow(QWidget):
         self.start_button.clicked.connect(self.start_callback)
         self.start_button.setStyleSheet('QPushButton {color: white;}')
         self.start_button.setEnabled(False)
-        buttonLayout.addWidget(self.start_button)
+        buttonLayout.addWidget(self.start_button)'''
 
-        #---- Stop Button
+        '''#---- Stop Button
         self.stop_button = QPushButton('Stop', self)
         self.stop_button.setToolTip('Stop Sensor Stream')
         self.stop_button.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
@@ -101,9 +101,9 @@ class CollectDataWindow(QWidget):
         self.stop_button.clicked.connect(self.stop_callback)
         self.stop_button.setStyleSheet('QPushButton {color: white;}')
         self.stop_button.setEnabled(False)
-        buttonLayout.addWidget(self.stop_button)
+        buttonLayout.addWidget(self.stop_button)'''
 
-        #---- Reset Button
+        '''#---- Reset Button
         self.reset_button = QPushButton('Reset Pipeline', self)
         self.reset_button.setToolTip('Disarm Pipeline')
         self.reset_button.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
@@ -111,7 +111,7 @@ class CollectDataWindow(QWidget):
         self.reset_button.clicked.connect(self.reset_callback)
         self.reset_button.setStyleSheet('QPushButton {color: white;}')
         self.reset_button.setEnabled(False)
-        buttonLayout.addWidget(self.reset_button)
+        buttonLayout.addWidget(self.reset_button)'''
 
         #---- Calibration Button
         self.calibration_button = QPushButton('Start Calibration', self)
@@ -120,7 +120,7 @@ class CollectDataWindow(QWidget):
         self.calibration_button.objectName = 'Start Calibration'
         self.calibration_button.clicked.connect(self.calibration_callback)  # Connect to the callback method
         self.calibration_button.setStyleSheet('QPushButton {color: white;}')
-        self.calibration_button.setEnabled(True)
+        self.calibration_button.setEnabled(False)
         buttonLayout.addWidget(self.calibration_button)
 
         #---- Drop-down menu of sensor modes
@@ -139,7 +139,27 @@ class CollectDataWindow(QWidget):
         self.SensorListBox.clicked.connect(self.sensorList_callback)
         buttonLayout.addWidget(self.SensorListBox)
 
-        #--- Home Button
+        #---- Start Cursor Button
+        self.cursor_button = QPushButton('Cursor Game', self)
+        self.cursor_button.setToolTip('Start Cursor')
+        self.cursor_button.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
+        self.cursor_button.objectName = 'Start Cursor'
+        self.cursor_button.clicked.connect(self.start_cursor)
+        self.cursor_button.setStyleSheet('QPushButton {color: white;}')
+        self.cursor_button.setEnabled(False)
+        buttonLayout.addWidget(self.cursor_button)
+
+        #---- Start Visualization Button
+        self.visualization_button = QPushButton('Visualization', self)
+        self.visualization_button.setToolTip('Start Visualization')
+        self.visualization_button.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
+        self.visualization_button.objectName = 'Start Visualization'
+        self.visualization_button.clicked.connect(self.start_visualization)
+        self.visualization_button.setStyleSheet('QPushButton {color: white;}')
+        self.visualization_button.setEnabled(False)
+        buttonLayout.addWidget(self.visualization_button)
+
+        #---- Home Button
         button = QPushButton('Home', self)
         button.setToolTip('Return to Start Menu')
         button.objectName = 'Home'
@@ -189,21 +209,21 @@ class CollectDataWindow(QWidget):
         self.SensorListBox.setCurrentRow(0)
 
         if len(sensorList)>0:
-            self.start_button.setEnabled(True)
+            self.calibration_button.setEnabled(True)
         self.getpipelinestate()
 
-    def start_callback(self):
-        self.CallbackConnector.Start_Callback()
-        
-    def stop_callback(self):
+    '''def start_callback(self):
+        self.CallbackConnector.Start_Callback()'''
+
+    '''def stop_callback(self):
         self.CallbackConnector.Stop_Callback()
         self.reset_button.setEnabled(True)
-        self.getpipelinestate()
+        self.getpipelinestate()'''
 
-    def reset_callback(self):
+    '''def reset_callback(self):
         self.CallbackConnector.Reset_Callback()
         self.getpipelinestate()
-        self.reset_button.setEnabled(False)
+        self.reset_button.setEnabled(False)'''
 
     def home_callback(self):
         self.controller.showStartMenu()
@@ -220,15 +240,21 @@ class CollectDataWindow(QWidget):
     def sensorModeList_callback(self):
         curItem = self.SensorListBox.currentRow()
         selMode = self.SensorModeList.currentText()
-        
         if selMode != '':
             self.CallbackConnector.setSampleMode_hardcoded()
 
     def calibration_callback(self):
         self.calibration_window.show()
         self.CallbackConnector.StartCalibration_Callback()
-        self.stop_button.setEnabled(True)
-        self.getpipelinestate()
+        self.visualization_button.setEnabled(True)
+        self.cursor_button.setEnabled(True)
+
+    def start_cursor(self):
+        self.CallbackConnector.StartCursor_Callback()
+
+    def start_visualization(self):
+        self.CallbackConnector.StartVisualization_Callback()
+
 
 class CountdownWidget(QWidget):
 
@@ -256,7 +282,7 @@ class CountdownWidget(QWidget):
         else:
             self.timer.stop()
             self.timer_label.setText("Countdown: Done")
-            self.timeout_signal.emit() 
+            self.timeout_signal.emit()
             API_Parameters.CalibrationStageInitialized = False
             API_Parameters.CalibrationStageFinished = True
 
@@ -266,7 +292,7 @@ class AngleWindow(QDialog, QObject):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Insert Angle Values")
-        
+
         layout = QVBoxLayout()
 
         self.angle_lineedits = []
@@ -334,7 +360,7 @@ class CalibrationWindow(QMainWindow):
 
         self.timer_widget = CountdownWidget()
         self.timer_widget.hide()  # Initially hide the CountdownWidget
-        self.timer_widget.timeout_signal.connect(self.show_angle_window) 
+        self.timer_widget.timeout_signal.connect(self.show_angle_window)
         layout.addWidget(self.timer_widget)
 
         # Angles selection window
@@ -356,7 +382,7 @@ class CalibrationWindow(QMainWindow):
         self.start_stage_button.show()
         self.CalibrationStage = 1
         self.timer_widget.hide()  #Hide the countdown widget when stage changes
-    
+
     def stage2_callback(self):
         self.stage_message_label.setText("Calibration Stage 2: Activation Peaks Detection")
         # Show Start button for Stage 2 only
@@ -370,12 +396,12 @@ class CalibrationWindow(QMainWindow):
         self.start_stage_button.show()
         self.CalibrationStage = 3
         self.timer_widget.hide()  # Hide the countdown widget when stage changes
-       
+
     def start_countdown(self):
         print("timer")
         # Show the countdown widget and start the countdown
         API_Parameters.CalibrationStage = self.CalibrationStage
-        API_Parameters.CalibrationStageInitialized = True 
+        API_Parameters.CalibrationStageInitialized = True
         self.timer_widget.show()
         self.timer_widget.start_countdown()
 
@@ -392,7 +418,7 @@ class CalibrationWindow(QMainWindow):
                 self.angle_window.angle_lineedits[i].show()
                 self.angle_window.angle_labels[i].show()
 
-    
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
