@@ -104,7 +104,7 @@ def Handle_Client(conn,addr):
     print(f"Connected by {addr}")
     #Connected = True
     while True:
-        #print("                                                      PM Server live")
+        print("                                                      PM Server live")
         data = conn.recv(1024)
         # Check if the received data is a GET request for "/data"
         if  data.decode().strip() == "GET /data1":
@@ -222,10 +222,11 @@ def Processing_Module_Client():
                         GlobalParameters.RequestAngles = False
                         GlobalParameters.CalibrationStage = 0
                         GlobalParameters.synergiesNumber = len(angles)
-                        '''
-                        GlobalParameters.SynergyBase = GlobalParameters.modelsList[GlobalParameters.synergiesNumber][1]
-                        GlobalParameters.SynergyBaseInverse = np.linalg.pinv(GlobalParameters.SynergyBase)
-                        GlobalParameters.synergiesNumber = GlobalParameters.modelsList[GlobalParameters.synergiesNumber][0]'''
+                        
+                        # GlobalParameters.SynergyBase = GlobalParameters.modelsList[GlobalParameters.synergiesNumber][1]
+                        # GlobalParameters.SynergyBaseInverse = np.linalg.pinv(GlobalParameters.SynergyBase)
+                        # GlobalParameters.synergiesNumber = GlobalParameters.modelsList[GlobalParameters.synergiesNumber][0]
+                        
                         # print("Angles recieved", angles)
                         #msgbox.alert(text = str(GlobalParameters.SynergyBase), title = "Angles", button = "OK")
 

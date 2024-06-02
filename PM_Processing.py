@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 from multiprocessing import Process
 import scipy
 import pymsgbox as msgbox
+import csv
 
 plt.switch_backend('TkAgg')
 
@@ -149,12 +150,22 @@ def Processing():
     processedSum = 0
     counter = 0
     print("PM: Processing live")
+    if GlobalParameters.saveCSV:
+        today = time.gmtime()
+        FileName = './Experiments/' + str(today.tm_year)  + str(today.tm_mon) + str(today.tm_mday) + '_' + str(today.tm_hour) + str(today.tm_min) + str(today.tm_sec) + ".csv"
+        writer = csv.writer(open(FileName, 'w', newline=''))
+        writer.writerow([f'Muscle {i+1}' for i in range(GlobalParameters.MusclesNumber)])
     while True:
         #print("PM: Processing live")
         PM_DS.stack_lock.acquire()
         RawData = PM_DS.PM_DataStruct.circular_stack.get_oldest_vector(1)
-        PM_DS.stack_lock.release()
+        PM_DS.stack_lock.release()     
+
         if RawData != []:
+            
+            if GlobalParameters.saveCSV:
+                writer.writerow(RawData)
+
             RectifiedData = DataProcessing.Rectify(RawData)
             ProcessedData = DataProcessing.LowPassFilter(RectifiedData)
             NormalizedData = DataProcessing.Normalize(ProcessedData, GlobalParameters.PeakActivation, GlobalParameters.MusclesNumber, GlobalParameters.Threshold)
@@ -165,6 +176,7 @@ def Processing():
             PM_DS.ProcessedDataBuffer_Semaphore.acquire()
             PM_DS.ProcessedDataBuffer.add_vector(ProcessedData)
             PM_DS.ProcessedDataBuffer_Semaphore.release()
+
 
             PM_DS.SynergyBase_Semaphore.acquire()
             SynergyActivations = np.array(DataProcessing.MapActivation(GlobalParameters.SynergyBaseInverse,reshapedData).T)
@@ -189,7 +201,7 @@ def CalibrationProcessing():
     print("PM: Calibration Processing live")
     while not GlobalParameters.TerminateCalibration:
 
-        #print("PM: Calibration Processing live")
+        print("PM: Calibration Processing live")
 
         if GlobalParameters.CalibrationStage == 1:
             print("Detecting Thresholds...")
