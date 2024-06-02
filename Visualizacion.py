@@ -3,11 +3,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import matplotlib.gridspec as GridSpec
+import matplotlib.widgets as widgets
 import socket
 import threading
 import json
 import time
-import pymsgbox as msgbox
+#import pymsgbox as msgbox
 from multiprocessing import Process
 import os
 
@@ -82,6 +83,7 @@ class Buffer:
     def add_matrix(self, data):
         for line in data:
             self.add_point(line)
+
 class Visualization:
     def Initialize(self):
         self.connection_lost = False
@@ -94,9 +96,22 @@ class Visualization:
         params.Pts2Display = round(params.Time2Display * params.SampleRate)
         params.TimeStep = 1 / params.SampleRate
 
+        self.ShowMuscle = [True for _ in range(params.MusclesNumber)]
+        self.ShowSynergy = [True for _ in range(params.SynergiesNumber)]
         # Create the figure and axis objects
         self.fig = plt.figure()
-        gs = GridSpec.GridSpec(nrows=3, ncols=2, width_ratios=[1, 1], height_ratios=[3, 1, 3])
+        gs = GridSpec.GridSpec(nrows=3, ncols=3, width_ratios=[3, 3, 1], height_ratios=[3, 1, 3])
+
+        # Add a menu to the plot
+        MusclesMenuSpace = plt.axes([0.8, 0.55, 0.15, 0.4])
+        MusclesListForMenu = [f'Muscle {i+1}' for i in range(params.MusclesNumber)]
+        self.MusclesMenu = widgets.CheckButtons(MusclesMenuSpace, MusclesListForMenu, [True for _ in range(params.MusclesNumber)])
+        self.MusclesMenu.on_clicked(self.MusclesMenu_CallBack)
+
+        SynergiesMenuSpace = plt.axes([0.8, 0.05, 0.15, 0.4])
+        SynergiesListForMenu = [f'Synergy {i+1}' for i in range(params.SynergiesNumber)]
+        self.SynergiesMenu = widgets.CheckButtons(SynergiesMenuSpace, SynergiesListForMenu, [True for _ in range(params.SynergiesNumber)])
+        self.SynergiesMenu.on_clicked(self.SynergiesMenu_CallBack)
 
         #configure muscles plot
         self.DotsMuscles = self.fig.add_subplot(gs[0, 0])
@@ -158,6 +173,14 @@ class Visualization:
 
 
     # Update function for FuncAnimation
+
+    def MusclesMenu_CallBack(self, label):
+        self.ShowMuscle = self.MusclesMenu.get_status()
+
+    def SynergiesMenu_CallBack(self, label):
+        self.ShowSynergy = self.SynergiesMenu.get_status()
+
+
     def update(self,frame):
 
         print(params.current_x)
@@ -173,7 +196,6 @@ class Visualization:
             for line in MusclesActivation:
                 params.current_x += params.TimeStep
                 self.x.add_point(params.current_x)
-
         except Exception as e:
             print(e)
 
@@ -188,9 +210,16 @@ class Visualization:
              print(e)
 
         for line in self.MusclesLines:
-            line.set_data(self.x.Buffer, self.MusclesBuffer.Buffer[:, self.MusclesLines.index(line)])
+            if self.ShowMuscle[self.MusclesLines.index(line)] == True:
+                line.set_data(self.x.Buffer, self.MusclesBuffer.Buffer[:, self.MusclesLines.index(line)])
+            else:
+                line.set_data(self.x.Buffer, np.zeros(params.Pts2Display))
+
         for line in self.SynergiesLines:
-            line.set_data(self.x.Buffer, self.SynergiesBuffer.Buffer[:, self.SynergiesLines.index(line)])
+            if self.ShowSynergy[self.SynergiesLines.index(line)] == True:
+                line.set_data(self.x.Buffer, self.SynergiesBuffer.Buffer[:, self.SynergiesLines.index(line)])
+            else:
+                line.set_data(self.x.Buffer, np.zeros(params.Pts2Display))
 
         self.DotsMuscles.set_xlim([params.current_x - params.Time2Display, params.current_x])
         self.DotsSynergies.set_xlim([params.current_x - params.Time2Display, params.current_x])
