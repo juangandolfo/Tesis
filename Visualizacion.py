@@ -9,14 +9,16 @@ import json
 import time
 import pymsgbox as msgbox
 from multiprocessing import Process
+import os
 
-
+plt.switch_backend('TkAgg')
 # TCP/IP visualization client ------------------------------------------------------------------------------
 HOST = "127.0.0.1"  # The server's hostname or IP address
 PORT_Client = 6002  # The port used by the API server
 
 # Create a socket
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+terminate = False
 
 def Connect():
     notConnected = True
@@ -25,40 +27,43 @@ def Connect():
             client_socket.connect((HOST, PORT_Client))
             notConnected = False
         except Exception as e:
-            #print(e)
-            pass
+            print(e)
 #-----------------------------------------------------------------------------------------------------------
 
 # Function to send the request and receive the data from MP
 def Request(type):
     start = time.time()
     request = "GET /" + type
-    client_socket.sendall(request.encode())
+    client_socket.settimeout(3)
+    try:
+        client_socket.sendall(request.encode())
+        data = b''
+        while True:
+            try:
+                chunk = client_socket.recv(1024)
+                data += chunk
+                if b"~" in data:
+                    #print("Delimiter found")
+                    break  # Delimiter found
+            except socket.timeout as e:
+                print(e)
+                continue
+            except socket.error as e:
+                print(e)
+                continue
+        end = time.time()
+        #print("Time elapsed: ", end - start)
 
-    data = b''
-    while True:
-        try:
-            #client_socket.settimeout(0.5)
-            chunk = client_socket.recv(1024)
-            data += chunk
-            if b"~" in data:
-                #print("Delimiter found")
-                break  # Delimiter found
-        except socket.timeout as e:
-            print(e)
-            continue
-        except socket.error as e:
-            print(e)
-            continue
-    end = time.time()
-    #print("Time elapsed: ", end - start)
+        serialized_data = data.decode().rstrip("~") # Quit the delimiter and decode the received data
+        response_data = json.loads(serialized_data) # Get the original data
 
-    serialized_data = data.decode().rstrip("~") # Quit the delimiter and decode the received data
-    response_data = json.loads(serialized_data) # Get the original data
-
-    if response_data == []:
-        raise Exception("PM:No data received")
-    return response_data
+        if response_data == []:
+            raise Exception("PM:No data received")
+        return response_data
+    except (socket.timeout, socket.error) as e:
+        print(f"Communication error: {e}")
+        client_socket.close() #Close TCP/IP connection
+        os.kill(os.getpid(), 9) #Kill Process
 
 # Semaphore to lock the stack
 MusclesStackSemaphore = threading.Semaphore(1)
@@ -67,6 +72,7 @@ SinergiesStackSemaphore = threading.Semaphore(1)
 class Buffer:
     def __init__(self, MusclesNumber, Pts2Display):
         self.Buffer = np.zeros((Pts2Display, MusclesNumber))
+        self.reconnect_successful = True
 
     def add_point(self, data):
         self.Buffer = np.roll(self.Buffer, -1, axis=0) # Roll the buffer to make space for the new vector
@@ -78,6 +84,8 @@ class Buffer:
             self.add_point(line)
 class Visualization:
     def Initialize(self):
+        self.connection_lost = False
+        self.reconnect_successful = True
         # Request parameters
         Parameters = Request("Parameters")
         params.MusclesNumber = int(Parameters[0])
@@ -148,8 +156,10 @@ class Visualization:
         self.bar1 = BarsMusculos.bar(range(params.MusclesNumber),range(params.MusclesNumber))
         self.bar2 = BarsSynergies.bar(range(params.SynergiesNumber),range(params.SynergiesNumber))
 
+
     # Update function for FuncAnimation
     def update(self,frame):
+
         print(params.current_x)
 
         try:
@@ -175,7 +185,7 @@ class Visualization:
             for bar, line in zip(self.bar2, SynergiesActivation[-1]):
                 bar.set_height(line)
         except Exception as e:
-            print(e)
+             print(e)
 
         for line in self.MusclesLines:
             line.set_data(self.x.Buffer, self.MusclesBuffer.Buffer[:, self.MusclesLines.index(line)])
@@ -186,12 +196,20 @@ class Visualization:
         self.DotsSynergies.set_xlim([params.current_x - params.Time2Display, params.current_x])
 
 def RunAnimation():
+    global ani
+    global terminate
     Connect()
     vis = Visualization()
     vis.Initialize()
-    # Create FuncAnimation instance
-    ani = animation.FuncAnimation(vis.fig, vis.update, interval=1,cache_frame_data= False) #/params.update_freq
-    # Show the plot
-    plt.show()
+    while not terminate:
+        ani = animation.FuncAnimation(vis.fig, vis.update, interval=1, cache_frame_data=False)
+        plt.show()
+    terminate = False
+
+def StopAnimation():
+    global terminate
+    terminate = True
+    if Animation_Process and Animation_Process.is_alive():
+        Animation_Process.join()
 
 Animation_Process = Process(target=RunAnimation)
