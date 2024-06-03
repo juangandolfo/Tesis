@@ -164,7 +164,10 @@ class PlottingManagement():
         TrigBase.ResetPipeline()
 
     def StartVisualization_Callback(self):
-        Visualizacion.Animation_Process.start()
+        #Visualizacion.Animation_Process.start()
+        import subprocess
+        import sys
+        subprocess.run([sys.executable, 'Visualizacion2.py'])
 
     def StartCursor_Callback(self):
         Cursor_Nuevo.Cursor_process.start()

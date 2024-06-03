@@ -155,7 +155,7 @@ class Visualization:
 
         # Create empty buffers
         self.MusclesBuffer = Buffer(params.MusclesNumber, params.Pts2Display)
-        self.SynergiesBuffer = Buffer(params.MusclesNumber, params.Pts2Display)
+        self.SynergiesBuffer = Buffer(params.SynergiesNumber, params.Pts2Display)
         self.x = Buffer(params.Pts2Display, 1)
         #self.x.Buffer = np.linspace((params.current_x - params.Pts2Display)/params.SampleRate, params.current_x/params.SampleRate, params.Pts2Display)
         self.x.Buffer = np.linspace(params.current_x - params.Time2Display, params.current_x, params.Pts2Display)
@@ -164,7 +164,7 @@ class Visualization:
             line, = self.DotsMuscles.plot(self.x.Buffer, self.MusclesBuffer.Buffer[:, i], color=params.MusclesColors[i])
             self.MusclesLines.append(line)
         self.SynergiesLines = []
-        for i in range(params.MusclesNumber):
+        for i in range(params.SynergiesNumber):
             line, = self.DotsSynergies.plot(self.x.Buffer, self.SynergiesBuffer.Buffer[:, i], color=params.SynergiesColors[i])
             self.SynergiesLines.append(line)
 

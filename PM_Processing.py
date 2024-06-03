@@ -305,7 +305,7 @@ def CalibrationProcessing():
 
             #GlobalParameters.SynergyBase = GlobalParameters.modelsList[GlobalParameters.MusclesNumber-2][1]
             GlobalParameters.SynergyBase = GlobalParameters.output[1]
-            GlobalParameters.SynergyBaseInverse = np.linalg.pinv(GlobalParameters.SynergyBase)
+            GlobalParameters.SynergyBaseInverse = GlobalParameters.output[2]
             GlobalParameters.synergiesNumber = GlobalParameters.output[0]
             GlobalParameters.AnglesRecieved = False
             GlobalParameters.RequestAngles = True
