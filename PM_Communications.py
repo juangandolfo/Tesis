@@ -22,7 +22,6 @@ server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 # Link the socket to the IP and PORT selected:
 #server_socket.bind((HOST, PORT_Server))
 
-
 # Auxiliar functions -------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 def Dictionary_to_matrix(dictionary):
@@ -101,80 +100,95 @@ def Request(Type):
 
 # Function to handle the connection with a client
 def Handle_Client(conn,addr):
+
     print(f"Connected by {addr}")
-    #Connected = True
-    while True:
-        print("                                                      PM Server live")
-        data = conn.recv(1024)
-        # Check if the received data is a GET request for "/data"
-        if  data.decode().strip() == "GET /data1":
-            PM_DS.PositionOutput_Semaphore.acquire()
-            response_data = GlobalParameters.CursorMovement_Gain*PM_DS.PM_DataStruct.positionOutput
-            PM_DS.PM_DataStruct.positionOutput = np.zeros(2)
-            PM_DS.PositionOutput_Semaphore.release()
+    conn.settimeout(3)
+    try:
+        while True:
+            #print("                                                      PM Server live")
+            try:
+                data = conn.recv(1024)
+                if not data:
+                    # No data received, client has likely disconnected
+                    print(f"Client {addr} disconnected")
+                    break
 
-            if response_data == []:
-                print("Empty data")
-                response_data = [0 for i in range(GlobalParameters.MusclesNumber)]
+                # Check if the received data is a GET request for "/data"
+                if  data.decode().strip() == "GET /data1":
+                    PM_DS.PositionOutput_Semaphore.acquire()
+                    response_data = GlobalParameters.CursorMovement_Gain*PM_DS.PM_DataStruct.positionOutput
+                    PM_DS.PM_DataStruct.positionOutput = np.zeros(2)
+                    PM_DS.PositionOutput_Semaphore.release()
 
-            response_data = np.array(response_data).tolist()
-            #print(response_data)
-            response_json = json.dumps(response_data).encode()  # Convert the dictionary to JSON and enconde into bytes
-            conn.sendall(response_json)
-            #print("PM: Data sent:", response_data)
+                    if response_data == []:
+                        print("Empty data")
+                        response_data = [0 for i in range(GlobalParameters.MusclesNumber)]
 
-        elif  data.decode().strip() == "GET /Muscles":
+                    response_data = np.array(response_data).tolist()
+                    #print(response_data)
+                    response_json = json.dumps(response_data).encode()  # Convert the dictionary to JSON and enconde into bytes
+                    conn.sendall(response_json)
+                    #print("PM: Data sent:", response_data)
 
-            PM_DS.ProcessedDataBuffer_Semaphore.acquire()  # Acquire lock before accessing the stack
-            response_data = PM_DS.ProcessedDataBuffer.get_vectors(1)
-            PM_DS.ProcessedDataBuffer_Semaphore.release()  # Release lock after reading the stack
+                elif  data.decode().strip() == "GET /Muscles":
 
-            if response_data == []:
-                print("Empty data")
-                response_data = []
+                    PM_DS.ProcessedDataBuffer_Semaphore.acquire()  # Acquire lock before accessing the stack
+                    response_data = PM_DS.ProcessedDataBuffer.get_vectors(1)
+                    PM_DS.ProcessedDataBuffer_Semaphore.release()  # Release lock after reading the stack
+
+                    if response_data == []:
+                        print("Empty data")
+                        response_data = []
 
 
-            response_data = np.array(response_data).tolist()
-            response_json = json.dumps(response_data)
-            response_json  += "~" # Add a delimiter at the end
-            # Convert the dictionary to JSON and enconde intio bytes
-            conn.sendall(response_json.encode())
-            #print("Data sent:", response_data)
+                    response_data = np.array(response_data).tolist()
+                    response_json = json.dumps(response_data)
+                    response_json  += "~" # Add a delimiter at the end
+                    # Convert the dictionary to JSON and enconde intio bytes
+                    conn.sendall(response_json.encode())
+                    #print("Data sent:", response_data)
 
-        elif data.decode().strip() == "GET /Synergies":
+                elif data.decode().strip() == "GET /Synergies":
 
-                PM_DS.SynergiesBuffer_Semaphore.acquire()  # Acquire lock before accessing the stack
-                response_data = PM_DS.SynergiesBuffer.get_vectors(1) #PM_DS.PM_DataStruct.circular_stack.get_vectors(3)
-                PM_DS.SynergiesBuffer_Semaphore.release()  # Release lock after reading the stack
+                        PM_DS.SynergiesBuffer_Semaphore.acquire()  # Acquire lock before accessing the stack
+                        response_data = PM_DS.SynergiesBuffer.get_vectors(1) #PM_DS.PM_DataStruct.circular_stack.get_vectors(3)
+                        PM_DS.SynergiesBuffer_Semaphore.release()  # Release lock after reading the stack
 
-                if response_data == []:
-                    print("Empty data")
-                    response_data = []
+                        if response_data == []:
+                            print("Empty data")
+                            response_data = []
 
-                response_data = np.array(response_data).tolist()
-                response_json = json.dumps(response_data)
-                response_json  += "~"
-                conn.sendall(response_json.encode())
+                        response_data = np.array(response_data).tolist()
+                        response_json = json.dumps(response_data)
+                        response_json  += "~"
+                        conn.sendall(response_json.encode())
 
-        elif data.decode().strip() == "GET /Parameters":
+                elif data.decode().strip() == "GET /Parameters":
 
-                response_data = [GlobalParameters.MusclesNumber,GlobalParameters.synergiesNumber,GlobalParameters.sampleRate] #PM_DS.PM_DataStruct.circular_stack.get_vectors(3)
+                        response_data = [GlobalParameters.MusclesNumber,GlobalParameters.synergiesNumber,GlobalParameters.sampleRate] #PM_DS.PM_DataStruct.circular_stack.get_vectors(3)
 
-                if response_data == []:
-                    print("Empty data")
-                    response_data = []
+                        if response_data == []:
+                            print("Empty data")
+                            response_data = []
 
-                response_data = np.array(response_data).tolist()
-                response_json = json.dumps(response_data)
-                response_json  += "~"
-                conn.sendall(response_json.encode())
-        #if data.decode().strip() == "DISCONNECT":
-             #Connected = False
+                        response_data = np.array(response_data).tolist()
+                        response_json = json.dumps(response_data)
+                        response_json  += "~"
+                        conn.sendall(response_json.encode())
+                #if data.decode().strip() == "DISCONNECT":
+                    #Connected = False
 
-        else:
-            #print("Invalid request")
-            pass
-    #conn.close()
+                else:
+                    #print("Invalid request")
+                    pass
+            except socket.timeout:
+                print(f"Client {addr} timed out")
+                break
+    except (ConnectionResetError, ConnectionAbortedError) as e:
+        print(f"Client {addr} connection lost: {e}")
+    finally:
+        conn.close()
+        print(f"Connection with {addr} closed")
 
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -254,17 +268,18 @@ def Processing_Module_Server():
     server_socket.bind((HOST, PORT_Server))
     # Listen the inner connections:
     print("Server listening on", HOST, "port", PORT_Server)
-    server_socket.listen()
-    Num_Clients = 0
+    server_socket.listen(2)
 
-    while Num_Clients < 2:
-        # Accept the connection and open a thread to handle the client.
-        conn, addr = server_socket.accept()
-        thread = Thread(target = Handle_Client, args=(conn, addr))
-        thread.start()
-        Num_Clients = Num_Clients + 1
-        #print(Num_Clients)
-
+    while True:
+        try:
+            # Accept the connection and open a thread to handle the client.
+            conn, addr = server_socket.accept()
+            thread = Thread(target = Handle_Client, args=(conn, addr))
+            thread.start()
+        except Exception as e:
+            print(f"Error accepting connections: {e}")
+            break
+    server_socket.close()
 
 PM_Client_thread = Thread(target=Processing_Module_Client,daemon=True)
 PM_Server_thread = Thread(target=Processing_Module_Server,daemon=True)

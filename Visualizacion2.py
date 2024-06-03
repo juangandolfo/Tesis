@@ -241,4 +241,6 @@ def StopAnimation():
     if Animation_Process and Animation_Process.is_alive():
         Animation_Process.join()
 
-Animation_Process = Process(target=RunAnimation)
+if __name__ == '__main__':
+    Animation_Process = Process(target=RunAnimation)
+    Animation_Process.start()
