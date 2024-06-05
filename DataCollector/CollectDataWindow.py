@@ -12,6 +12,8 @@ import tkinter as tk
 from tkinter import filedialog
 from Plotter import GenericPlot as gp
 import API_Parameters
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 
 class CollectDataWindow(QWidget):
     def __init__(self,controller):
@@ -292,28 +294,39 @@ class AngleWindow(QDialog, QObject):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Insert Angle Values")
+        self.resize(600, 400)
 
         layout = QVBoxLayout()
+        # Matplotlib Figure and Canvas
+        self.figure = plt.figure(figsize=(5, 4))
+        self.canvas = FigureCanvas(self.figure)
+        layout.addWidget(self.canvas)
 
         self.angle_lineedits = []
         self.angle_labels = []
         for i in range(8):
             angle_label = QLabel(f"Synergy {i+1}:")
             angle_lineedit = QLineEdit()
+            angle_lineedit.setFixedWidth(100)
             angle_lineedit.hide()
             angle_label.hide()
             self.angle_lineedits.append(angle_lineedit)
             self.angle_labels.append(angle_label)
             layout.addWidget(angle_label)
             layout.addWidget(angle_lineedit)
+            # Connect the textChanged signal to the update_plot method
+            angle_lineedit.textChanged.connect(self.update_plot)
 
         save_button = QPushButton("Save")
+        save_button.setFixedWidth(100)
         save_button.clicked.connect(self.save_angles)
         layout.addWidget(save_button)
 
         self.setLayout(layout)
 
         self.angle_values_saved.connect(self.process_angles)  # Connect signal to method
+        # Show all angle input fields and plot initially
+        self.update_plot()
 
     def save_angles(self):
         angles = [lineedit.text() for lineedit in self.angle_lineedits]
@@ -325,36 +338,61 @@ class AngleWindow(QDialog, QObject):
         API_Parameters.AnglesReady = 1
         API_Parameters.AnglesOutput = angles
         API_Parameters.AnglesOutputSemaphore.release()
-        # Do something with the angle values
+        self.update_plot()
+
+    def update_plot(self):
+        angles = [lineedit.text() for lineedit in self.angle_lineedits]
+        try:
+            angles = [int(angle) for angle in angles if angle]
+        except ValueError:
+            return  # Ignore invalid input
+
+        self.figure.clear()
+        ax = self.figure.add_subplot(111, polar=True)
+
+        for angle in angles:
+            theta = np.radians(angle)  # Convert to radians
+            ax.plot([0, theta], [0, 1], marker='o')  # Plot the vector
+
+        ax.set_title("Chosen Angles (Polar Plot)")
+        self.canvas.draw()
 
 
 class CalibrationWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Calibration Window")
-        self.setGeometry(100, 100, 400, 200)
+        self.setGeometry(100, 100, 800, 600)
         self.CalibrationStage = 0
 
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
+        main_layout = QHBoxLayout(central_widget)
 
-        layout = QVBoxLayout(central_widget)
+        layout = QVBoxLayout()
 
         self.stage1_button = QPushButton("Stage 1")
+        self.stage1_button.setFixedSize(240, 30)  # Set a fixed size for the button
         self.stage2_button = QPushButton("Stage 2")
+        self.stage2_button.setFixedSize(240, 30)  # Set a fixed size for the button
         self.stage3_button = QPushButton("Stage 3")
+        self.stage3_button.setFixedSize(240, 30)  # Set a fixed size for the button
         self.terminate_button = QPushButton("Terminate Calibration")
+        self.terminate_button.setFixedSize(240, 30)  # Set a fixed size for the button
 
         layout.addWidget(self.stage1_button)
         layout.addWidget(self.stage2_button)
         layout.addWidget(self.stage3_button)
         layout.addWidget(self.terminate_button)
 
-        self.stage_message_label = QLabel("")
+        #self.stage_message_label = QLabel("")
+        self.stage_message_label = QTextBrowser()
+        self.stage_message_label.setFixedWidth(240)
         layout.addWidget(self.stage_message_label)
 
         # Initialize Start buttons for each stage
         self.start_stage_button = QPushButton("Start")
+        self.start_stage_button.setFixedSize(240, 30)  # Set a fixed size for the button
         self.start_stage_button.hide()  # Initially hide the Start button
         layout.addWidget(self.start_stage_button)
 
@@ -363,11 +401,6 @@ class CalibrationWindow(QMainWindow):
         self.timer_widget.timeout_signal.connect(self.show_angle_window)
         layout.addWidget(self.timer_widget)
 
-        # Angles selection window
-        self.angle_window = AngleWindow()
-        self.angle_window.hide()  # Initially hide the AngleWindow
-        layout.addWidget(self.angle_window)
-
         self.stage1_button.clicked.connect(self.stage1_callback)
         self.stage2_button.clicked.connect(self.stage2_callback)
         self.stage3_button.clicked.connect(self.stage3_callback)
@@ -375,6 +408,15 @@ class CalibrationWindow(QMainWindow):
 
         # Connect Start button to start countdown
         self.start_stage_button.clicked.connect(self.start_countdown)
+        main_layout.addLayout(layout)
+
+        # Angles selection window
+        self.angle_window = AngleWindow()
+        self.angle_window.hide()  # Initially hide the AngleWindow
+        main_layout.addWidget(self.angle_window)
+        self.blank_space = QWidget()
+        main_layout.addWidget(self.blank_space)
+        main_layout.setStretch(1, 1)
 
     def stage1_callback(self):
         self.stage_message_label.setText("Calibration Stage 1: Activation Threshold Detection")

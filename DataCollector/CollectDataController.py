@@ -20,6 +20,7 @@ import Delsys_API_Server
 import API_Parameters
 import Cursor_Nuevo
 import Visualizacion
+import Visualizacion2
 
 clr.AddReference("System.Collections")
 from System.Collections.Generic import List
@@ -28,6 +29,7 @@ from System import Int32
 
 base = TrignoBase()
 TrigBase = base.BaseInstance
+
 
 app.use_app('PySide2')
 
@@ -41,6 +43,8 @@ class PlottingManagement():
         self.outData = [[0]]
         self.Index = None
         self.newTransform = None
+        self.AnimationProcess = Visualizacion.Animation_Process
+        self.CursorProcess = Cursor_Nuevo.Cursor_Process
 
     def streaming(self):
         """This is the data processing thread"""
@@ -164,10 +168,15 @@ class PlottingManagement():
         TrigBase.ResetPipeline()
 
     def StartVisualization_Callback(self):
-        Visualizacion.Animation_Process.start()
+        '''if Visualizacion.terminate:
+            Visualizacion.StopAnimation()  # Detener el proceso actual si está en ejecución
+        self.AnimationProcess.start()'''
+        import subprocess
+        import sys
+        subprocess.run([sys.executable, "Visualizacion2.py"])
 
     def StartCursor_Callback(self):
-        Cursor_Nuevo.Cursor_process.start()
+        self.CursorProcess.start()
 
     #---------------------------------------------------------------------------------
     #---- Helper Functions
