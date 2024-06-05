@@ -12,7 +12,6 @@ import time
 from multiprocessing import Process
 import os
 
-plt.switch_backend('TkAgg')
 # TCP/IP visualization client ------------------------------------------------------------------------------
 HOST = "127.0.0.1"  # The server's hostname or IP address
 PORT_Client = 6002  # The port used by the API server

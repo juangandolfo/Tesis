@@ -283,13 +283,13 @@ def CalibrationProcessing():
             GlobalParameters.SynergyBaseInverse = np.linalg.pinv(H)
             PlotSynergiesDetected(vafs, n_components, H)'''
             GlobalParameters.modelsList, GlobalParameters.vafs, GlobalParameters.output= SD.calculateSynergy(aux_buffer)
-            '''for model in GlobalParameters.modelsList:
+            for model in GlobalParameters.modelsList:
                 print(model[0])
                 print(model[1])
                 print(model[2])
                 print(model[3])
                 print(GlobalParameters.vafs)
-                PlotSynergiesDetected(GlobalParameters.vafs,model[0],model[1])'''
+                PlotSynergiesDetected(GlobalParameters.vafs,model[0],model[1])
 
             #GlobalParameters.SynergyBase = GlobalParameters.modelsList[GlobalParameters.MusclesNumber-2][1]
             GlobalParameters.SynergyBase = GlobalParameters.output[1]

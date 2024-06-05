@@ -10,6 +10,7 @@ import LocalCircularBufferVector as Buffer
 import pymsgbox as msgbox
 
 
+
 HOST = "127.0.0.1"  # Standard adress (localhost)
 PORT_Client = 6001  # Port to get data from the File API Server
 PORT_Server = 6002 # The port used by the PM Server
@@ -190,6 +191,7 @@ def Handle_Client(conn,addr):
         conn.close()
         print(f"Connection with {addr} closed")
 
+
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # Threads -------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -278,7 +280,7 @@ def Processing_Module_Server():
         except Exception as e:
             print(f"Error accepting connections: {e}")
             break
-    server_socket.close()
+    #server_socket.close()
 
 PM_Client_thread = Thread(target=Processing_Module_Client,daemon=True)
 PM_Server_thread = Thread(target=Processing_Module_Server,daemon=True)

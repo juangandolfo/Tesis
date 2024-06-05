@@ -10,16 +10,13 @@ import json
 import time
 #import pymsgbox as msgbox
 from multiprocessing import Process
-import os
 
-plt.switch_backend('TkAgg')
 # TCP/IP visualization client ------------------------------------------------------------------------------
 HOST = "127.0.0.1"  # The server's hostname or IP address
 PORT_Client = 6002  # The port used by the API server
 
 # Create a socket
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-terminate = False
 
 def Connect():
     notConnected = True
@@ -64,7 +61,6 @@ def Request(type):
     except (socket.timeout, socket.error) as e:
         print(f"Communication error: {e}")
         client_socket.close() #Close TCP/IP connection
-        os.kill(os.getpid(), 9) #Kill Process
 
 # Semaphore to lock the stack
 MusclesStackSemaphore = threading.Semaphore(1)
@@ -225,21 +221,12 @@ class Visualization:
         self.DotsSynergies.set_xlim([params.current_x - params.Time2Display, params.current_x])
 
 def RunAnimation():
-    global ani
-    global terminate
     Connect()
     vis = Visualization()
     vis.Initialize()
-    while not terminate:
-        ani = animation.FuncAnimation(vis.fig, vis.update, interval=1, cache_frame_data=False)
-        plt.show()
-    terminate = False
+    ani = animation.FuncAnimation(vis.fig, vis.update, interval=1, cache_frame_data=False)
+    plt.show()
 
-def StopAnimation():
-    global terminate
-    terminate = True
-    if Animation_Process and Animation_Process.is_alive():
-        Animation_Process.join()
 
 if __name__ == '__main__':
     Animation_Process = Process(target=RunAnimation)

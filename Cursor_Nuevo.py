@@ -6,8 +6,8 @@ import json
 from collections import deque
 from threading import Thread, Semaphore
 from multiprocessing import Process
-import pygame   
-import random   
+import pygame
+import random
 from tkinter import messagebox
 from pygame.locals import (K_UP,
                            K_DOWN,
@@ -41,15 +41,19 @@ frequency = 120
 # Function to send the request and receive the data from MP
 def Get_data():
         request = "GET /data1"
-        client_socket.sendall(request.encode())
+        client_socket.settimeout(3)
         try:
-            data = client_socket.recv(1024)
-            response_data = json.loads(data.decode()) # Decode the received data
-        except socket.timeout as e:
-            print(e)
-        except socket.error as e:
-            print(e)
-        
+            client_socket.sendall(request.encode())
+            try:
+                data = client_socket.recv(1024)
+                response_data = json.loads(data.decode()) # Decode the received data
+            except socket.timeout as e:
+                print(e)
+            except socket.error as e:
+                print(e)
+        except (socket.timeout, socket.error) as e:
+            print(f"Communication error: {e}")
+            #client_socket.close() #Close TCP/IP connection
         return response_data
 # ----------------------------------------------------------------------------------------------------------
 
@@ -94,13 +98,17 @@ def getSpeedFromKeyboard(pressed_keys):
     elif pressed_keys[K_RIGHT]:
         speed=(20, 0)
     else:
-        speed=(0,0)    
+        speed=(0,0)
     return speed
 
 def getSpeedFromEMG():
     #time.sleep(1/frequency)
-    speed = Get_data()
-    #print("Client1:", data) 
+    speed = [0,0]
+    try:
+        speed = Get_data()
+    except Exception as e:
+        print(e)
+    #print("Client1:", data)
     #speed=(10*(abs(data[0])-abs(data[1])),0)
     #print("Cursor:",speed)
     return speed
@@ -125,7 +133,7 @@ class Enemy(pygame.sprite.Sprite):
         self.rect.move_ip(-self.speed, 0)
         if self.rect.right < 0:
             self.kill()
-    
+
     def moveEnemy(self,position):
         self.rect = self.surf.get_rect(
         center=position)
@@ -133,8 +141,8 @@ class Enemy(pygame.sprite.Sprite):
 def Cursor():
     Connect()
     pygame.init()
-    Cursor.SCREEN_WIDTH = 800
-    Cursor.SCREEN_HEIGHT = 800
+    Cursor.SCREEN_WIDTH = 700
+    Cursor.SCREEN_HEIGHT = 700
 
     screen = pygame.display.set_mode((Cursor.SCREEN_WIDTH, Cursor.SCREEN_HEIGHT))
     """
@@ -162,7 +170,7 @@ def Cursor():
             ]
     def GenerateEnemies():
         objectiveEnemy=random.randint(0,7)
-        for i in range(8): 
+        for i in range(8):
             if i == objectiveEnemy:
                 objective= Enemy()
                 objective.name='objective'
@@ -175,27 +183,30 @@ def Cursor():
                 new_enemy.surf.fill((255,0,0))
                 new_enemy.moveEnemy(position[i])
                 enemies.add(new_enemy)
-                all_sprites.add(new_enemy) 
+                all_sprites.add(new_enemy)
             """new_enemy = Enemy()
             if i == objectiveEnemy :
                 new_enemy.surf.fill((0,255,0))
             new_enemy.moveEnemy(position[i])
             enemies.add(new_enemy)
             all_sprites.add(new_enemy)"""
-        
+
     pygame.key.set_repeat(50,0)
 
     running = True
     GenerateEnemies()
 
-    while running:    
+    while running:
         #print("running")
-        #for event in pygame.event.get():
-            #if event.type == KEYDOWN:
-            # if event.key == K_ESCAPE:
-                #  running=False
-        # elif event.type == QUIT:
-            # running=False
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                running = False
+
+            elif event.type == KEYDOWN:
+                if event.key == K_ESCAPE:
+                    running = False
+
+        #print("running")
         """elif event.type == ADDENEMY:
             new_enemy = Enemy()
             enemies.add(new_enemy)
@@ -205,7 +216,7 @@ def Cursor():
         #rect = surf.get_rect()
         #surf_center = ((Cursor.SCREEN_WIDTH-surf.get_width())/2,(Cursor.SCREEN_HEIGHT-surf.get_height())/2)
         #screen.blit(surf, surf_center)
-    
+
         screen.fill((0, 0, 0))
         #pressed_keys = pygame.key.get_pressed()
         #speed=getSpeedFromKeyboard(pressed_keys)
@@ -215,7 +226,7 @@ def Cursor():
         screen.blit(player.surf, player.rect)
         for entity in all_sprites:
             screen.blit(entity.surf, entity.rect)
-        
+
         if pygame.sprite.spritecollideany(player, objectives):
             messagebox.showerror('You did it!!!!!!!!!!!!!!!','Lograste llegar al objetivo crackkk!!')
             player.update((Cursor.SCREEN_WIDTH/2-player.rect.center[1],Cursor.SCREEN_HEIGHT/2-player.rect.center[0]))
@@ -228,12 +239,10 @@ def Cursor():
         if pygame.sprite.spritecollideany(player, enemies):
             print('perdiste')
             player.update((Cursor.SCREEN_WIDTH/2-player.rect.center[0],Cursor.SCREEN_HEIGHT/2-player.rect.center[1]))
-            
+
             #player.kill()
             #running = False
         pygame.display.flip()
         #clock.tick(60)
 
-Cursor_process = Process(target=Cursor)
-
-
+Cursor_Process = Process(target=Cursor)
