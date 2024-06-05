@@ -168,12 +168,10 @@ class PlottingManagement():
         TrigBase.ResetPipeline()
 
     def StartVisualization_Callback(self):
-        '''if Visualizacion.terminate:
-            Visualizacion.StopAnimation()  # Detener el proceso actual si está en ejecución
-        self.AnimationProcess.start()'''
+        #Visualizacion.Animation_Process.start()
         import subprocess
         import sys
-        subprocess.run([sys.executable, "Visualizacion2.py"])
+        subprocess.run([sys.executable, 'Visualizacion2.py'])
 
     def StartCursor_Callback(self):
         self.CursorProcess.start()

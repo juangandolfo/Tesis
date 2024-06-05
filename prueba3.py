@@ -4,12 +4,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import matplotlib.gridspec as GridSpec
+import matplotlib.widgets as widgets
 import socket
 import threading
 import json
 import time
 import scipy
-
 
 class LPF:
     def __init__(self):
@@ -100,6 +100,22 @@ DotsMuscles.set_xlabel('Muscles')
 DotsMuscles.set_ylabel('Activation')
 DotsMuscles.set_title('Last 5 seconds of muscle activation')
 DotsMuscles.legend() 
+def buttonClicked(pressevent):
+    print('Button clicked')
+    pass
+Button1Axes = plt.axes([0.78, 0.05, 0.2, 0.9])
+# Button2Axes  = plt.axes([0.88, 0.78, 0.1, 0.05])
+# Button3Axes  = plt.axes([0.88, 0.68, 0.1, 0.05])
+
+#button1 = widgets.Button(Button1Axes, 'Show Muscle Activation')
+# button1.on_clicked(buttonClicked)
+# button2 = widgets.Button(Button2Axes, 'Show Synergy Activation')
+# button2.on_clicked(buttonClicked)
+# button3 = widgets.Button(Button3Axes, 'Show Muscle Activation')
+# button3.on_clicked(buttonClicked)
+
+menu = widgets.CheckButtons(Button1Axes, ['Muscle 1', 'Muscle 2','Muscle 3', 'Muscle 4'], [True, True,True,True])
+
 
 #configure synergies plot
 DotsSynergies = fig.add_subplot(gs[2, 0])
@@ -156,6 +172,7 @@ def update(frame):
         params.current_x = params.current_x + 1/params.SampleRate #params.definition #len(MusclesActivation)
         x.add_point(params.current_x)
         counter += 1
+    
 
 
 # Create FuncAnimation instance

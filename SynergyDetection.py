@@ -75,14 +75,15 @@ def calculateSynergy(matrix):
         vaf = 1 - (np.sum((matrix - Reconstructed_matrix) ** 2) / np.sum(matrix ** 2))
         #print("VAF: ", vaf)
         vafs.append(vaf)
-        models.append((n_components, H, r_squared, vaf))
+        H_inv = np.linalg.pinv(H)
+        models.append((n_components, H, H_inv, r_squared, vaf))
         # Comparación directa de VAFs
         if n_components == 2:
-            output = (n_components, H, r_squared, vafs)
+            output = (n_components, H, H_inv,r_squared, vafs)
         else:
             #print(vaf, vafs[-2])
             if vaf>vafs[-2]:
-                output = (n_components, H, r_squared, vafs)
+                output = (n_components, H, H_inv, r_squared, vafs)
         '''if n_components ==2:
             output = (n_components, H, r_squared, vafs)
         else:
@@ -90,6 +91,7 @@ def calculateSynergy(matrix):
             if vaf>0.9 and outputDefined==False:
                 output = (n_components, H, r_squared, vafs)
                 outputDefined = True'''
+        
 
     #deteccion de codo
     ''' x = range(2, GlobalParameters.MusclesNumber+1)
