@@ -8,19 +8,13 @@ from threading import Thread
 from Plotter.GenericPlot import *
 from AeroPy.TrignoBase import *
 from AeroPy.DataManager import *
-from multiprocessing import Process
-
-
+import subprocess
 import time
 import sys
-#sys.path.append("../")
 from API_Server_Nuevo import *
 from Aero_Nuevo import *
 import Delsys_API_Server
 import API_Parameters
-import Cursor_Nuevo
-import Visualizacion
-import Visualizacion2
 
 clr.AddReference("System.Collections")
 from System.Collections.Generic import List
@@ -43,8 +37,6 @@ class PlottingManagement():
         self.outData = [[0]]
         self.Index = None
         self.newTransform = None
-        self.AnimationProcess = Visualizacion.Animation_Process
-        self.CursorProcess = Cursor_Nuevo.Cursor_Process
 
     def streaming(self):
         """This is the data processing thread"""
@@ -122,7 +114,6 @@ class PlottingManagement():
             idxVal = 0
             for i in range(self.SensorsFound):
                 selectedSensor = TrigBase.GetSensorObject(i)
-                print(str(selectedSensor))
                 if len(selectedSensor.TrignoChannels) > 0:
                     for channel in range(len(selectedSensor.TrignoChannels)):
                         print(selectedSensor.TrignoChannels[channel].Name)
@@ -168,13 +159,10 @@ class PlottingManagement():
         TrigBase.ResetPipeline()
 
     def StartVisualization_Callback(self):
-        #Visualizacion.Animation_Process.start()
-        import subprocess
-        import sys
         subprocess.run([sys.executable, 'Visualizacion2.py'])
 
     def StartCursor_Callback(self):
-        self.CursorProcess.start()
+        subprocess.run([sys.executable, 'Cursor.py'])
 
     #---------------------------------------------------------------------------------
     #---- Helper Functions

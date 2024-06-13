@@ -11,6 +11,7 @@ from multiprocessing import Process
 import scipy
 import pymsgbox as msgbox
 import csv
+import json
 
 plt.switch_backend('TkAgg')
 
@@ -21,6 +22,27 @@ def save_to_csv(filename, aux_vector, M1, M2):
         writer.writerow(['Thresholds', 'M1', 'M2'])
         for i in range(len(aux_vector)):
             writer.writerow([aux_vector[i], M1[i], M2[i]])
+
+def SaveConfigurationToJson():
+    # Save the configuration to a JSON file
+    musclesNumber = GlobalParameters.MusclesNumber
+    angles = GlobalParameters.synergy_CursorMap
+    SynergyBase= GlobalParameters.SynergyBase
+    SynergyBaseInverse = GlobalParameters.SynergyBaseInverse
+    projectionMatrix = GlobalParameters.projectionMatrix 
+
+    data = {
+        "MusclesNumber": musclesNumber, 
+        "Angles": angles, 
+        "SynergyBase": SynergyBase.tolist(), 
+        "SynergyBaseInverse": SynergyBaseInverse.tolist(),
+        "ProjectionMatrix": projectionMatrix.tolist()   
+        }
+    json_array = json.dumps(data, sort_keys=True, indent=4)
+    f = open('Configuration.json', 'w')
+    f.write(json_array) 
+    
+    
 
 def PlotResults(Thresholds, ID):
 
@@ -153,7 +175,8 @@ def Processing():
     if GlobalParameters.saveCSV:
         today = time.gmtime()
         FileName = './Experiments/' + str(today.tm_year)  + str(today.tm_mon) + str(today.tm_mday) + '_' + str(today.tm_hour) + str(today.tm_min) + str(today.tm_sec) + ".csv"
-        writer = csv.writer(open(FileName, 'w', newline=''))
+        file = open(FileName, 'w', newline='')
+        writer = csv.writer(file)
         writer.writerow([f'Muscle {i+1}' for i in range(GlobalParameters.MusclesNumber)])
     while True:
         #print("PM: Processing live")
@@ -165,6 +188,7 @@ def Processing():
             
             if GlobalParameters.saveCSV:
                 writer.writerow(RawData)
+                file.flush()
 
             RectifiedData = DataProcessing.Rectify(RawData)
             ProcessedData = DataProcessing.LowPassFilter(RectifiedData)
@@ -312,6 +336,7 @@ def CalibrationProcessing():
             print("Synergies detected")
 
     print("PM: Calibration terminated")
+    SaveConfigurationToJson()
     PM_Processing.start()
 
 PM_Calibration = Thread(target=CalibrationProcessing,daemon=True)
