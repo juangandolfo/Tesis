@@ -42,7 +42,16 @@ def SaveConfigurationToJson():
     f = open('Configuration.json', 'w')
     f.write(json_array) 
     
-    
+def UploadCalibrationFromJson():
+    # Load the configuration from a JSON file
+    with open('Configuration.json') as f:
+        data = json.load(f)
+        print(data)
+        GlobalParameters.MusclesNumber = data['MusclesNumber']
+        GlobalParameters.synergy_CursorMap = data['Angles']
+        GlobalParameters.SynergyBase = np.array(data['SynergyBase'])
+        GlobalParameters.SynergyBaseInverse = np.array(data['SynergyBaseInverse'])
+        GlobalParameters.projectionMatrix = np.array(data['ProjectionMatrix'])
 
 def PlotResults(Thresholds, ID):
 
@@ -159,7 +168,6 @@ class DataProcessing:
         return np.array([synergyActivation[right]-synergyActivation[left],synergyActivation[up]-synergyActivation[down]])
         '''
         return np.ravel(np.matmul(synergyActivation,synergy_CursorMap))
-
 
 DataProcessing = DataProcessing()
 

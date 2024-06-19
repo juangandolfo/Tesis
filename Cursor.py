@@ -5,7 +5,8 @@ import json
 import pygame
 import random
 from multiprocessing import Process
-from tkinter import messagebox
+#from tkinter import messagebox
+import pymsgbox as messagebox
 from pygame.locals import (K_UP,
                            K_DOWN,
                            K_LEFT,
@@ -168,7 +169,7 @@ def getSpeedFromEMG():
         print(e)
     return speed
 
-# Main loop ------------------------------------------------------------------------------------------------
+# MAIN LOOP ------------------------------------------------------------------------------------------------
 #-----------------------------------------------------------------------------------------------------------
 def Cursor():
     # set up the display and communication
@@ -202,7 +203,8 @@ def Cursor():
             screen.blit(entity.surf, entity.rect)
 
         if pygame.sprite.spritecollideany(player, objectives):
-            messagebox.showinfo('Y el TITULO?!?!','YA ANDA! (ponenos S plz)')
+            #messagebox.showinfo('Y el TITULO?!?!','YA ANDA! (ponenos S plz)')
+            messagebox.alert(text='Ganaste', title='Y el TITULO?!?!', button='OK')
             player.update((SCREEN_WIDTH/2-player.rect.center[1],SCREEN_HEIGHT/2-player.rect.center[0]))
             for objective in objectives:
                 objective.kill()
