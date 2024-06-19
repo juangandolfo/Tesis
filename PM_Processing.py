@@ -11,7 +11,7 @@ from multiprocessing import Process
 import scipy
 import pymsgbox as msgbox
 import csv
-import PM_Communications
+import json
 
 plt.switch_backend('TkAgg')
 
@@ -22,6 +22,54 @@ def save_to_csv(filename, aux_vector, M1, M2):
         writer.writerow(['Thresholds', 'M1', 'M2'])
         for i in range(len(aux_vector)):
             writer.writerow([aux_vector[i], M1[i], M2[i]])
+
+def SaveConfigurationToJson():
+    # Save the configuration to a JSON file
+    musclesNumber = GlobalParameters.MusclesNumber
+    angles = GlobalParameters.synergy_CursorMap
+    SynergyBase= GlobalParameters.SynergyBase
+    SynergyBaseInverse = GlobalParameters.SynergyBaseInverse
+    projectionMatrix = GlobalParameters.projectionMatrix 
+
+    data = {
+        "MusclesNumber": musclesNumber, 
+        "Angles": angles, 
+        "SynergyBase": SynergyBase.tolist(), 
+        "SynergyBaseInverse": SynergyBaseInverse.tolist(),
+        "ProjectionMatrix": projectionMatrix.tolist()   
+        }
+    json_array = json.dumps(data, sort_keys=True, indent=4)
+    f = open('Configuration.json', 'w')
+    f.write(json_array) 
+    
+    
+
+def PlotResults(Thresholds, ID):
+
+    num_musculos = len(Thresholds)
+    nombres_musculos = [f'Músculo {i+1}' for i in range(num_musculos)]  # Generar automáticamente los nombres de los músculos
+
+    # Crear una figura y ejes para el gráfico de barras
+    fig, ax = plt.subplots(figsize=(8, 6))
+
+    # Graficar las barras
+    ax.bar(nombres_musculos, Thresholds)
+
+    if ID == "Thresholds":
+
+        ax.set_xlabel('Muscles')  # Etiqueta del eje x
+        ax.set_ylabel('Thresholds')  # Etiqueta del eje y
+        ax.set_title('Detected thresholds')  # Título del gráfico
+
+    elif ID == "Peaks":
+        ax.set_xlabel('Muscles')  # Etiqueta del eje x
+        ax.set_ylabel('Peaks')  # Etiqueta del eje y
+        ax.set_title('Detected Peaks')  # Título del gráfico
+
+    else:
+        return
+
+    plt.show()
 
 def PlotSynergiesDetected(vafs, knee_point, H):
     # Plot VAF data
@@ -127,7 +175,8 @@ def Processing():
     if GlobalParameters.saveCSV:
         today = time.gmtime()
         FileName = './Experiments/' + str(today.tm_year)  + str(today.tm_mon) + str(today.tm_mday) + '_' + str(today.tm_hour) + str(today.tm_min) + str(today.tm_sec) + ".csv"
-        writer = csv.writer(open(FileName, 'w', newline=''))
+        file = open(FileName, 'w', newline='')
+        writer = csv.writer(file)
         writer.writerow([f'Muscle {i+1}' for i in range(GlobalParameters.MusclesNumber)])
     while True:
         #print("PM: Processing live")
@@ -139,6 +188,7 @@ def Processing():
             
             if GlobalParameters.saveCSV:
                 writer.writerow(RawData)
+                file.flush()
 
             RectifiedData = DataProcessing.Rectify(RawData)
             ProcessedData = DataProcessing.LowPassFilter(RectifiedData)
@@ -289,6 +339,7 @@ def CalibrationProcessing():
             msgbox.alert("stage 4")
 
     print("PM: Calibration terminated")
+    SaveConfigurationToJson()
     PM_Processing.start()
 
 PM_Calibration = Thread(target=CalibrationProcessing,daemon=True)
