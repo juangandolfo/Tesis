@@ -50,8 +50,8 @@ def Dictionary_to_matrix(dictionary):
     return matriz
 
 # Function to send the request and receive the data from API Server
-def Request(Type):
-    request = "GET /"+Type
+def Request(request):
+    #request = "GET /"+Type
     #print("                                                                     Request:", request)
     try:
         client_socket.sendall(request.encode())
@@ -80,6 +80,10 @@ def Request(Type):
             elif b"CS3" in data:
                 GlobalParameters.CalibrationStage = 3
                 serialized_data = data.decode().rstrip("CS3")
+                break
+            elif b"CS4" in data:
+                GlobalParameters.CalibrationStage = 4
+                serialized_data = data.decode().rstrip("CS4")
                 break
             elif b"CSF" in data:
                 GlobalParameters.CalibrationStage = 0
@@ -207,8 +211,8 @@ def Processing_Module_Client():
             pass
     # Request Number of cahnnels from host
 
-    GlobalParameters.MusclesNumber = Request("SensorsNumber")
-    GlobalParameters.sampleRate = Request("SampleRate")
+    GlobalParameters.MusclesNumber = Request("GET /SensorsNumber")
+    GlobalParameters.sampleRate = Request("GET /SampleRate")
     try:
         GlobalParameters.Initialize()
     except Exception as e:
@@ -225,8 +229,8 @@ def Processing_Module_Client():
         try:
             try:
                 if GlobalParameters.RequestAngles == True:
-                    data = Request("Angles")
-                    #print("Angles")
+                    data = Request("GET /Angles")
+                    #Request("GET/ data")
                     angles = []
                     if data != []:
                         for element in data:
@@ -246,11 +250,48 @@ def Processing_Module_Client():
                         
                         # print("Angles recieved", angles)
                         #msgbox.alert(text = str(GlobalParameters.SynergyBase), title = "Angles", button = "OK")
-
-                    Request("data")
-
+                
+                elif GlobalParameters.PlotThresholds == True:
+                        
+                    try: 
+                        response = Request("PLOT /Thresholds")
+                    except Exception as e:
+                        print(e)
+                    if response[0] == 1:
+                        response = Request(str(GlobalParameters.Threshold.tolist()))    
+                        if response[0] == 1:
+                            GlobalParameters.PlotThresholds = False
+                
+                elif GlobalParameters.PlotPeaks == True:
+                    try: 
+                        response = Request("PLOT /Peaks")
+                    except Exception as e:
+                        print(e)
+                    if response[0] == 1:
+                        response = Request(str(GlobalParameters.PeakActivation.tolist()))    
+                        if response[0] == 1:
+                            GlobalParameters.PlotPeaks = False
+                
+                elif GlobalParameters.PlotSynergiesDetected == True:
+                    try: 
+                        response = Request("PLOT /Detection")
+                    except Exception as e:
+                        print(e)
+                    if response[0] == 1:
+                        DetectionModels = {}
+                        for i in range(len(GlobalParameters.modelsList)):
+                            key = f'{i+2} Synergies'
+                            value = GlobalParameters.modelsList[i][1].tolist()
+                            DetectionModels[key] = value
+                        DetectionModels['vafs'] = GlobalParameters.vafs
+                        response = Request(json.dumps(DetectionModels))
+                        if response[0] == 1:
+                            GlobalParameters.PlotSynergiesDetected = False
+                            GlobalParameters.AnglesRecieved = False
+                            GlobalParameters.RequestAngles = True
+                            
                 else:
-                    data = Request("data")
+                    data = Request("GET /data")
                     formated_data = Dictionary_to_matrix(data)
                     PM_DS.stack_lock.acquire()  # Acquire lock before accessing the stack
                     PM_DS.PM_DataStruct.circular_stack.add_matrix(formated_data)
@@ -258,7 +299,7 @@ def Processing_Module_Client():
 
             except Exception as e:
                 print("PM Client", e)
-                msgbox.alert("Extra data")
+                msgbox.alert("Extra")
 
         except socket.error as e:
             print("Connection error:", e)

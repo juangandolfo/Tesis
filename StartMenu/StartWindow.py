@@ -8,11 +8,11 @@ class StartWindow(QWidget):
         QWidget.__init__(self)
         self.controller = controller
         grid = QGridLayout()
-        self.setStyleSheet("background-color:#3d4c51;")
+        self.setStyleSheet("background-color:#DDDDDD;")  # Even Darker Light Steel Blue
         self.setWindowTitle("Start Menu")
 
         imageBox = QHBoxLayout()
-        self.im = QPixmap("./Images/delsys.png")
+        self.im = QPixmap("./Images/LogoUCU.png")
         self.label = QLabel()
         self.label.setPixmap(self.im)
         imageBox.addWidget(self.label)
@@ -22,12 +22,12 @@ class StartWindow(QWidget):
         buttonBox=QHBoxLayout()
         buttonBox.setSpacing(0)
 
-        button = QPushButton('Collect Data', self)
-        button.setToolTip('Collect Data')
-        button.objectName = 'Collect'
+        button = QPushButton('Start', self)
+        button.setToolTip('Start')
+        button.objectName = 'Start'
         button.clicked.connect(self.Collect_Data_Callback)
         button.setFixedSize(200,100)
-        button.setStyleSheet('QPushButton {color: white;}')
+        button.setStyleSheet('QPushButton {color: #000066;}')
         buttonBox.addWidget(button)
 
         grid.addLayout(buttonBox,1,0)

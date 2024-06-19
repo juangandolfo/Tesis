@@ -42,6 +42,7 @@ frequency = 120
 def Get_data():
         request = "GET /data1"
         client_socket.settimeout(3)
+        response_data = []
         try:
             client_socket.sendall(request.encode())
             try:

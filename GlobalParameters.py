@@ -34,6 +34,10 @@ projectionMatrix = np.column_stack((x, y))
 
 AnglesRecieved = False
 RequestAngles = False
+PlotThresholds = False
+PlotPeaks = False
+PlotSynergiesDetected = False
+PlotSynergiesDetected = False
 
 PeakActivation = []
 Threshold = []

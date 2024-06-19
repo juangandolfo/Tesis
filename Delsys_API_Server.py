@@ -6,6 +6,7 @@ import pickle
 import numpy as np
 import clr
 import pymsgbox as msgbox
+import matplotlib.pyplot as plt
 clr.AddReference("System")
 from System import Guid
 import API_Parameters
@@ -57,6 +58,7 @@ def API_Server(AeroInstance,emgPositionVector):
                     print("API", e)
                 # Check if the received data is a GET request for "/data"
                 data = DataReceived.decode().strip()
+                print(data)
                 if data == "GET /StartDataStreaming":
                     serialized_data = json.dumps(1) # Serialize the object using json
                     serialized_data  += "~"
@@ -87,6 +89,8 @@ def API_Server(AeroInstance,emgPositionVector):
                                 serialized_data  += "CS2" # Add a delimiter at the end
                             elif API_Parameters.CalibrationStage == 3:
                                 serialized_data  += "CS3" # Add a delimiter at the end
+                            elif API_Parameters.CalibrationStage == 4:
+                                serialized_data  += "CS4" # Add a delimiter at the end
                     elif API_Parameters.CalibrationStageFinished:
                          API_Parameters.CalibrationStageFinished = False
                          serialized_data  += "CSF" # Add a delimiter at the end
@@ -121,6 +125,7 @@ def API_Server(AeroInstance,emgPositionVector):
                 elif data == "GET /Angles":
                     API_Parameters.AnglesOutputSemaphore.acquire()
                     serialized_data = json.dumps(API_Parameters.AnglesOutput)
+                    print(serialized_data)
                     API_Parameters.AnglesOutputSemaphore.release()
                     #msgbox.alert(text = "The angles are: " + serialized_data, title = "Angles", button = "OK")
                     serialized_data  += "~"
@@ -128,9 +133,76 @@ def API_Server(AeroInstance,emgPositionVector):
                         conn.sendall(serialized_data.encode())
                     except Exception as e:
                         print(e)
-                #elif data == "GET /Erase data":
-                    #dataReady = AeroInstance.CheckDataQueue()
+                    dataReady = AeroInstance.CheckDataQueue()
+                    if dataReady:
+                        AeroInstance.PollData()
+                
+                elif data == "PLOT /Thresholds":
+                    serialized_data = json.dumps([1])
+                    serialized_data  += "~"
+                    try:
+                        conn.sendall(serialized_data.encode())
+                    except Exception as e:
+                        print(e)
+                    
+                    DataReceived = conn.recv(1024)
+                    API_Parameters.Thresholds = np.array(json.loads(DataReceived.decode().strip()))
+                    API_Parameters.PlotThresholds = True
+                    try:
+                        API_Parameters.PlotCalibrationSignal.signal.emit()
+                    except Exception as e:
+                        msgbox.alert(e)
+                    serialized_data = json.dumps([1])
+                    serialized_data  += "~"
+                    try:
+                        conn.sendall(serialized_data.encode())
+                    except Exception as e:
+                        print(e)
+
+                elif data == "PLOT /Peaks":
+                    serialized_data = json.dumps([1])
+                    serialized_data  += "~"
+                    try:
+                        conn.sendall(serialized_data.encode())
+                    except Exception as e:
+                        print(e)
+                    
+                    DataReceived = conn.recv(1024)
+                    API_Parameters.Peaks = np.array(json.loads(DataReceived.decode().strip()))
+                    API_Parameters.PlotPeaks = True
+                    try:
+                        API_Parameters.PlotCalibrationSignal.signal.emit()
+                    except Exception as e:
+                        msgbox.alert(e)
+                    serialized_data = json.dumps([1])
+                    serialized_data  += "~"
+                    try:
+                        conn.sendall(serialized_data.encode())
+                    except Exception as e:
+                        print(e)
+
+                elif data == "PLOT /Detection":
+                    serialized_data = json.dumps([1])
+                    serialized_data  += "~"
+                    try:
+                        conn.sendall(serialized_data.encode())
+                    except Exception as e:
+                        print(e)
+                    
+                    DataReceived = conn.recv(1024)
+                    API_Parameters.SynergiesModels = json.loads(DataReceived.decode().strip())
+                    API_Parameters.PlotModels = True
+                    try:
+                        API_Parameters.PlotCalibrationSignal.signal.emit()
+                    except Exception as e:
+                        msgbox.alert(e)
+                    serialized_data = json.dumps([1])
+                    serialized_data  += "~"
+                    try:
+                        conn.sendall(serialized_data.encode())
+                    except Exception as e:
+                        print(e)
 
                 else:
-                   print("Invalid request")
+                   print("Invalid request", data)
                    pass
