@@ -28,8 +28,8 @@ TrigBase = base.BaseInstance
 app.use_app('PySide2')
 
 class PlottingManagement():
-    def __init__(self,EMGplot):
-        self.EMGplot = EMGplot                      # Plot canvas for EMG data
+    def __init__(self):
+        #self.EMGplot = EMGplot                      # Plot canvas for EMG data
         self.packetCount = 0                        # Number of packets received from base
         self.pauseFlag = False                      # Flag to start/stop collection and plotting
         self.numSamples = 10000                     # Default number of samples to visualize at a time

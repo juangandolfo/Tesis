@@ -267,7 +267,7 @@ def CalibrationProcessing():
 
             print("Thresholds:", thresholds)
             GlobalParameters.Threshold = thresholds
-            PlotResults(GlobalParameters.Threshold, "Thresholds")
+            GlobalParameters.PlotThresholds = True
 
         elif GlobalParameters.CalibrationStage == 2:
             print("Detecting Peaks...")
@@ -294,7 +294,7 @@ def CalibrationProcessing():
                             GlobalParameters.PeakActivation[i] = ProcessedData[i]
                 print("stage2")
             print("Peaks:", GlobalParameters.PeakActivation)
-            PlotResults(GlobalParameters.PeakActivation, "Peaks")
+            GlobalParameters.PlotPeaks = True
 
         elif GlobalParameters.CalibrationStage == 3:
             print("Detecting Synergies...")
@@ -327,21 +327,24 @@ def CalibrationProcessing():
             GlobalParameters.SynergyBaseInverse = np.linalg.pinv(H)
             PlotSynergiesDetected(vafs, n_components, H)'''
             GlobalParameters.modelsList, GlobalParameters.vafs, GlobalParameters.output= SD.calculateSynergy(aux_buffer)
-            for model in GlobalParameters.modelsList:
+            '''for model in GlobalParameters.modelsList:
                 print(model[0])
                 print(model[1])
                 print(model[2])
                 print(model[3])
                 print(GlobalParameters.vafs)
-                PlotSynergiesDetected(GlobalParameters.vafs,model[0],model[1])
+                PlotSynergiesDetected(GlobalParameters.vafs,model[0],model[1])'''
 
             #GlobalParameters.SynergyBase = GlobalParameters.modelsList[GlobalParameters.MusclesNumber-2][1]
             GlobalParameters.SynergyBase = GlobalParameters.output[1]
             GlobalParameters.SynergyBaseInverse = GlobalParameters.output[2]
             GlobalParameters.synergiesNumber = GlobalParameters.output[0]
-            GlobalParameters.AnglesRecieved = False
-            GlobalParameters.RequestAngles = True
-            print("Synergies detected")
+            GlobalParameters.PlotSynergiesDetected = True
+            #GlobalParameters.AnglesRecieved = False
+            #GlobalParameters.RequestAngles = True
+
+        elif GlobalParameters.CalibrationStage == 4:
+            msgbox.alert("stage 4")
 
     print("PM: Calibration terminated")
     SaveConfigurationToJson()
