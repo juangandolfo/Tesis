@@ -52,7 +52,7 @@ def Dictionary_to_matrix(dictionary):
 # Function to send the request and receive the data from API Server
 def Request(request):
     #request = "GET /"+Type
-    #print("                                                                     Request:", request)
+    print("                                                                     Request:", request)
     try:
         client_socket.sendall(request.encode())
     except socket.error as e:
@@ -123,7 +123,6 @@ def Handle_Client(conn,addr):
                     PM_DS.PositionOutput_Semaphore.acquire()
                     response_data = np.trunc(GlobalParameters.CursorMovement_Gain*PM_DS.PM_DataStruct.positionOutput)
                     PM_DS.PM_DataStruct.positionOutput = PM_DS.PM_DataStruct.positionOutput - response_data/GlobalParameters.CursorMovement_Gain
-                    #PM_DS.PM_DataStruct.positionOutput = np.zeros(2)
                     PM_DS.PositionOutput_Semaphore.release()
 
                     if response_data == []:
@@ -208,7 +207,7 @@ def Processing_Module_Client():
             client_socket.connect((HOST, PORT_Client))
             notConnected = False
         except Exception as e:
-            #print(e)
+            print(e)
             pass
     # Request Number of cahnnels from host
 
@@ -226,7 +225,7 @@ def Processing_Module_Client():
         print("Data streaming started")'''
     # Loop to request data
     while True:
-        #print("                           PM Client live")
+        print("                           PM Client live")
         try:
             try:
                 if GlobalParameters.RequestAngles == True:
@@ -278,6 +277,7 @@ def Processing_Module_Client():
                         response = Request("PLOT /Detection")
                     except Exception as e:
                         print(e)
+                        msgbox.alert("PLOT /Detection1")
                     if response[0] == 1:
                         DetectionModels = {}
                         for i in range(len(GlobalParameters.modelsList)):
@@ -285,22 +285,39 @@ def Processing_Module_Client():
                             value = GlobalParameters.modelsList[i][1].tolist()
                             DetectionModels[key] = value
                         DetectionModels['vafs'] = GlobalParameters.vafs
-                        response = Request(json.dumps(DetectionModels))
+                        response = Request(json.dumps(DetectionModels) + '~')
                         if response[0] == 1:
                             GlobalParameters.PlotSynergiesDetected = False
                             GlobalParameters.AnglesRecieved = False
                             GlobalParameters.RequestAngles = True
+                            #msgbox.alert("PLOT /Detection")
+
+                elif GlobalParameters.UploadFromJson == True:
+                    GlobalParameters.UploadFromJson = False
+                    try: 
+                        response = Request("UPLOAD /Configurations")
+                    except Exception as e:
+                        print(e)
+                    if response[0] == 1:
+                        print("Done")
+                        # response = Request(GlobalParameters.JsonData)    
+                        # if response[0] == 1:
+                        #     GlobalParameters.UploadFromJson = False
                             
                 else:
                     data = Request("GET /data")
                     formated_data = Dictionary_to_matrix(data)
-                    PM_DS.stack_lock.acquire()  # Acquire lock before accessing the stack
-                    PM_DS.PM_DataStruct.circular_stack.add_matrix(formated_data)
-                    PM_DS.stack_lock.release()  # Release lock after reading the stack
+                    if GlobalParameters.DetectingSynergies == False:
+                        PM_DS.stack_lock.acquire()  # Acquire lock before accessing the stack
+                        PM_DS.PM_DataStruct.circular_stack.add_matrix(formated_data)
+                        PM_DS.stack_lock.release()  # Release lock after reading the stack
+                    else:
+                        #print("Detecting synergies")
+                        pass
 
             except Exception as e:
                 print("PM Client", e)
-                msgbox.alert("Extra")
+                msgbox.alert("Extra")   
 
         except socket.error as e:
             print("Connection error:", e)

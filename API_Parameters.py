@@ -1,8 +1,7 @@
 import numpy as np
 import threading
 from PySide2.QtCore import *
-
-
+from PySide2.QtCore import QObject, Signal
 
 ChannelsNumber = 0
 DelsysMode = True
@@ -14,7 +13,6 @@ CalibrationStageFinished = False
 CalibrationStage = 0
 
 AnglesReady = 0
-#Angles = [1,1]
 AnglesOutput = []
 AnglesOutputSemaphore = threading.Semaphore(1)
 
@@ -28,7 +26,7 @@ PlotPeaks = False
 PlotModels = False
 PlotAngles = False
 
-from PySide2.QtCore import QObject, Signal
+remaining_time = 15
 
 class PlotSignal(QObject):
     signal = Signal()  # Define the signal attribute

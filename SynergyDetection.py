@@ -6,6 +6,7 @@ import itertools
 import matplotlib.pyplot as plt
 import GlobalParameters
 import kneed
+import pymsgbox as msgbox
 
 def plot_bars(H, s, m):
     # Ensure that H and Model_H have the same shape
@@ -91,8 +92,8 @@ def calculateSynergy(matrix):
             if vaf>0.9 and outputDefined==False:
                 output = (n_components, H, r_squared, vafs)
                 outputDefined = True'''
-        
-
+        #msgbox.alert(f" H: {H},")
+    
     #deteccion de codo
     ''' x = range(2, GlobalParameters.MusclesNumber+1)
     y = vafs

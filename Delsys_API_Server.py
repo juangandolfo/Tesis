@@ -19,7 +19,7 @@ def FormattedDictionary_to_PythonDictionary(formatted_dictionary, emgPositionVec
     python_dictionary = {}
     #outArr = [[] for i in range(len(formatted_dictionary.Keys))] # matrix
     keys = []
-
+    
     for i in formatted_dictionary.Keys:
         keys.append(i)
     '''for j in range(len(keys)):
@@ -33,6 +33,12 @@ def FormattedDictionary_to_PythonDictionary(formatted_dictionary, emgPositionVec
 
     return python_dictionary
 
+def UploadCalibrationFromJson():
+    # Load the configuration from a JSON file
+    with open('Configuration.json') as f:
+        data = json.load(f)
+        #msgbox.alert(data["Angles"])
+        print(data["Angles"])
 
 def API_Server(AeroInstance,emgPositionVector):
     # Create a socket
@@ -49,6 +55,7 @@ def API_Server(AeroInstance,emgPositionVector):
         conn, addr = s.accept()
         with conn:
             print(f"Connected by {addr}")
+            BaseStarted = False
             while True:
                 #print("                                                 API Server live")
                 try:
@@ -82,7 +89,11 @@ def API_Server(AeroInstance,emgPositionVector):
 
                     elif API_Parameters.CalibrationStageInitialized:
                             API_Parameters.CalibrationStageInitialized = False
-
+                            # if not BaseStarted:
+                            #     AeroInstance.Start()
+                            #     BaseStarted = True
+                            # else:
+                            #     pass
                             if API_Parameters.CalibrationStage == 1:
                                 serialized_data  += "CS1" # Add a delimiter at the end
                             elif API_Parameters.CalibrationStage == 2:
@@ -92,8 +103,10 @@ def API_Server(AeroInstance,emgPositionVector):
                             elif API_Parameters.CalibrationStage == 4:
                                 serialized_data  += "CS4" # Add a delimiter at the end
                     elif API_Parameters.CalibrationStageFinished:
-                         API_Parameters.CalibrationStageFinished = False
-                         serialized_data  += "CSF" # Add a delimiter at the end
+                        API_Parameters.CalibrationStageFinished = False
+                        serialized_data  += "CSF" # Add a delimiter at the end
+                        #AeroInstance.Stop()
+                        #BaseStarted = False
                     else:
                         serialized_data  += "~" # Add a delimiter at the end
                     try:
@@ -182,15 +195,26 @@ def API_Server(AeroInstance,emgPositionVector):
                         print(e)
 
                 elif data == "PLOT /Detection":
+                    #msgbox.alert("Ploting Synergies")
                     serialized_data = json.dumps([1])
                     serialized_data  += "~"
                     try:
                         conn.sendall(serialized_data.encode())
                     except Exception as e:
                         print(e)
+                    data = b''
+                    while True:
+                        try:
+                            chunk = conn.recv(1024)
+                            data += chunk
+                            if b"~" in data:
+                                serialized_data = data.decode().rstrip("~")
+                                break
+                        except Exception as e:
+                            print(e)
+                            break
                     
-                    DataReceived = conn.recv(1024)
-                    API_Parameters.SynergiesModels = json.loads(DataReceived.decode().strip())
+                    API_Parameters.SynergiesModels = json.loads(serialized_data)
                     API_Parameters.PlotModels = True
                     try:
                         API_Parameters.PlotCalibrationSignal.signal.emit()
@@ -201,7 +225,19 @@ def API_Server(AeroInstance,emgPositionVector):
                     try:
                         conn.sendall(serialized_data.encode())
                     except Exception as e:
+                        print(e)                   
+                
+                elif data == "UPLOAD /Configurations":
+                    UploadCalibrationFromJson()
+                    serialized_data = json.dumps([1])
+                    serialized_data  += "~"
+                    try:
+                        conn.sendall(serialized_data.encode())
+                    except Exception as e:
                         print(e)
+                    API_Parameters.CalibrationStageFinished = True
+
+                    
 
                 else:
                    print("Invalid request", data)

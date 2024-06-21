@@ -65,7 +65,6 @@ def PlotResults(Thresholds, ID):
     ax.bar(nombres_musculos, Thresholds)
 
     if ID == "Thresholds":
-
         ax.set_xlabel('Muscles')  # Etiqueta del eje x
         ax.set_ylabel('Thresholds')  # Etiqueta del eje y
         ax.set_title('Detected thresholds')  # Título del gráfico
@@ -101,10 +100,6 @@ def PlotSynergiesDetected(vafs, knee_point, H):
     # Bars graphic of synergies
     aux= []
     plt.figure()
-    #plt.subplot(111)
-    #plt.plot(range(2,GlobalParameters.MusclesNumber+1), vafs)
-    #plt.figure()
-
     for j in range(0, knee_point):
         plt.subplot(100*knee_point+10+j+1)
         for i in range(0, H.shape[1]):
@@ -113,8 +108,6 @@ def PlotSynergiesDetected(vafs, knee_point, H):
         aux = []
 
     plt.show()
-
-
 
 class DataProcessing:
 
@@ -326,7 +319,12 @@ def CalibrationProcessing():
             GlobalParameters.SynergyBase = H
             GlobalParameters.SynergyBaseInverse = np.linalg.pinv(H)
             PlotSynergiesDetected(vafs, n_components, H)'''
-            GlobalParameters.modelsList, GlobalParameters.vafs, GlobalParameters.output= SD.calculateSynergy(aux_buffer)
+            GlobalParameters.DetectingSynergies = True
+            try: 
+                GlobalParameters.modelsList, GlobalParameters.vafs, GlobalParameters.output= SD.calculateSynergy(aux_buffer)
+            except Exception as e:
+                msgbox.alert("Cannot detect synergies")
+            GlobalParameters.DetectingSynergies = False
             '''for model in GlobalParameters.modelsList:
                 print(model[0])
                 print(model[1])
@@ -344,7 +342,10 @@ def CalibrationProcessing():
             #GlobalParameters.RequestAngles = True
 
         elif GlobalParameters.CalibrationStage == 4:
-            msgbox.alert("stage 4")
+            print("stage 4")
+            GlobalParameters.UploadFromJson = True
+            print("Saving configuration...")
+
 
     print("PM: Calibration terminated")
     SaveConfigurationToJson()

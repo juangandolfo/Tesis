@@ -18,4 +18,4 @@ ShowSinergies = [True for _ in range(SynergiesNumber)]
 current_x = 0
 
 MusclesColors = ['red','blue','green','yellow','pink','brown','orange','violet']
-SynergiesColors = ['red','blue','green','yellow','pink']
+SynergiesColors = ['red','blue','green','yellow','pink','brown','orange','violet']

@@ -37,7 +37,8 @@ RequestAngles = False
 PlotThresholds = False
 PlotPeaks = False
 PlotSynergiesDetected = False
-PlotSynergiesDetected = False
+UploadFromJson = False
+DetectingSynergies = False
 
 PeakActivation = []
 Threshold = []

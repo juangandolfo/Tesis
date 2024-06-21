@@ -203,8 +203,9 @@ def Cursor():
             screen.blit(entity.surf, entity.rect)
 
         if pygame.sprite.spritecollideany(player, objectives):
-            #messagebox.showinfo('Y el TITULO?!?!','YA ANDA! (ponenos S plz)')
-            messagebox.alert(text='Ganaste', title='Y el TITULO?!?!', button='OK')
+            #messagebox.showinfo('Y el TITULO?!?!','YA ANDA! (ponenos S plz)') #este es con TKinter
+            #messagebox.alert(text='Ganaste', title='Y el TITULO?!?!', button='OK') #este es con pymsgbox
+            print('ganaste')
             player.update((SCREEN_WIDTH/2-player.rect.center[1],SCREEN_HEIGHT/2-player.rect.center[0]))
             for objective in objectives:
                 objective.kill()

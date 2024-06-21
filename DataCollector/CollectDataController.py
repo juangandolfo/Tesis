@@ -15,6 +15,7 @@ from API_Server_Nuevo import *
 from Aero_Nuevo import *
 import Delsys_API_Server
 import API_Parameters
+import pymsgbox as msgbox
 
 clr.AddReference("System.Collections")
 from System.Collections.Generic import List
@@ -159,10 +160,17 @@ class PlottingManagement():
         TrigBase.ResetPipeline()
 
     def StartVisualization_Callback(self):
-        subprocess.run([sys.executable, 'Visualizacion2.py'])
+        try:
+            subprocess.run([sys.executable, 'Visualizacion2.py'])
+        except Exception as e:
+            msgbox.alert(e)
 
     def StartCursor_Callback(self):
-        subprocess.run([sys.executable, 'Cursor.py'])
+        try:
+            subprocess.run([sys.executable, 'Cursor.py'])
+        except Exception as e:
+            msgbox.alert(e)
+        
 
     #---------------------------------------------------------------------------------
     #---- Helper Functions

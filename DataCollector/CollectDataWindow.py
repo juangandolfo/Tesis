@@ -275,7 +275,7 @@ class CountdownWidget(QWidget):
         #self.remaining_time = 30
 
     def start_countdown(self):
-        self.remaining_time = 5
+        self.remaining_time = API_Parameters.remaining_time
         self.timer_label.setText(f"Remaining time: {self.remaining_time}")
         self.timer.start(1000)
 
