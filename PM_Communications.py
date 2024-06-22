@@ -3,7 +3,7 @@ import PM_DataStructure as PM_DS
 import socket
 import json
 import time
-import pickle
+import msgpack as pack
 import numpy as np
 from threading import Thread
 import LocalCircularBufferVector as Buffer
@@ -53,52 +53,101 @@ def Dictionary_to_matrix(dictionary):
 def Request(request):
     #request = "GET /"+Type
     print("                                                                     Request:", request)
+    response_data = {}
     try:
         client_socket.sendall(request.encode())
     except socket.error as e:
             print("PM request:", e)
     data = b''
-    while True:
+    if request ==  "GET /data":
         try:
-            chunk = client_socket.recv(1024)
-            data += chunk
-            if b"~" in data:
-                serialized_data = data.decode().rstrip("~")
-                break
-            elif b"TC" in data:
-                GlobalParameters.TerminateCalibration = True
-                serialized_data = data.decode().rstrip("TC")
-                break
-            elif b"CS1" in data:
-                GlobalParameters.CalibrationStage = 1
-                serialized_data = data.decode().rstrip("CS1")
-                break
-            elif b"CS2" in data:
-                GlobalParameters.CalibrationStage = 2
-                serialized_data = data.decode().rstrip("CS2")
-                break
-            elif b"CS3" in data:
-                GlobalParameters.CalibrationStage = 3
-                serialized_data = data.decode().rstrip("CS3")
-                break
-            elif b"CS4" in data:
-                GlobalParameters.CalibrationStage = 4
-                serialized_data = data.decode().rstrip("CS4")
-                break
-            elif b"CSF" in data:
-                GlobalParameters.CalibrationStage = 0
-                serialized_data = data.decode().rstrip("CSF")
-                break
+            while True:
+                chunk = client_socket.recv(1024)
+                data += chunk
+                if b"~" in data:
+                    serialized_data = data.rstrip(pack.packb(':'))
+                    break
+                elif b"TC" in data:
+                    GlobalParameters.TerminateCalibration = True
+                    serialized_data = data.rstrip("TC")
+                    break
+                elif b"CS1" in data:
+                    GlobalParameters.CalibrationStage = 1
+                    serialized_data = data.rstrip("CS1")
+                    break
+                elif b"CS2" in data:
+                    GlobalParameters.CalibrationStage = 2
+                    serialized_data = data.rstrip("CS2")
+                    break
+                elif b"CS3" in data:
+                    GlobalParameters.CalibrationStage = 3
+                    serialized_data = data.rstrip("CS3")
+                    break
+                elif b"CS4" in data:
+                    GlobalParameters.CalibrationStage = 4
+                    serialized_data = data.rstrip("CS4")
+                    break
+                elif b"CSF" in data:
+                    GlobalParameters.CalibrationStage = 0
+                    serialized_data = data.rstrip("CSF")
+                    break
+                else:
+                    serialized_data = data
+                    print("algo")
 
         except socket.timeout as e:
             print("PM Client timeout", e)
-            continue
+            serialized_data = b''
         except socket.error as e:
             print("PM Client socket error", e)
-            continue
+            serialized_data = b''
+    else:
+        while True:
+            try:
+                chunk = client_socket.recv(1024)
+                data += chunk
+                if b"~" in data:
+                    serialized_data = data.decode().rstrip("~")
+                    break
+                elif b"TC" in data:
+                    GlobalParameters.TerminateCalibration = True
+                    serialized_data = data.decode().rstrip("TC")
+                    break
+                elif b"CS1" in data:
+                    GlobalParameters.CalibrationStage = 1
+                    serialized_data = data.decode().rstrip("CS1")
+                    break
+                elif b"CS2" in data:
+                    GlobalParameters.CalibrationStage = 2
+                    serialized_data = data.decode().rstrip("CS2")
+                    break
+                elif b"CS3" in data:
+                    GlobalParameters.CalibrationStage = 3
+                    serialized_data = data.decode().rstrip("CS3")
+                    break
+                elif b"CS4" in data:
+                    GlobalParameters.CalibrationStage = 4
+                    serialized_data = data.decode().rstrip("CS4")
+                    break
+                elif b"CSF" in data:
+                    GlobalParameters.CalibrationStage = 0
+                    serialized_data = data.decode().rstrip("CSF")
+                    break
 
-    response_data = json.loads(serialized_data)
-    if response_data == {}:
+            except socket.timeout as e:
+                print("PM Client timeout", e)
+                continue
+            except socket.error as e:
+                print("PM Client socket error", e)
+                continue 
+    
+    if request ==  "GET /data":
+        print(pack.packb(':'))
+        print(serialized_data)
+        response_data = pack.unpackb(serialized_data, raw=False)
+    else:
+        response_data = json.loads(serialized_data)
+    if response_data == {} or  response_data == []:
         #raise Exception("PM:No data received")
         pass
     return response_data
@@ -306,7 +355,8 @@ def Processing_Module_Client():
                             
                 else:
                     data = Request("GET /data")
-                    formated_data = Dictionary_to_matrix(data)
+                    # formated_data = Dictionary_to_matrix(data)
+                    formated_data = np.asarray(data)
                     if GlobalParameters.DetectingSynergies == False:
                         PM_DS.stack_lock.acquire()  # Acquire lock before accessing the stack
                         PM_DS.PM_DataStruct.circular_stack.add_matrix(formated_data)

@@ -2,7 +2,7 @@ import socket
 import random
 import json
 import time
-import pickle
+import msgpack as pack
 import numpy as np
 import clr
 import pymsgbox as msgbox
@@ -22,16 +22,23 @@ def FormattedDictionary_to_PythonDictionary(formatted_dictionary, emgPositionVec
     
     for i in formatted_dictionary.Keys:
         keys.append(i)
+        
     '''for j in range(len(keys)):
-        #outArr[j].append(np.asarray(formatted_dictionary[keys[j]], dtype='object'))
-        python_dictionary[str(keys[j])] = np.asarray(formatted_dictionary[keys[j]]).tolist()
+        # outArr[j].append(np.asarray(formatted_dictionary[keys[j]], dtype='object'))
         # full data
     '''
-    for j in emgPositionVector:
-        #outArr[j].append(np.asarray(formatted_dictionary[keys[j]], dtype='object')) # matrix
-            python_dictionary[str(keys[j])] = np.asarray(formatted_dictionary[keys[j]]).tolist()
-
-    return python_dictionary
+    DataRows = min(set([len(formatted_dictionary[keys[i]]) for i in emgPositionVector]))
+    # set(len(row) for row in keys)
+    DataColumns = len(emgPositionVector)
+    # DataRows = len(formatted_dictionary[keys[0]])
+    OutMatrix = np.zeros((DataRows,DataColumns))
+    for j in range(len(emgPositionVector)):
+        # outArr[j].append(np.asarray(formatted_dictionary[keys[j]], dtype='object')) # matrix
+        # python_dictionary[str(keys[j])] = np.asarray(formatted_dictionary[keys[j]]).tolist()
+        OutMatrix[:,j] = np.asarray(formatted_dictionary[keys[emgPositionVector[j]]])[:DataRows]
+        # python_dictionary[str(keys[emgPositionVector[j]])] = np.asarray(OutMatrix[j]).tolist()
+    
+    return OutMatrix.tolist()
 
 def UploadCalibrationFromJson():
     # Load the configuration from a JSON file
@@ -78,11 +85,15 @@ def API_Server(AeroInstance,emgPositionVector):
                     #print("Data requested")
                     dataReady = AeroInstance.CheckDataQueue()
                     if dataReady:
-                        response_data = FormattedDictionary_to_PythonDictionary(AeroInstance.PollData(),emgPositionVector)
+                        try:
+                            response_data = FormattedDictionary_to_PythonDictionary(AeroInstance.PollData(),emgPositionVector)
+                            #print(response_data)
+                        except Exception as e:
+                            msgbox.alert(e)
                     else:
-                        response_data={}
+                        response_data=[]
 
-                    serialized_data = json.dumps(response_data) # Serialize the object using json
+                    serialized_data = pack.packb(response_data,use_bin_type=True) # Serialize the object using json
                     if API_Parameters.TerminateCalibrationFlag:
                         serialized_data  += "TC" # Add a delimiter at the end
                         API_Parameters.TerminateCalibrationFlag = False
@@ -108,9 +119,9 @@ def API_Server(AeroInstance,emgPositionVector):
                         #AeroInstance.Stop()
                         #BaseStarted = False
                     else:
-                        serialized_data  += "~" # Add a delimiter at the end
+                        serialized_data  += pack.packb(':') # Add a delimiter at the end
                     try:
-                        conn.sendall(serialized_data.encode())
+                        conn.sendall(serialized_data)
                         #print("data sent:", serialized_data)
                     except Exception as e:
                         print("API sending", e)
