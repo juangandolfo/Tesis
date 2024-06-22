@@ -92,7 +92,7 @@ def calculateSynergy(matrix):
             if vaf>0.9 and outputDefined==False:
                 output = (n_components, H, r_squared, vafs)
                 outputDefined = True'''
-        #msgbox.alert(f" H: {H},")
+        msgbox.alert(f" H: {H},")
     
     #deteccion de codo
     ''' x = range(2, GlobalParameters.MusclesNumber+1)

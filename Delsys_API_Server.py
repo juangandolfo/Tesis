@@ -7,6 +7,7 @@ import numpy as np
 import clr
 import pymsgbox as msgbox
 import matplotlib.pyplot as plt
+import zlib
 clr.AddReference("System")
 from System import Guid
 import API_Parameters
@@ -62,7 +63,6 @@ def API_Server(AeroInstance,emgPositionVector):
         conn, addr = s.accept()
         with conn:
             print(f"Connected by {addr}")
-            BaseStarted = False
             while True:
                 #print("                                                 API Server live")
                 try:
@@ -72,7 +72,7 @@ def API_Server(AeroInstance,emgPositionVector):
                     print("API", e)
                 # Check if the received data is a GET request for "/data"
                 data = DataReceived.decode().strip()
-                print(data)
+                #print(data)
                 if data == "GET /StartDataStreaming":
                     serialized_data = json.dumps(1) # Serialize the object using json
                     serialized_data  += "~"
@@ -82,7 +82,7 @@ def API_Server(AeroInstance,emgPositionVector):
                     except Exception as e:
                         print(e)
                 elif data == "GET /data":
-                    #print("Data requested")
+                    print("Data requested")
                     dataReady = AeroInstance.CheckDataQueue()
                     if dataReady:
                         try:
@@ -92,10 +92,10 @@ def API_Server(AeroInstance,emgPositionVector):
                             msgbox.alert(e)
                     else:
                         response_data=[]
-
+                        print("sending empty data")
                     serialized_data = pack.packb(response_data,use_bin_type=True) # Serialize the object using json
                     if API_Parameters.TerminateCalibrationFlag:
-                        serialized_data  += "TC" # Add a delimiter at the end
+                        serialized_data  += b"TC" # Add a delimiter at the end
                         API_Parameters.TerminateCalibrationFlag = False
 
                     elif API_Parameters.CalibrationStageInitialized:
@@ -106,23 +106,23 @@ def API_Server(AeroInstance,emgPositionVector):
                             # else:
                             #     pass
                             if API_Parameters.CalibrationStage == 1:
-                                serialized_data  += "CS1" # Add a delimiter at the end
+                                serialized_data  += b"CS1" # Add a delimiter at the end
                             elif API_Parameters.CalibrationStage == 2:
-                                serialized_data  += "CS2" # Add a delimiter at the end
+                                serialized_data  += b"CS2" # Add a delimiter at the end
                             elif API_Parameters.CalibrationStage == 3:
-                                serialized_data  += "CS3" # Add a delimiter at the end
+                                serialized_data  += b"CS3" # Add a delimiter at the end
                             elif API_Parameters.CalibrationStage == 4:
-                                serialized_data  += "CS4" # Add a delimiter at the end
+                                serialized_data  += b"CS4" # Add a delimiter at the end
                     elif API_Parameters.CalibrationStageFinished:
                         API_Parameters.CalibrationStageFinished = False
-                        serialized_data  += "CSF" # Add a delimiter at the end
+                        serialized_data  += b"CSF" # Add a delimiter at the end
                         #AeroInstance.Stop()
                         #BaseStarted = False
                     else:
-                        serialized_data  += pack.packb(':') # Add a delimiter at the end
+                        serialized_data  = serialized_data + b'end' # Add a delimiter at the end
+                        #print(serialized_data)
                     try:
                         conn.sendall(serialized_data)
-                        #print("data sent:", serialized_data)
                     except Exception as e:
                         print("API sending", e)
 
