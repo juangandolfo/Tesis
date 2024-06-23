@@ -30,8 +30,12 @@ def SaveConfigurationToJson():
     SynergyBase= GlobalParameters.SynergyBase
     SynergyBaseInverse = GlobalParameters.SynergyBaseInverse
     projectionMatrix = GlobalParameters.projectionMatrix 
+    Threshold = GlobalParameters.Threshold
+    Peaks = GlobalParameters.PeakActivation
 
     data = {
+        "Thresholds": Threshold.tolist(),
+        "Peaks": Peaks.tolist(),
         "MusclesNumber": musclesNumber, 
         "Angles": angles, 
         "SynergyBase": SynergyBase.tolist(), 
