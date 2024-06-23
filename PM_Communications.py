@@ -8,13 +8,12 @@ import numpy as np
 from threading import Thread
 import LocalCircularBufferVector as Buffer
 import pymsgbox as msgbox
-
+from io import BytesIO
 
 
 HOST = "127.0.0.1"  # Standard adress (localhost)
 PORT_Client = 6001  # Port to get data from the File API Server
 PORT_Server = 6002 # The port used by the PM Server
-
 
 # Create a socket for the client
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -63,38 +62,43 @@ def Request(request):
         try:
             while True:
                 chunk = client_socket.recv(1024)
-                data += chunk
-                if b"~" in data:
-                    serialized_data = data.rstrip(pack.packb(':'))
+                if b'end'in chunk:
+                    chunk = chunk.rstrip(b'end')
+                    data += chunk
                     break
-                elif b"TC" in data:
+                elif b"TC" in chunk:
                     GlobalParameters.TerminateCalibration = True
-                    serialized_data = data.rstrip("TC")
+                    chunk = chunk.rstrip(b"TC")
+                    data += chunk
                     break
-                elif b"CS1" in data:
+                elif b"CS1" in chunk:
                     GlobalParameters.CalibrationStage = 1
-                    serialized_data = data.rstrip("CS1")
+                    chunk = chunk.rstrip(b"CS1")
+                    data += chunk
                     break
-                elif b"CS2" in data:
+                elif b"CS2" in chunk:
                     GlobalParameters.CalibrationStage = 2
-                    serialized_data = data.rstrip("CS2")
+                    chunk = chunk.rstrip(b"CS2")
+                    data += chunk
                     break
-                elif b"CS3" in data:
+                elif b"CS3" in chunk:
                     GlobalParameters.CalibrationStage = 3
-                    serialized_data = data.rstrip("CS3")
+                    chunk = chunk.rstrip(b"CS3")
+                    data += chunk
                     break
-                elif b"CS4" in data:
+                elif b"CS4" in chunk:
                     GlobalParameters.CalibrationStage = 4
-                    serialized_data = data.rstrip("CS4")
+                    chunk = chunk.rstrip(b"CS4")
+                    data += chunk
                     break
-                elif b"CSF" in data:
+                elif b"CSF" in chunk:
                     GlobalParameters.CalibrationStage = 0
-                    serialized_data = data.rstrip("CSF")
+                    chunk = chunk.rstrip(b"CSF")
+                    data += chunk
                     break
-                else:
-                    serialized_data = data
-                    print("algo")
-
+                else: 
+                    data += chunk
+                    
         except socket.timeout as e:
             print("PM Client timeout", e)
             serialized_data = b''
@@ -107,6 +111,7 @@ def Request(request):
                 chunk = client_socket.recv(1024)
                 data += chunk
                 if b"~" in data:
+                    last_chunk = data
                     serialized_data = data.decode().rstrip("~")
                     break
                 elif b"TC" in data:
@@ -142,14 +147,19 @@ def Request(request):
                 continue 
     
     if request ==  "GET /data":
-        print(pack.packb(':'))
-        print(serialized_data)
-        response_data = pack.unpackb(serialized_data, raw=False)
+        try:
+            if data == b'\x90': 
+                raise Exception("PM:No data received")
+            else:
+                response_data = pack.unpackb(data, max_array_len = len(data), raw=False)
+               
+        except Exception as e:
+            print(e)
+            pass
     else:
         response_data = json.loads(serialized_data)
     if response_data == {} or  response_data == []:
-        #raise Exception("PM:No data received")
-        pass
+        raise Exception("PM:No data received")
     return response_data
 
 # Function to handle the connection with a client
@@ -175,7 +185,6 @@ def Handle_Client(conn,addr):
                     PM_DS.PositionOutput_Semaphore.release()
 
                     if response_data == []:
-                        print("Empty data")
                         response_data = [0 for i in range(GlobalParameters.MusclesNumber)]
 
                     response_data = np.array(response_data).tolist()
@@ -189,12 +198,9 @@ def Handle_Client(conn,addr):
                     PM_DS.ProcessedDataBuffer_Semaphore.acquire()  # Acquire lock before accessing the stack
                     response_data = PM_DS.ProcessedDataBuffer.get_vectors(1)
                     PM_DS.ProcessedDataBuffer_Semaphore.release()  # Release lock after reading the stack
-
                     if response_data == []:
                         print("Empty data")
                         response_data = []
-
-
                     response_data = np.array(response_data).tolist()
                     response_json = json.dumps(response_data)
                     response_json  += "~" # Add a delimiter at the end
@@ -274,7 +280,7 @@ def Processing_Module_Client():
         print("Data streaming started")'''
     # Loop to request data
     while True:
-        print("                           PM Client live")
+        #print("                           PM Client live")
         try:
             try:
                 if GlobalParameters.RequestAngles == True:
@@ -354,20 +360,23 @@ def Processing_Module_Client():
                         #     GlobalParameters.UploadFromJson = False
                             
                 else:
-                    data = Request("GET /data")
-                    # formated_data = Dictionary_to_matrix(data)
-                    formated_data = np.asarray(data)
-                    if GlobalParameters.DetectingSynergies == False:
-                        PM_DS.stack_lock.acquire()  # Acquire lock before accessing the stack
-                        PM_DS.PM_DataStruct.circular_stack.add_matrix(formated_data)
-                        PM_DS.stack_lock.release()  # Release lock after reading the stack
-                    else:
-                        #print("Detecting synergies")
-                        pass
+                    try:
+                        data = Request("GET /data")
+                        # formated_data = Dictionary_to_matrix(data)
+                        formated_data = np.asarray(data)
+                        if GlobalParameters.DetectingSynergies == False:
+                            PM_DS.stack_lock.acquire()  # Acquire lock before accessing the stack
+                            PM_DS.PM_DataStruct.circular_stack.add_matrix(formated_data)
+                            PM_DS.stack_lock.release()  # Release lock after reading the stack
+                        else:
+                            #print("Detecting synergies")
+                            pass
+                    except Exception as e:
+                        print(e)
 
             except Exception as e:
                 print("PM Client", e)
-                msgbox.alert("Extra")   
+                print(data)
 
         except socket.error as e:
             print("Connection error:", e)

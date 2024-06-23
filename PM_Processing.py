@@ -230,7 +230,7 @@ def CalibrationProcessing():
     print("PM: Calibration Processing live")
     while not GlobalParameters.TerminateCalibration:
 
-        #print("PM: Calibration Processing live")
+        print("PM: Calibration Processing live")
 
         if GlobalParameters.CalibrationStage == 1:
             print("Detecting Thresholds...")

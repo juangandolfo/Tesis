@@ -46,7 +46,7 @@ Threshold = []
 TerminateCalibration = False
 CalibrationStage = 0
 
-saveCSV = False
+saveCSV = True
 
 #LPF
 LPF_cutoff = 40
