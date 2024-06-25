@@ -199,7 +199,7 @@ def Handle_Client(conn,addr):
                     response_data = PM_DS.ProcessedDataBuffer.get_vectors(1)
                     PM_DS.ProcessedDataBuffer_Semaphore.release()  # Release lock after reading the stack
                     if response_data == []:
-                        print("Empty data")
+                        #print("Empty data")
                         response_data = []
                     response_data = np.array(response_data).tolist()
                     response_json = json.dumps(response_data)
@@ -215,7 +215,7 @@ def Handle_Client(conn,addr):
                         PM_DS.SynergiesBuffer_Semaphore.release()  # Release lock after reading the stack
 
                         if response_data == []:
-                            print("Empty data")
+                            #print("Empty data")
                             response_data = []
 
                         response_data = np.array(response_data).tolist()
@@ -228,7 +228,7 @@ def Handle_Client(conn,addr):
                         response_data = [GlobalParameters.MusclesNumber,GlobalParameters.synergiesNumber,GlobalParameters.sampleRate] #PM_DS.PM_DataStruct.circular_stack.get_vectors(3)
 
                         if response_data == []:
-                            print("Empty data")
+                            #print("Empty data")
                             response_data = []
 
                         response_data = np.array(response_data).tolist()
@@ -265,9 +265,9 @@ def Processing_Module_Client():
             print(e)
             pass
     # Request Number of cahnnels from host
-
     GlobalParameters.MusclesNumber = Request("GET /SensorsNumber")
     GlobalParameters.sampleRate = Request("GET /SampleRate")
+    GlobalParameters.ExperimentTimestamp = Request("GET /ExperimentTimestamp")
     try:
         GlobalParameters.Initialize()
     except Exception as e:
@@ -297,9 +297,7 @@ def Processing_Module_Client():
                         GlobalParameters.RequestAngles = False
                         GlobalParameters.CalibrationStage = 0
                         GlobalParameters.synergiesNumber = len(angles)
-                        # msgbox.alert("lo hizo")
                         GlobalParameters.SynergyBase = GlobalParameters.modelsList[GlobalParameters.synergiesNumber-2][1]
-                        # msgbox.alert("lo hizo 2")
                         GlobalParameters.SynergyBaseInverse = GlobalParameters.modelsList[GlobalParameters.synergiesNumber-2][2]
                         
                         
@@ -354,10 +352,24 @@ def Processing_Module_Client():
                     except Exception as e:
                         print(e)
                     if response[0] == 1:
-                        print("Done")
-                        # response = Request(GlobalParameters.JsonData)    
+                        configurationDictionary = Request("GET /JsonConfiguration")
+                        GlobalParameters.Threshold = np.asarray(configurationDictionary['Thresholds'])
+                        GlobalParameters.PeakActivation = np.asarray(configurationDictionary['Peaks'])
+                        GlobalParameters.SynergyBase = np.asarray(configurationDictionary['SynergyBase'])
+                        synergy_CursorMap = np.asarray(configurationDictionary['synergy_CursorMap'])
+                        angles = []
+                        for element in synergy_CursorMap:
+                            angles.append(int(element))
+                        GlobalParameters.synergy_CursorMap = angles
+                        GlobalParameters.UploadedFromJson = True
+
+                        # while not GlobalParameters.UploadedFromJsonFinished:
+                        #     continue
+                        # response = Request("SET /JsonConfigurationFinished")
                         # if response[0] == 1:
-                        #     GlobalParameters.UploadFromJson = False
+                        #     GlobalParameters.UploadedFromJsonFinished = False
+
+                        
                             
                 else:
                     try:
@@ -372,11 +384,12 @@ def Processing_Module_Client():
                             #print("Detecting synergies")
                             pass
                     except Exception as e:
-                        print(e)
+                        #print(e)
+                        pass
 
             except Exception as e:
                 print("PM Client", e)
-                print(data)
+                #print(data)
 
         except socket.error as e:
             print("Connection error:", e)
