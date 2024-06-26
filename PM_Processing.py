@@ -15,44 +15,6 @@ import json
 
 plt.switch_backend('TkAgg')
 
-# Function to save data to a CSV file
-def save_to_csv(filename, aux_vector, M1, M2):
-    with open(filename, 'w', newline='') as csvfile:
-        writer = csv.writer(csvfile)
-        writer.writerow(['Thresholds', 'M1', 'M2'])
-        for i in range(len(aux_vector)):
-            writer.writerow([aux_vector[i], M1[i], M2[i]])
-
-def SaveConfigurationToJson():
-    # Save the configuration to a JSON file
-    musclesNumber = GlobalParameters.MusclesNumber
-    angles = GlobalParameters.synergy_CursorMap
-    SynergyBase= GlobalParameters.SynergyBase
-    SynergyBaseInverse = GlobalParameters.SynergyBaseInverse
-    projectionMatrix = GlobalParameters.projectionMatrix 
-
-    data = {
-        "MusclesNumber": musclesNumber, 
-        "Angles": angles, 
-        "SynergyBase": SynergyBase.tolist(), 
-        "SynergyBaseInverse": SynergyBaseInverse.tolist(),
-        "ProjectionMatrix": projectionMatrix.tolist()   
-        }
-    json_array = json.dumps(data, sort_keys=True, indent=4)
-    f = open('Configuration.json', 'w')
-    f.write(json_array) 
-    
-def UploadCalibrationFromJson():
-    # Load the configuration from a JSON file
-    with open('Configuration.json') as f:
-        data = json.load(f)
-        print(data)
-        GlobalParameters.MusclesNumber = data['MusclesNumber']
-        GlobalParameters.synergy_CursorMap = data['Angles']
-        GlobalParameters.SynergyBase = np.array(data['SynergyBase'])
-        GlobalParameters.SynergyBaseInverse = np.array(data['SynergyBaseInverse'])
-        GlobalParameters.projectionMatrix = np.array(data['ProjectionMatrix'])
-
 def PlotResults(Thresholds, ID):
 
     num_musculos = len(Thresholds)
@@ -175,7 +137,7 @@ def Processing():
     print("PM: Processing live")
     if GlobalParameters.saveCSV:
         today = time.gmtime()
-        FileName = './Experiments/' + str(today.tm_year)  + str(today.tm_mon) + str(today.tm_mday) + '_' + str(today.tm_hour) + str(today.tm_min) + str(today.tm_sec) + ".csv"
+        FileName = './Experiments/Experiment-' + GlobalParameters.ExperimentTimestamp + ".csv"
         file = open(FileName, 'w', newline='')
         writer = csv.writer(file)
         writer.writerow([f'Muscle {i+1}' for i in range(GlobalParameters.MusclesNumber)])
@@ -342,13 +304,22 @@ def CalibrationProcessing():
             #GlobalParameters.RequestAngles = True
 
         elif GlobalParameters.CalibrationStage == 4:
-            print("stage 4")
             GlobalParameters.UploadFromJson = True
-            print("Saving configuration...")
-
+            while GlobalParameters.CalibrationStage == 4:
+                print("stage4")
+                if GlobalParameters.UploadedFromJson:
+                    try:
+                        # GlobalParameters.projectionMatrix = GlobalParameters.GenerateProjectionMatrix(GlobalParameters.synergy_CursorMap) 
+                        GlobalParameters.SynergyBaseInverse = np.linalg.pinv(GlobalParameters.SynergyBase)
+                        GlobalParameters.projectionMatrix = GlobalParameters.GenerateProjectionMatrix(GlobalParameters.synergy_CursorMap)    
+                        GlobalParameters.UploadedFromJsonFinished = True          
+                    except Exception as e:
+                        msgbox.alert(e)
+                    
+                    GlobalParameters.UploadedFromJson = False
+                    break
 
     print("PM: Calibration terminated")
-    SaveConfigurationToJson()
     PM_Processing.start()
 
 PM_Calibration = Thread(target=CalibrationProcessing,daemon=True)

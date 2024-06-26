@@ -440,11 +440,21 @@ class CalibrationWindow(QMainWindow):
         # Show the countdown widget and start the countdown
         API_Parameters.CalibrationStage = self.CalibrationStage
         API_Parameters.CalibrationStageInitialized = True
-        self.timer_widget.show()
-        self.timer_widget.start_countdown()
+        if self.CalibrationStage == 4:
+            pass
+        else:
+            self.timer_widget.show()
+            self.timer_widget.start_countdown()
 
     def terminate_callback (self):
         API_Parameters.TerminateCalibrationFlag = True
+        API_Parameters.SaveCalibrationToJson(
+                                            API_Parameters.ChannelsNumber,
+                                            API_Parameters.Thresholds,
+                                            API_Parameters.Peaks,
+                                            API_Parameters.AnglesOutput,
+                                            API_Parameters.SynergyBase
+                                            )
         self.close()
 
     def show_angle_window(self):
@@ -544,10 +554,19 @@ class CalibrationWindow(QMainWindow):
         API_Parameters.PlotAngles = False
         API_Parameters.AnglesOutputSemaphore.acquire()
         API_Parameters.AnglesReady = 1
-        API_Parameters.AnglesOutput = angles
         API_Parameters.AnglesOutputSemaphore.release()
-
-    
+        API_Parameters.AnglesOutput = [] 
+        for angle in angles:
+            if angle != '':
+                API_Parameters.AnglesOutput.append(angle)
+        AnglesCount = len(API_Parameters.AnglesOutput)
+        #API_Parameters.AnglesOutput = angles
+        try:
+            API_Parameters.SynergyBase = API_Parameters.SynergiesModels[f'{AnglesCount} Synergies']
+        except Exception as e:
+            msgbox.alert(f"CollectDataWindow: {e}")
+            pass
+            
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

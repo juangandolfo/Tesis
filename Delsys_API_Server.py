@@ -8,6 +8,7 @@ import clr
 import pymsgbox as msgbox
 import matplotlib.pyplot as plt
 import zlib
+
 clr.AddReference("System")
 from System import Guid
 import API_Parameters
@@ -41,13 +42,6 @@ def FormattedDictionary_to_PythonDictionary(formatted_dictionary, emgPositionVec
     
     return OutMatrix.tolist()
 
-def UploadCalibrationFromJson():
-    # Load the configuration from a JSON file
-    with open('Configuration.json') as f:
-        data = json.load(f)
-        #msgbox.alert(data["Angles"])
-        print(data["Angles"])
-
 def API_Server(AeroInstance,emgPositionVector):
     # Create a socket
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -63,6 +57,7 @@ def API_Server(AeroInstance,emgPositionVector):
         conn, addr = s.accept()
         with conn:
             print(f"Connected by {addr}")
+            API_Parameters.CreateExperimentName()
             while True:
                 #print("                                                 API Server live")
                 try:
@@ -224,14 +219,43 @@ def API_Server(AeroInstance,emgPositionVector):
                         print(e)                   
                 
                 elif data == "UPLOAD /Configurations":
-                    UploadCalibrationFromJson()
-                    serialized_data = pack.packb([1], use_bin_type=True)
-                    serialized_data  += b'END'
+                    try:
+                        Thresholds, Peaks, AnglesOutput, SynergyBase = API_Parameters.UploadCalibrationFromJson()
+                        API_Parameters.Thresholds = Thresholds
+                        API_Parameters.Peaks = Peaks
+                        API_Parameters.AnglesOutput = AnglesOutput
+                        API_Parameters.SynergyBase = SynergyBase
+                    except Exception as e:
+                        msgbox.alert(e)                    
+                        
+                    serialized_data = json.dumps([1])
+                    serialized_data  += "~"
                     try:
                         conn.sendall(serialized_data)
                     except Exception as e:
                         print(e)
                     API_Parameters.CalibrationStageFinished = True
+
+                elif data == "GET /JsonConfiguration":
+                    dictionary = {"Thresholds": API_Parameters.Thresholds,
+                                  "Peaks": API_Parameters.Peaks,
+                                   "synergy_CursorMap": API_Parameters.AnglesOutput,
+                                   "SynergyBase": API_Parameters.SynergyBase}
+                    serialized_data = json.dumps(dictionary)  
+                    serialized_data  += "~" 
+                    try:
+                        conn.sendall(serialized_data.encode())
+                    except Exception as e:
+                        print(e)
+
+                elif data == "GET /ExperimentTimestamp":
+                    serialized_data = json.dumps(API_Parameters.ExperimentTimestamp)
+                    serialized_data  += "~"
+                    try:
+                        conn.sendall(serialized_data.encode())
+                    except Exception as e:
+                        print(e)
+                                      
 
                 else:
                    print("Invalid request", data)

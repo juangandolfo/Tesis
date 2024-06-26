@@ -7,7 +7,6 @@ import pymsgbox as msgbox
 ModoDelsys = True # True if we use the Delsys API Server, False if we use the API Server from the PM.
 Initialized = False
 
-
 MusclesNumber = 4
 
 RawData_BufferSize = 1000
@@ -39,6 +38,8 @@ PlotPeaks = False
 PlotSynergiesDetected = False
 UploadFromJson = False
 DetectingSynergies = False
+UploadedFromJson = False
+UploadedFromJsonFinished = False
 
 PeakActivation = []
 Threshold = []
@@ -47,6 +48,7 @@ TerminateCalibration = False
 CalibrationStage = 0
 
 saveCSV = True
+ExperimentTimestamp = ''
 
 #LPF
 LPF_cutoff = 40
