@@ -50,126 +50,81 @@ def Dictionary_to_matrix(dictionary):
 
 # Function to send the request and receive the data from API Server
 def Request(request):
-    #request = "GET /"+Type
-    print("                                                                     Request:", request)
-    response_data = {}
+    response_data = []
     try:
         client_socket.sendall(request.encode())
     except socket.error as e:
             print("PM request:", e)
     data = b''
-    if request ==  "GET /data":
-        try:
-            while True:
-                chunk = client_socket.recv(1024)
-                if b'end'in chunk:
-                    chunk = chunk.rstrip(b'end')
-                    data += chunk
-                    break
-                elif b"TC" in chunk:
-                    GlobalParameters.TerminateCalibration = True
-                    chunk = chunk.rstrip(b"TC")
-                    data += chunk
-                    break
-                elif b"CS1" in chunk:
-                    GlobalParameters.CalibrationStage = 1
-                    chunk = chunk.rstrip(b"CS1")
-                    data += chunk
-                    break
-                elif b"CS2" in chunk:
-                    GlobalParameters.CalibrationStage = 2
-                    chunk = chunk.rstrip(b"CS2")
-                    data += chunk
-                    break
-                elif b"CS3" in chunk:
-                    GlobalParameters.CalibrationStage = 3
-                    chunk = chunk.rstrip(b"CS3")
-                    data += chunk
-                    break
-                elif b"CS4" in chunk:
-                    GlobalParameters.CalibrationStage = 4
-                    chunk = chunk.rstrip(b"CS4")
-                    data += chunk
-                    break
-                elif b"CSF" in chunk:
-                    GlobalParameters.CalibrationStage = 0
-                    chunk = chunk.rstrip(b"CSF")
-                    data += chunk
-                    break
-                else: 
-                    data += chunk
-                    
-        except socket.timeout as e:
-            print("PM Client timeout", e)
-            serialized_data = b''
-        except socket.error as e:
-            print("PM Client socket error", e)
-            serialized_data = b''
-    else:
-        while True:
-            try:
-                chunk = client_socket.recv(1024)
-                data += chunk
-                if b"~" in data:
-                    last_chunk = data
-                    serialized_data = data.decode().rstrip("~")
-                    break
-                elif b"TC" in data:
-                    GlobalParameters.TerminateCalibration = True
-                    serialized_data = data.decode().rstrip("TC")
-                    break
-                elif b"CS1" in data:
-                    GlobalParameters.CalibrationStage = 1
-                    serialized_data = data.decode().rstrip("CS1")
-                    break
-                elif b"CS2" in data:
-                    GlobalParameters.CalibrationStage = 2
-                    serialized_data = data.decode().rstrip("CS2")
-                    break
-                elif b"CS3" in data:
-                    GlobalParameters.CalibrationStage = 3
-                    serialized_data = data.decode().rstrip("CS3")
-                    break
-                elif b"CS4" in data:
-                    GlobalParameters.CalibrationStage = 4
-                    serialized_data = data.decode().rstrip("CS4")
-                    break
-                elif b"CSF" in data:
-                    GlobalParameters.CalibrationStage = 0
-                    serialized_data = data.decode().rstrip("CSF")
-                    break
-
-            except socket.timeout as e:
-                print("PM Client timeout", e)
-                continue
-            except socket.error as e:
-                print("PM Client socket error", e)
-                continue 
     
-    if request ==  "GET /data":
-        try:
-            if data == b'\x90': 
-                raise Exception("PM:No data received")
-            else:
-                response_data = pack.unpackb(data, max_array_len = len(data), raw=False)
-               
-        except Exception as e:
-            print(e)
-            pass
-    else:
-        response_data = json.loads(serialized_data)
-    if response_data == {} or  response_data == []:
-        raise Exception("PM:No data received")
+    try:
+        while True:
+            chunk = client_socket.recv(1024)
+            if b'END'in chunk:
+                chunk = chunk[:-3]
+                data += chunk
+                #print("delimiter found")
+                break
+            elif b"TC" in chunk:
+                GlobalParameters.TerminateCalibration = True
+                chunk = chunk[:-2]
+                data += chunk
+                break
+            elif b"CS1" in chunk:
+                GlobalParameters.CalibrationStage = 1
+                chunk = chunk[:-3]
+                data += chunk
+                break
+            elif b"CS2" in chunk:
+                GlobalParameters.CalibrationStage = 2
+                chunk = chunk[:-3]
+                data += chunk
+                break
+            elif b"CS3" in chunk:
+                GlobalParameters.CalibrationStage = 3
+                chunk = chunk[:-3]
+                data += chunk
+                break
+            elif b"CS4" in chunk:
+                GlobalParameters.CalibrationStage = 4
+                chunk = chunk[:-3]
+                data += chunk
+                break
+            elif b"CSF" in chunk:
+                GlobalParameters.CalibrationStage = 0
+                chunk = chunk[:-3]
+                data += chunk
+                break
+            else: 
+                data += chunk
+                
+    except socket.timeout as e:
+        print("PM Client timeout", e)
+    except socket.error as e:
+        print("PM Client socket error", e)
+    except Exception as e:
+        msgbox.alert(e)
+    
+    try:
+        if data == b'\x90': 
+            raise Exception("PM:No data received")
+        else:
+            response_data = pack.unpackb(data, max_array_len = len(data), raw=False)
+            
+    except Exception as e:
+        #msgbox.alert(e)
+        pass
+        
     return response_data
 
 # Function to handle the connection with a client
 def Handle_Client(conn,addr):
 
     print(f"Connected by {addr}")
-    conn.settimeout(3)
+    conn.settimeout(300)
     try:
         while True:
-            #print("                                                      PM Server live")
+            print("                                                      PM Server live")
             try:
                 data = conn.recv(1024)
                 if not data:
@@ -185,11 +140,11 @@ def Handle_Client(conn,addr):
                     PM_DS.PositionOutput_Semaphore.release()
 
                     if response_data == []:
-                        response_data = [0 for i in range(GlobalParameters.MusclesNumber)]
+                        response_data = [0,0]
 
-                    response_data = np.array(response_data).tolist()
+                    response_data = np.asarray(response_data).tolist()
                     #print(response_data)
-                    response_json = json.dumps(response_data).encode()  # Convert the dictionary to JSON and enconde into bytes
+                    response_json = pack.packb(response_data, use_bin_type=True)  # Convert the dictionary to JSON and enconde into bytes
                     conn.sendall(response_json)
                     #print("PM: Data sent:", response_data)
 
@@ -201,12 +156,21 @@ def Handle_Client(conn,addr):
                     if response_data == []:
                         print("Empty data")
                         response_data = []
-                    response_data = np.array(response_data).tolist()
-                    response_json = json.dumps(response_data)
-                    response_json  += "~" # Add a delimiter at the end
+                    response_data = np.asarray(response_data).tolist()
+                    print(response_data)
+                    try:
+                        serialized_data = pack.packb(response_data,use_bin_type=True) 
+                    except Exception as e:
+                        msgbox.alert(e)
+                    serialized_data  += b'END' # Add a delimiter at the end
+                    if serialized_data[-3:] == b'END':
+                        conn.sendall(serialized_data)
+                    else: 
+                        msgbox.alert('fail')
+                        #msgbox.alert(serialized_data)
                     # Convert the dictionary to JSON and enconde intio bytes
-                    conn.sendall(response_json.encode())
-                    #print("Data sent:", response_data)
+                    
+                    #print("Data sent:", serialized_data)
 
                 elif data.decode().strip() == "GET /Synergies":
 
@@ -218,25 +182,34 @@ def Handle_Client(conn,addr):
                             print("Empty data")
                             response_data = []
 
-                        response_data = np.array(response_data).tolist()
-                        response_json = json.dumps(response_data)
-                        response_json  += "~"
-                        conn.sendall(response_json.encode())
+                        response_data = np.asarray(response_data).tolist()
+                        try:
+                            serialized_data = pack.packb(response_data, use_bin_type=True) 
+                        except Exception as e:  
+                            msgbox.alert(e)
+                        serialized_data  += b'END' # Add a delimiter at the end
+                        # Convert the dictionary to JSON and enconde intio bytes
+                        if serialized_data[-3:] == b'END':
+                            conn.sendall(serialized_data)
+                        else: 
+                            msgbox.alert('fail')
+                            #msgbox.alert(serialized_data)
+                        #print("Data sent:", response_data)
 
                 elif data.decode().strip() == "GET /Parameters":
-
                         response_data = [GlobalParameters.MusclesNumber,GlobalParameters.synergiesNumber,GlobalParameters.sampleRate] #PM_DS.PM_DataStruct.circular_stack.get_vectors(3)
-
+                        
                         if response_data == []:
                             print("Empty data")
                             response_data = []
 
                         response_data = np.array(response_data).tolist()
-                        response_json = json.dumps(response_data)
-                        response_json  += "~"
-                        conn.sendall(response_json.encode())
-                #if data.decode().strip() == "DISCONNECT":
-                    #Connected = False
+                        try:
+                            serialized_data = pack.packb(response_data, use_bin_type=True) 
+                        except Exception as e:  
+                            msgbox.alert(e)
+                        serialized_data  += b'END' # Add a delimiter at the end
+                        conn.sendall(serialized_data)
 
                 else:
                     #print("Invalid request")
@@ -244,11 +217,16 @@ def Handle_Client(conn,addr):
             except socket.timeout:
                 print(f"Client {addr} timed out")
                 break
+            except Exception as e:  
+                msgbox.alert(data)    
     except (ConnectionResetError, ConnectionAbortedError) as e:
         print(f"Client {addr} connection lost: {e}")
+    except Exception as e:
+        msgbox.alert(f'PM Comms Server {e}')
     finally:
         conn.close()
         print(f"Connection with {addr} closed")
+    
 
 
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -262,12 +240,14 @@ def Processing_Module_Client():
             client_socket.connect((HOST, PORT_Client))
             notConnected = False
         except Exception as e:
-            print(e)
+            #print(e)
             pass
     # Request Number of cahnnels from host
-
-    GlobalParameters.MusclesNumber = Request("GET /SensorsNumber")
-    GlobalParameters.sampleRate = Request("GET /SampleRate")
+    try:
+        GlobalParameters.MusclesNumber = Request("GET /SensorsNumber")
+        GlobalParameters.sampleRate = Request("GET /SampleRate")
+    except Exception as e:
+        print(e)
     try:
         GlobalParameters.Initialize()
     except Exception as e:
@@ -280,12 +260,11 @@ def Processing_Module_Client():
         print("Data streaming started")'''
     # Loop to request data
     while True:
-        #print("                           PM Client live")
+        print("                           PM Client live")
         try:
             try:
                 if GlobalParameters.RequestAngles == True:
                     data = Request("GET /Angles")
-                    #Request("GET/ data")
                     angles = []
                     if data != []:
                         for element in data:
@@ -307,13 +286,16 @@ def Processing_Module_Client():
                         #msgbox.alert(text = str(GlobalParameters.SynergyBase), title = "Angles", button = "OK")
                 
                 elif GlobalParameters.PlotThresholds == True:
-                        
                     try: 
                         response = Request("PLOT /Thresholds")
                     except Exception as e:
                         print(e)
                     if response[0] == 1:
-                        response = Request(str(GlobalParameters.Threshold.tolist()))    
+                        try:
+                            serialized_data = pack.packb(GlobalParameters.Threshold.tolist(), use_bin_type=True) 
+                            client_socket.sendall(serialized_data)
+                        except Exception as e:
+                            msgbox.alert(e)  
                         if response[0] == 1:
                             GlobalParameters.PlotThresholds = False
                 
@@ -323,7 +305,11 @@ def Processing_Module_Client():
                     except Exception as e:
                         print(e)
                     if response[0] == 1:
-                        response = Request(str(GlobalParameters.PeakActivation.tolist()))    
+                        try:
+                            serialized_data = pack.packb(GlobalParameters.PeakActivation.tolist(), use_bin_type=True) 
+                            client_socket.sendall(serialized_data)
+                        except Exception as e:
+                            msgbox.alert(e)  
                         if response[0] == 1:
                             GlobalParameters.PlotPeaks = False
                 
@@ -332,7 +318,6 @@ def Processing_Module_Client():
                         response = Request("PLOT /Detection")
                     except Exception as e:
                         print(e)
-                        msgbox.alert("PLOT /Detection1")
                     if response[0] == 1:
                         DetectionModels = {}
                         for i in range(len(GlobalParameters.modelsList)):
@@ -340,12 +325,18 @@ def Processing_Module_Client():
                             value = GlobalParameters.modelsList[i][1].tolist()
                             DetectionModels[key] = value
                         DetectionModels['vafs'] = GlobalParameters.vafs
-                        response = Request(json.dumps(DetectionModels) + '~')
+
+                        try:
+                            serialized_data = pack.packb(DetectionModels, use_bin_type=True) 
+                            serialized_data  = serialized_data + b'END'
+                            client_socket.sendall(serialized_data)
+                        except Exception as e:
+                            msgbox.alert(e)  
+                        
                         if response[0] == 1:
                             GlobalParameters.PlotSynergiesDetected = False
                             GlobalParameters.AnglesRecieved = False
                             GlobalParameters.RequestAngles = True
-                            #msgbox.alert("PLOT /Detection")
 
                 elif GlobalParameters.UploadFromJson == True:
                     GlobalParameters.UploadFromJson = False
@@ -372,11 +363,11 @@ def Processing_Module_Client():
                             #print("Detecting synergies")
                             pass
                     except Exception as e:
-                        print(e)
+                        #print(e)
+                        pass
 
             except Exception as e:
                 print("PM Client", e)
-                print(data)
 
         except socket.error as e:
             print("Connection error:", e)
@@ -400,7 +391,7 @@ def Processing_Module_Server():
         except Exception as e:
             print(f"Error accepting connections: {e}")
             break
-    #server_socket.close()
+    
 
 PM_Client_thread = Thread(target=Processing_Module_Client,daemon=True)
 PM_Server_thread = Thread(target=Processing_Module_Server,daemon=True)

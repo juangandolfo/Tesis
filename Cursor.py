@@ -5,6 +5,7 @@ import json
 import pygame
 import random
 from multiprocessing import Process
+import msgpack as pack
 #from tkinter import messagebox
 import pymsgbox as messagebox
 from pygame.locals import (K_UP,
@@ -60,7 +61,7 @@ def Get_data():
         client_socket.sendall(request.encode())
         try:
             data = client_socket.recv(1024)
-            response_data = json.loads(data.decode()) # Decode the received data
+            response_data = pack.unpackb(data, raw=False)
         except socket.timeout as e:
             print(e)
         except socket.error as e:

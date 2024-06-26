@@ -180,7 +180,7 @@ def Processing():
         writer = csv.writer(file)
         writer.writerow([f'Muscle {i+1}' for i in range(GlobalParameters.MusclesNumber)])
     while True:
-        #print("PM: Processing live")
+        print("PM: Processing live")
         PM_DS.stack_lock.acquire()
         RawData = PM_DS.PM_DataStruct.circular_stack.get_oldest_vector(1)
         PM_DS.stack_lock.release()     

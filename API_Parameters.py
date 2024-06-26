@@ -26,7 +26,7 @@ PlotPeaks = False
 PlotModels = False
 PlotAngles = False
 
-remaining_time = 15
+remaining_time = 5
 
 class PlotSignal(QObject):
     signal = Signal()  # Define the signal attribute
