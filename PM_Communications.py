@@ -9,6 +9,9 @@ from threading import Thread
 import LocalCircularBufferVector as Buffer
 import pymsgbox as msgbox
 from io import BytesIO
+import threading
+
+synergies_Lock = threading.Lock()
 
 
 HOST = "127.0.0.1"  # Standard adress (localhost)
@@ -21,6 +24,7 @@ client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 # Link the socket to the IP and PORT selected:
 #server_socket.bind((HOST, PORT_Server))
+
 
 # Auxiliar functions -------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -110,7 +114,6 @@ def Request(request):
             raise Exception("PM:No data received")
         else:
             response_data = pack.unpackb(data, max_array_len = len(data), raw=False)
-            
     except Exception as e:
         #msgbox.alert(e)
         pass
@@ -121,7 +124,7 @@ def Request(request):
 def Handle_Client(conn,addr):
 
     print(f"Connected by {addr}")
-    conn.settimeout(300)
+    conn.settimeout(15)
     try:
         while True:
             print("                                                      PM Server live")
@@ -149,31 +152,37 @@ def Handle_Client(conn,addr):
                     #print("PM: Data sent:", response_data)
 
                 elif  data.decode().strip() == "GET /Muscles":
+                    # with synergies_Lock:
+                        PM_DS.ProcessedDataBuffer_Semaphore.acquire()  # Acquire lock before accessing the stack
+                        response_data = PM_DS.ProcessedDataBuffer.get_vectors(1)
+                        PM_DS.ProcessedDataBuffer_Semaphore.release()  # Release lock after reading the stack
+                        
+                        if response_data == []:
+                            #print("Empty data")
+                            response_data = []
+                        else:   
+                            response_data = np.asarray(response_data).tolist()
 
-                    PM_DS.ProcessedDataBuffer_Semaphore.acquire()  # Acquire lock before accessing the stack
-                    response_data = PM_DS.ProcessedDataBuffer.get_vectors(1)
-                    PM_DS.ProcessedDataBuffer_Semaphore.release()  # Release lock after reading the stack
-                    if response_data == []:
-                        #print("Empty data")
-                        response_data = []
-                    response_data = np.asarray(response_data).tolist()
-                    print(response_data)
-                    try:
-                        serialized_data = pack.packb(response_data,use_bin_type=True) 
-                    except Exception as e:
-                        msgbox.alert(e)
-                    serialized_data  += b'END' # Add a delimiter at the end
-                    if serialized_data[-3:] == b'END':
-                        conn.sendall(serialized_data)
-                    else: 
-                        msgbox.alert('fail')
-                        #msgbox.alert(serialized_data)
+                        #print(response_data)
+                        try:
+                            serialized_data = pack.packb(response_data,use_bin_type=True) 
+                        except Exception as e:
+                            msgbox.alert(f'Muscles pack {e}')
+                        serialized_data  += b'END' # Add a delimiter at the end
+                        if serialized_data[-3:] == b'END':
+                            try:    
+                                conn.sendall(serialized_data)
+                            except Exception as e:
+                                msgbox.alert("PM comms sending", e) 
+                        else: 
+                            msgbox.alert('fail')
+                    #msgbox.alert(serialized_data)
                     # Convert the dictionary to JSON and enconde intio bytes
                     
                     #print("Data sent:", serialized_data)
 
                 elif data.decode().strip() == "GET /Synergies":
-
+                    # with synergies_Lock:
                         PM_DS.SynergiesBuffer_Semaphore.acquire()  # Acquire lock before accessing the stack
                         response_data = PM_DS.SynergiesBuffer.get_vectors(1) #PM_DS.PM_DataStruct.circular_stack.get_vectors(3)
                         PM_DS.SynergiesBuffer_Semaphore.release()  # Release lock after reading the stack
@@ -186,7 +195,7 @@ def Handle_Client(conn,addr):
                         try:
                             serialized_data = pack.packb(response_data, use_bin_type=True) 
                         except Exception as e:  
-                            msgbox.alert(e)
+                            msgbox.alert(f'Synergies pack {e}')
                         serialized_data  += b'END' # Add a delimiter at the end
                         # Convert the dictionary to JSON and enconde intio bytes
                         if serialized_data[-3:] == b'END':
@@ -221,16 +230,16 @@ def Handle_Client(conn,addr):
                 msgbox.alert(data)    
     except (ConnectionResetError, ConnectionAbortedError) as e:
         print(f"Client {addr} connection lost: {e}")
+
     except Exception as e:
         msgbox.alert(f'PM Comms Server {e}')
     finally:
         conn.close()
-        print(f"Connection with {addr} closed")
+        # msgbox.alert(f"Connection with {addr} closed")
     
 
 
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
 # Threads -------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 def Processing_Module_Client():

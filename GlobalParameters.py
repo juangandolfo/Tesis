@@ -47,7 +47,7 @@ Threshold = []
 TerminateCalibration = False
 CalibrationStage = 0
 
-saveCSV = True
+saveCSV = False
 ExperimentTimestamp = ''
 
 #LPF

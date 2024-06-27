@@ -161,7 +161,7 @@ class PlottingManagement():
 
     def StartVisualization_Callback(self):
         try:
-            subprocess.run([sys.executable, 'Visualizacion2.py'])
+            subprocess.run([sys.executable, 'Visualizacion4.py'])
         except Exception as e:
             msgbox.alert(e)
 

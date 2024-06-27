@@ -39,13 +39,15 @@ def CloseConnection():
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 #-----------------------------------------------------------------------------------------------------------
+vacio = pack.packb([])
 def Request(type):
     global LastChunk
+    global vacio
     with Socket_Lock:
         response_data = []
         # Function to send a request and receive the data from the server
         request = "GET /" + type
-        client_socket.settimeout(3)
+        client_socket.settimeout(15)
         data = b''
         try:
             client_socket.sendall(request.encode())
@@ -55,7 +57,7 @@ def Request(type):
         except Exception as e:
             print("PM request:", e)
         
-        '''while True:
+        while True:
             try:
                 chunk = client_socket.recv(1024)
                 if b'END' in chunk:
@@ -68,9 +70,9 @@ def Request(type):
                     data += chunk
             except Exception as e:
                 msgbox.alert(f'Chunks fail {e}')
-                msgbox.alert(data)'''
+                msgbox.alert(data)
         
-        while True:
+        '''while True:
             try:
                 chunk = client_socket.recv(1024)
                 data += LastChunk
@@ -79,6 +81,7 @@ def Request(type):
                     chunk = chunk_splitted[0]
                     LastChunk = chunk_splitted[1]
                     data += chunk
+                    print()
                     if len(chunk_splitted) > 2:
                         msgbox.alert("mas de un delimitador")
                     print('                                                                                                                  delimiter found')
@@ -96,17 +99,24 @@ def Request(type):
                     msgbox.alert("connection rejected")
             except Exception as e:
                 msgbox.alert(f'Chunks fail {e}')
-                msgbox.alert(data)
+                msgbox.alert(data)'''
 
         try:
-            if data == b'\x90': 
+            if data == b'\x90':
+                '''msgbox.alert(f'data : {e}')
+                msgbox.alert(data == b'\x90')
+                data = b''
+                '''
                 raise Exception("Vis:No data received")
             else:
                 response_data = pack.unpackb(data, max_array_len = len(data), raw=False)
                 
         except Exception as e:
-            msgbox.alert(f'Cannot unpack data {data}')
+            #if e == f'Cannot unpack data {data}:
+            #msgbox.alert(f'Cannot unpack data {e}')
+            data = b''
             raise Exception('Cannot unpack data')
+            
     
     return response_data
     
@@ -253,49 +263,40 @@ class Visualization:
     def update(self,frame):
         try:
             # GET THE DATA FROM THE SERVER AND SAVE IT TO THE SHARED BUFFERS
-            try:
-                # RequestSemaphore.acquire()
-                MusclesActivation = Request("Muscles")
-                # RequestSemaphore.release()
-                # This semaphore is put in place for a future implementation of a threading architecture 
-                # were one thread asks for data and the other continuously updates the plot
-                MusclesStackSemaphore.acquire() 
-                self.MusclesBuffer.add_matrix(MusclesActivation)
-                MusclesStackSemaphore.release()
-                
-                # This is to update the x axis, it is executed only once because all the lines share the same time frames
-                for line in MusclesActivation: 
-                    params.current_x += params.TimeStep
-                    self.x.add_point(params.current_x)
+            MusclesStackSemaphore.acquire()
+            muscles = self.MusclesBuffer.Buffer
+            MusclesStackSemaphore.release()
 
+            SinergiesStackSemaphore.acquire()
+            synergies = self.SynergiesBuffer.Buffer
+            SinergiesStackSemaphore.release()
+            
+            XSemaphore.acquire()
+            x = self.x.Buffer
+            XSemaphore.release()
+
+            try:
+                MusclesActivation = muscles[-1]
                 # UPDATE THE MUSCLES BAR
-                for bar, line in zip(self.musclesBar, MusclesActivation[-1]):
+                for bar, line in zip(self.musclesBar, MusclesActivation):
                     bar.set_height(line)
-                
             except Exception as e:
                 msgbox.alert(e)
 
             try:
-                RequestSemaphore.acquire()
-                SynergiesActivation = Request("Synergies")
-                RequestSemaphore.release()
-                SinergiesStackSemaphore.acquire()
-                self.SynergiesBuffer.add_matrix(SynergiesActivation)
-                SinergiesStackSemaphore.release()
-
+                SynergiesActivation = synergies[-1]
                 # UPDATE THE SYNERGIES BAR
-                for bar, line in zip(self.synergiesBar, SynergiesActivation[-1]):
+                for bar, line in zip(self.synergiesBar, SynergiesActivation):
                     bar.set_height(line)
 
             except Exception as e:
                 msgbox.alert(f'Synergies Request {e}')
-                
 
             # UPDATE THE LINES PLOTS
             # Muscles lines
             for line in self.MusclesLines:
                 if self.ShowMuscle[self.MusclesLines.index(line)] == True:
-                    line.set_data(self.x.Buffer, self.MusclesBuffer.Buffer[:, self.MusclesLines.index(line)])
+                    line.set_data(x, muscles[:, self.MusclesLines.index(line)])
                 else:
                     line.set_data(self.x.Buffer, np.zeros(params.Pts2Display))
             self.DotsMuscles.set_xlim([params.current_x - params.Time2Display, params.current_x])
@@ -303,29 +304,59 @@ class Visualization:
             # Synergies lines
             for line in self.SynergiesLines:
                 if self.ShowSynergy[self.SynergiesLines.index(line)] == True:
-                    line.set_data(self.x.Buffer, self.SynergiesBuffer.Buffer[:, self.SynergiesLines.index(line)])
+                    line.set_data(x, synergies[:, self.SynergiesLines.index(line)])
                 else:
-                    line.set_data(self.x.Buffer, np.zeros(params.Pts2Display))
+                    line.set_data(x, np.zeros(params.Pts2Display))
             self.DotsSynergies.set_xlim([params.current_x - params.Time2Display, params.current_x])
         except Exception as e:
             msgbox.alert(f'Vis {e}')
 
+# FUNCTIONS ------------------------------------------------------------------------------------------------
+#-----------------------------------------------------------------------------------------------------------
+def DataCollector():
+    while True:   
+        # RequestSemaphore.acquire()
+        try:
+            MusclesActivation = Request("Muscles")
+        except Exception as e:
+            print(e)
+       
+        MusclesStackSemaphore.acquire() 
+        vis.MusclesBuffer.add_matrix(MusclesActivation)
+        MusclesStackSemaphore.release()
+        
+        # This is to update the x axis, it is executed only once because all the lines share the same time frames
+        for line in MusclesActivation: 
+            params.current_x += params.TimeStep
+            XSemaphore.acquire()
+            vis.x.add_point(params.current_x)
+            XSemaphore.release()
+        try:
+            SynergiesActivation = Request("Synergies")
+        except Exception as e:
+            print(e)
+        SinergiesStackSemaphore.acquire()
+        vis.SynergiesBuffer.add_matrix(SynergiesActivation)
+        SinergiesStackSemaphore.release()
+    
+
 # INSTANCES ------------------------------------------------------------------------------------------------
 #-----------------------------------------------------------------------------------------------------------
+XSemaphore = threading.Semaphore(1)
 MusclesStackSemaphore = threading.Semaphore(1)
 SinergiesStackSemaphore = threading.Semaphore(1)
 RequestSemaphore = threading.Semaphore(1)
 Socket_Lock = threading.Lock()
 
-# FUNCTIONS ------------------------------------------------------------------------------------------------
-#-----------------------------------------------------------------------------------------------------------
+DataCollectorThread = threading.Thread(target=DataCollector,daemon=False)
+vis = Visualization()
 
 # MAIN LOOP ------------------------------------------------------------------------------------------------
 #-----------------------------------------------------------------------------------------------------------
 def RunAnimation():
     Connect()
-    vis = Visualization()
     vis.Initialize()
+    DataCollectorThread.start()
     ani = animation.FuncAnimation(vis.fig, vis.update, interval=1, cache_frame_data=False)
     plt.show()
 
