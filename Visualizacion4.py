@@ -10,8 +10,12 @@ import json
 from multiprocessing import Process
 import msgpack as pack
 import pymsgbox as msgbox
+import time
 
 LastChunk = b''
+
+
+
 
 # PARAMETERS -----------------------------------------------------------------------------------------------
 #-----------------------------------------------------------------------------------------------------------
@@ -21,7 +25,7 @@ PORT_Client = 6002  # The port used by the API server
 # TCP/IP visualization client ------------------------------------------------------------------------------
 #-----------------------------------------------------------------------------------------------------------
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
+vacio = pack.packb([], use_bin_type = True)
 #-----------------------------------------------------------------------------------------------------------
 def Connect():
     global client_socket
@@ -55,38 +59,20 @@ def Request(type):
         except Exception as e:
             print("PM request:", e)
         
-        '''while True:
+        while True:
             try:
                 chunk = client_socket.recv(1024)
                 if b'END' in chunk:
                     lastchunk = chunk
                     chunk = chunk[:-3]
                     data += chunk
-                    print('                                                                                                                  delimiter found')
                     break  # Delimiter found
                 else:
                     data += chunk
             except Exception as e:
                 msgbox.alert(f'Chunks fail {e}')
-                msgbox.alert(data)'''
-        
-        while True:
-            try:
-                chunk = client_socket.recv(1024)
-                data += LastChunk
-                if b'END' in chunk:
-                    chunk_splitted = chunk.split(b'END')
-                    chunk = chunk_splitted[0]
-                    LastChunk = chunk_splitted[1]
-                    data += chunk
-                    if len(chunk_splitted) > 2:
-                        msgbox.alert("mas de un delimitador")
-                    print('                                                                                                                  delimiter found')
-                    break  # Delimiter found
-                else:
-                    data += chunk
-            except socket.error as e:
-                msgbox.alert("socket error")
+                msgbox.alert(data)
+            
                 try:
                     # client_socket
                     CloseConnection()
@@ -94,20 +80,16 @@ def Request(type):
                     Connect()
                 except:
                     msgbox.alert("connection rejected")
-            except Exception as e:
-                msgbox.alert(f'Chunks fail {e}')
-                msgbox.alert(data)
 
         try:
-            if data == b'\x90': 
+            if data == vacio: 
                 raise Exception("Vis:No data received")
             else:
                 response_data = pack.unpackb(data, max_array_len = len(data), raw=False)
                 
         except Exception as e:
-            msgbox.alert(f'Cannot unpack data {data}')
-            raise Exception('Cannot unpack data')
-    
+            if data != b'\x90':
+                raise Exception(f'Cannot unpack data {data}')
     return response_data
     
     
@@ -220,7 +202,10 @@ class Visualization:
         self.SynergiesBuffer = Buffer(params.SynergiesNumber, params.Pts2Display)
         self.x = Buffer(params.Pts2Display, 1)
         self.x.Buffer = np.linspace(params.current_x - params.Time2Display, params.current_x, params.Pts2Display)
-        
+
+        self.muscles = self.MusclesBuffer.Buffer
+        self.synergies = self.SynergiesBuffer.Buffer
+        xBuffer = self.x.Buffer        
 
         # CREATE THE LINE OBJECTS
         # Muscles lines
@@ -251,44 +236,58 @@ class Visualization:
 
     # UPDATE FUNCTION
     def update(self,frame):
+        start = time.time()
+        print(frame)
         try:
+        
             # GET THE DATA FROM THE SERVER AND SAVE IT TO THE SHARED BUFFERS
             try:
-                # RequestSemaphore.acquire()
                 MusclesRequest = Request("Muscles")
             except Exception as e:
-                msgbox.alert(e)
+                MusclesRequest = []
+                print(e)
+            
             try:
                 SynergiesRequest = Request("Synergies")
             except Exception as e:
-                msgbox.alert(e)
+                SynergiesRequest = []
+                print(e)
             
             try:
-                MusclesStackSemaphore.acquire() 
-                self.MusclesBuffer.add_matrix(MusclesRequest)
-                muscles = self.MusclesBuffer.Buffer
-                MusclesStackSemaphore.release()
+                if MusclesStackSemaphore.acquire(blocking=False): 
+                    self.MusclesBuffer.add_matrix(MusclesRequest)
+                    self.muscles = self.MusclesBuffer.Buffer
+                    MusclesStackSemaphore.release()
+                else:
+                    print("                                                             Muscle semaphore taken")
                 
-                SinergiesStackSemaphore.acquire()
-                self.SynergiesBuffer.add_matrix(SynergiesRequest)
-                synergies = self.SynergiesBuffer.Buffer
-                SinergiesStackSemaphore.release()
+                if SinergiesStackSemaphore.acquire(blocking=False):
+                    self.SynergiesBuffer.add_matrix(SynergiesRequest)
+                    self.synergies = self.SynergiesBuffer.Buffer
+                    SinergiesStackSemaphore.release()
+                else:
+                    print("                                                             synergies semaphore taken")
                 
-                XSemaphore.acquire()
-                for line in MusclesRequest: 
-                    params.current_x += params.TimeStep
-                    self.x.add_point(params.current_x)
-                x = self.x.Buffer
-                XSemaphore.release()
+                
+                if XSemaphore.acquire(blocking=False):
+                    for line in MusclesRequest: 
+                        params.current_x += params.TimeStep
+                        self.x.add_point(params.current_x)
+                    xBuffer = self.x.Buffer
+                    XSemaphore.release()
+                else:
+                    print("                                                             X semaphore taken")
+                
+
             except Exception as e:
                 msgbox.alert(f'Semaphores {e}')
-            # This is to update the x axis, it is executed only once because all the lines share the same time frames
+            
             # UPDATE THE MUSCLES BAR
-            MusclesActivation = muscles[-1]
+            MusclesActivation = self.muscles[-1]
             for bar, line in zip(self.musclesBar, MusclesActivation):
                 bar.set_height(line)
                 
-            SynergiesActivation = synergies[-1]
+            SynergiesActivation = self.synergies[-1]
             for bar, line in zip(self.synergiesBar, SynergiesActivation):
                 bar.set_height(line)
 
@@ -296,20 +295,27 @@ class Visualization:
             # Muscles lines
             for line in self.MusclesLines:
                 if self.ShowMuscle[self.MusclesLines.index(line)] == True:
-                    line.set_data(x, muscles[:, self.MusclesLines.index(line)])
+                    line.set_data(xBuffer, self.muscles[:, self.MusclesLines.index(line)])
                 else:
-                    line.set_data(x, np.zeros(params.Pts2Display))
-            self.DotsMuscles.set_xlim([params.current_x - params.Time2Display, params.current_x])
+                    line.set_data(xBuffer, np.zeros(params.Pts2Display))
+            if params.current_x > self.DotsMuscles.get_xlim()[1]:
+                self.DotsMuscles.set_xlim([params.current_x , params.current_x + params.Time2Display])
 
             # Synergies lines
             for line in self.SynergiesLines:
                 if self.ShowSynergy[self.SynergiesLines.index(line)] == True:
-                    line.set_data(x, synergies[:, self.SynergiesLines.index(line)])
+                    line.set_data(xBuffer, self.synergies[:, self.SynergiesLines.index(line)])
                 else:
-                    line.set_data(x, np.zeros(params.Pts2Display))
-            self.DotsSynergies.set_xlim([params.current_x - params.Time2Display, params.current_x])
+                    line.set_data(xBuffer, np.zeros(params.Pts2Display))
+            if params.current_x > self.DotsSynergies.get_xlim()[1]:
+                self.DotsSynergies.set_xlim([params.current_x, params.current_x + params.Time2Display])
+
+            # self.DotsSynergies.set_xlim([params.current_x - params.Time2Display, params.current_x])
+           
         except Exception as e:
             msgbox.alert(f'Vis {e}')
+        
+        print((time.time() - start)*1000)
 
 # INSTANCES ------------------------------------------------------------------------------------------------
 #-----------------------------------------------------------------------------------------------------------
@@ -324,11 +330,12 @@ Socket_Lock = threading.Lock()
 
 # MAIN LOOP ------------------------------------------------------------------------------------------------
 #-----------------------------------------------------------------------------------------------------------
+
 def RunAnimation():
     Connect()
     vis = Visualization()
     vis.Initialize()
-    ani = animation.FuncAnimation(vis.fig, vis.update, repeat_delay = 15, cache_frame_data=False,)
+    ani = animation.FuncAnimation(vis.fig, vis.update,frames = 500, interval = 50, repeat = True, cache_frame_data=False)
     plt.show()
 
 if __name__ == '__main__':
