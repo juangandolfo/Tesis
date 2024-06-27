@@ -190,8 +190,8 @@ def Handle_Client(conn,addr):
                         if response_data == []:
                             #print("Empty data")
                             response_data = []
-
-                        response_data = np.asarray(response_data).tolist()
+                        else:   
+                            response_data = np.asarray(response_data).tolist()
                         try:
                             serialized_data = pack.packb(response_data, use_bin_type=True) 
                         except Exception as e:  
@@ -211,8 +211,8 @@ def Handle_Client(conn,addr):
                         if response_data == []:
                             #print("Empty data")
                             response_data = []
-
-                        response_data = np.array(response_data).tolist()
+                        else:
+                            response_data = np.array(response_data).tolist()
                         try:
                             serialized_data = pack.packb(response_data, use_bin_type=True) 
                         except Exception as e:  
@@ -243,159 +243,162 @@ def Handle_Client(conn,addr):
 # Threads -------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 def Processing_Module_Client():
-    notConnected = True
-    while notConnected:
-        try:
-            client_socket.connect((HOST, PORT_Client))
-            notConnected = False
-        except Exception as e:
-            #print(e)
-            pass
-    # Request Number of cahnnels from host
-    GlobalParameters.MusclesNumber = Request("GET /SensorsNumber")
-    GlobalParameters.sampleRate = Request("GET /SampleRate")
-    GlobalParameters.ExperimentTimestamp = Request("GET /ExperimentTimestamp")
     try:
-        GlobalParameters.Initialize()
-    except Exception as e:
-        print(e)
-        return
-    PM_DS.PM_DataStruct.InitializeRawDataBuffer()
-
-    '''recieved = Request("StartDataStreaming")
-    if recieved == "[1]":
-        print("Data streaming started")'''
-    # Loop to request data
-    while True:
-        print("                           PM Client live")
-        try:
+        notConnected = True
+        while notConnected:
             try:
-                if GlobalParameters.RequestAngles == True:
-                    data = Request("GET /Angles")
-                    angles = []
-                    if data != []:
-                        for element in data:
-                            if element != '':
-                                angles.append(int(element))
-                        #msgbox.alert(text = "The angles are: " + str(angles), title = "Angles", button = "OK")
-                        GlobalParameters.synergy_CursorMap = angles
-                        GlobalParameters.AnglesRecieved = True
-                        GlobalParameters.RequestAngles = False
-                        GlobalParameters.CalibrationStage = 0
-                        GlobalParameters.synergiesNumber = len(angles)
-                        GlobalParameters.SynergyBase = GlobalParameters.modelsList[GlobalParameters.synergiesNumber-2][1]
-                        GlobalParameters.SynergyBaseInverse = GlobalParameters.modelsList[GlobalParameters.synergiesNumber-2][2]
-                        
-                        
-                        # print("Angles recieved", angles)
-                        #msgbox.alert(text = str(GlobalParameters.SynergyBase), title = "Angles", button = "OK")
-                
-                elif GlobalParameters.PlotThresholds == True:
-                    try: 
-                        response = Request("PLOT /Thresholds")
-                    except Exception as e:
-                        print(e)
-                    if response[0] == 1:
-                        try:
-                            serialized_data = pack.packb(GlobalParameters.Threshold.tolist(), use_bin_type=True) 
-                            client_socket.sendall(serialized_data)
-                        except Exception as e:
-                            msgbox.alert(e)  
-                        if response[0] == 1:
-                            GlobalParameters.PlotThresholds = False
-                
-                elif GlobalParameters.PlotPeaks == True:
-                    try: 
-                        response = Request("PLOT /Peaks")
-                    except Exception as e:
-                        print(e)
-                    if response[0] == 1:
-                        try:
-                            serialized_data = pack.packb(GlobalParameters.PeakActivation.tolist(), use_bin_type=True) 
-                            client_socket.sendall(serialized_data)
-                        except Exception as e:
-                            msgbox.alert(e)  
-                        if response[0] == 1:
-                            GlobalParameters.PlotPeaks = False
-                
-                elif GlobalParameters.PlotSynergiesDetected == True:
-                    try: 
-                        response = Request("PLOT /Detection")
-                    except Exception as e:
-                        print(e)
-                    if response[0] == 1:
-                        DetectionModels = {}
-                        for i in range(len(GlobalParameters.modelsList)):
-                            key = f'{i+2} Synergies'
-                            value = GlobalParameters.modelsList[i][1].tolist()
-                            DetectionModels[key] = value
-                        DetectionModels['vafs'] = GlobalParameters.vafs
-
-                        try:
-                            serialized_data = pack.packb(DetectionModels, use_bin_type=True) 
-                            serialized_data  = serialized_data + b'END'
-                            client_socket.sendall(serialized_data)
-                        except Exception as e:
-                            msgbox.alert(e)  
-                        
-                        if response[0] == 1:
-                            GlobalParameters.PlotSynergiesDetected = False
-                            GlobalParameters.AnglesRecieved = False
-                            GlobalParameters.RequestAngles = True
-
-                elif GlobalParameters.UploadFromJson == True:
-                    GlobalParameters.UploadFromJson = False
-                    try: 
-                        response = Request("UPLOAD /Configurations")
-                    except Exception as e:
-                        print(e)
-                    if response[0] == 1:
-                        configurationDictionary = Request("GET /JsonConfiguration")
-                        GlobalParameters.Threshold = np.asarray(configurationDictionary['Thresholds'])
-                        GlobalParameters.PeakActivation = np.asarray(configurationDictionary['Peaks'])
-                        GlobalParameters.SynergyBase = np.asarray(configurationDictionary['SynergyBase'])
-                        synergy_CursorMap = np.asarray(configurationDictionary['synergy_CursorMap'])
-                        angles = []
-                        for element in synergy_CursorMap:
-                            angles.append(int(element))
-                        GlobalParameters.synergy_CursorMap = angles
-                        GlobalParameters.UploadedFromJson = True
-
-                        # while not GlobalParameters.UploadedFromJsonFinished:
-                        #     continue
-                        # response = Request("SET /JsonConfigurationFinished")
-                        # if response[0] == 1:
-                        #     GlobalParameters.UploadedFromJsonFinished = False
-
-                        
-                            
-                else:
-                    try:
-                        data = Request("GET /data")
-                        # formated_data = Dictionary_to_matrix(data)
-                        formated_data = np.asarray(data)
-                        if GlobalParameters.DetectingSynergies == False:
-                            PM_DS.stack_lock.acquire()  # Acquire lock before accessing the stack
-                            PM_DS.PM_DataStruct.circular_stack.add_matrix(formated_data)
-                            PM_DS.stack_lock.release()  # Release lock after reading the stack
-                        else:
-                            #print("Detecting synergies")
-                            pass
-                    except Exception as e:
-                        #print(e)
-                        pass
-                        #print(e)
-                        pass
-
+                client_socket.connect((HOST, PORT_Client))
+                notConnected = False
             except Exception as e:
-                print("PM Client", e)
-                #print(data)
+                #print(e)
+                pass
+        # Request Number of cahnnels from host
+        GlobalParameters.MusclesNumber = Request("GET /SensorsNumber")
+        GlobalParameters.sampleRate = Request("GET /SampleRate")
+        GlobalParameters.ExperimentTimestamp = Request("GET /ExperimentTimestamp")
+        try:
+            GlobalParameters.Initialize()
+        except Exception as e:
+            print(e)
+            return
+        PM_DS.PM_DataStruct.InitializeRawDataBuffer()
 
-        except socket.error as e:
-            print("Connection error:", e)
-            continue
-            # Manage a connection error
-        #time.sleep(0.001)
+        '''recieved = Request("StartDataStreaming")
+        if recieved == "[1]":
+            print("Data streaming started")'''
+        # Loop to request data
+        while True:
+            print("                           PM Client live")
+            try:
+                try:
+                    if GlobalParameters.RequestAngles == True:
+                        data = Request("GET /Angles")
+                        angles = []
+                        if data != []:
+                            for element in data:
+                                if element != '':
+                                    angles.append(int(element))
+                            #msgbox.alert(text = "The angles are: " + str(angles), title = "Angles", button = "OK")
+                            GlobalParameters.synergy_CursorMap = angles
+                            GlobalParameters.AnglesRecieved = True
+                            GlobalParameters.RequestAngles = False
+                            GlobalParameters.CalibrationStage = 0
+                            GlobalParameters.synergiesNumber = len(angles)
+                            GlobalParameters.SynergyBase = GlobalParameters.modelsList[GlobalParameters.synergiesNumber-2][1]
+                            GlobalParameters.SynergyBaseInverse = GlobalParameters.modelsList[GlobalParameters.synergiesNumber-2][2]
+                            
+                            
+                            # print("Angles recieved", angles)
+                            #msgbox.alert(text = str(GlobalParameters.SynergyBase), title = "Angles", button = "OK")
+                    
+                    elif GlobalParameters.PlotThresholds == True:
+                        try: 
+                            response = Request("PLOT /Thresholds")
+                        except Exception as e:
+                            print(e)
+                        if response[0] == 1:
+                            try:
+                                serialized_data = pack.packb(GlobalParameters.Threshold.tolist(), use_bin_type=True) 
+                                client_socket.sendall(serialized_data)
+                            except Exception as e:
+                                msgbox.alert(e)  
+                            if response[0] == 1:
+                                GlobalParameters.PlotThresholds = False
+                    
+                    elif GlobalParameters.PlotPeaks == True:
+                        try: 
+                            response = Request("PLOT /Peaks")
+                        except Exception as e:
+                            print(e)
+                        if response[0] == 1:
+                            try:
+                                serialized_data = pack.packb(GlobalParameters.PeakActivation.tolist(), use_bin_type=True) 
+                                client_socket.sendall(serialized_data)
+                            except Exception as e:
+                                msgbox.alert(e)  
+                            if response[0] == 1:
+                                GlobalParameters.PlotPeaks = False
+                    
+                    elif GlobalParameters.PlotSynergiesDetected == True:
+                        try: 
+                            response = Request("PLOT /Detection")
+                        except Exception as e:
+                            print(e)
+                        if response[0] == 1:
+                            DetectionModels = {}
+                            for i in range(len(GlobalParameters.modelsList)):
+                                key = f'{i+2} Synergies'
+                                value = GlobalParameters.modelsList[i][1].tolist()
+                                DetectionModels[key] = value
+                            DetectionModels['vafs'] = GlobalParameters.vafs
+
+                            try:
+                                serialized_data = pack.packb(DetectionModels, use_bin_type=True) 
+                                serialized_data  = serialized_data + b'END'
+                                client_socket.sendall(serialized_data)
+                            except Exception as e:
+                                msgbox.alert(e)  
+                            
+                            if response[0] == 1:
+                                GlobalParameters.PlotSynergiesDetected = False
+                                GlobalParameters.AnglesRecieved = False
+                                GlobalParameters.RequestAngles = True
+
+                    elif GlobalParameters.UploadFromJson == True:
+                        GlobalParameters.UploadFromJson = False
+                        try: 
+                            response = Request("UPLOAD /Configurations")
+                        except Exception as e:
+                            print(e)
+                        if response[0] == 1:
+                            configurationDictionary = Request("GET /JsonConfiguration")
+                            GlobalParameters.Threshold = np.asarray(configurationDictionary['Thresholds'])
+                            GlobalParameters.PeakActivation = np.asarray(configurationDictionary['Peaks'])
+                            GlobalParameters.SynergyBase = np.asarray(configurationDictionary['SynergyBase'])
+                            synergy_CursorMap = np.asarray(configurationDictionary['synergy_CursorMap'])
+                            angles = []
+                            for element in synergy_CursorMap:
+                                angles.append(int(element))
+                            GlobalParameters.synergy_CursorMap = angles
+                            GlobalParameters.UploadedFromJson = True
+
+                            # while not GlobalParameters.UploadedFromJsonFinished:
+                            #     continue
+                            # response = Request("SET /JsonConfigurationFinished")
+                            # if response[0] == 1:
+                            #     GlobalParameters.UploadedFromJsonFinished = False
+
+                            
+                                
+                    else:
+                        try:
+                            data = Request("GET /data")
+                            # formated_data = Dictionary_to_matrix(data)
+                            formated_data = np.asarray(data)
+                            if GlobalParameters.DetectingSynergies == False:
+                                PM_DS.stack_lock.acquire()  # Acquire lock before accessing the stack
+                                PM_DS.PM_DataStruct.circular_stack.add_matrix(formated_data)
+                                PM_DS.stack_lock.release()  # Release lock after reading the stack
+                            else:
+                                #print("Detecting synergies")
+                                pass
+                        except Exception as e:
+                            #print(e)
+                            pass
+                            #print(e)
+                            pass
+
+                except Exception as e:
+                    print("PM Client", e)
+                    #print(data)
+
+            except socket.error as e:
+                print("Connection error:", e)
+                continue
+                # Manage a connection error
+            #time.sleep(0.001)
+    except Exception as e:
+        msgbox(e)
 
 
 def Processing_Module_Server():
