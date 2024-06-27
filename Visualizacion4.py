@@ -45,7 +45,7 @@ def Request(type):
         response_data = []
         # Function to send a request and receive the data from the server
         request = "GET /" + type
-        client_socket.settimeout(3)
+        # client_socket.settimeout(3)
         data = b''
         try:
             client_socket.sendall(request.encode())
@@ -255,57 +255,58 @@ class Visualization:
             # GET THE DATA FROM THE SERVER AND SAVE IT TO THE SHARED BUFFERS
             try:
                 # RequestSemaphore.acquire()
-                MusclesActivation = Request("Muscles")
-                # RequestSemaphore.release()
-                # This semaphore is put in place for a future implementation of a threading architecture 
-                # were one thread asks for data and the other continuously updates the plot
-                MusclesStackSemaphore.acquire() 
-                self.MusclesBuffer.add_matrix(MusclesActivation)
-                MusclesStackSemaphore.release()
-                
-                # This is to update the x axis, it is executed only once because all the lines share the same time frames
-                for line in MusclesActivation: 
-                    params.current_x += params.TimeStep
-                    self.x.add_point(params.current_x)
-
-                # UPDATE THE MUSCLES BAR
-                for bar, line in zip(self.musclesBar, MusclesActivation[-1]):
-                    bar.set_height(line)
-                
+                MusclesRequest = Request("Muscles")
             except Exception as e:
                 msgbox.alert(e)
-
             try:
-                RequestSemaphore.acquire()
-                SynergiesActivation = Request("Synergies")
-                RequestSemaphore.release()
-                SinergiesStackSemaphore.acquire()
-                self.SynergiesBuffer.add_matrix(SynergiesActivation)
-                SinergiesStackSemaphore.release()
-
-                # UPDATE THE SYNERGIES BAR
-                for bar, line in zip(self.synergiesBar, SynergiesActivation[-1]):
-                    bar.set_height(line)
-
+                SynergiesRequest = Request("Synergies")
             except Exception as e:
-                msgbox.alert(f'Synergies Request {e}')
+                msgbox.alert(e)
+            
+            try:
+                MusclesStackSemaphore.acquire() 
+                self.MusclesBuffer.add_matrix(MusclesRequest)
+                muscles = self.MusclesBuffer.Buffer
+                MusclesStackSemaphore.release()
                 
+                SinergiesStackSemaphore.acquire()
+                self.SynergiesBuffer.add_matrix(SynergiesRequest)
+                synergies = self.SynergiesBuffer.Buffer
+                SinergiesStackSemaphore.release()
+                
+                XSemaphore.acquire()
+                for line in MusclesRequest: 
+                    params.current_x += params.TimeStep
+                    self.x.add_point(params.current_x)
+                x = self.x.Buffer
+                XSemaphore.release()
+            except Exception as e:
+                msgbox.alert(f'Semaphores {e}')
+            # This is to update the x axis, it is executed only once because all the lines share the same time frames
+            # UPDATE THE MUSCLES BAR
+            MusclesActivation = muscles[-1]
+            for bar, line in zip(self.musclesBar, MusclesActivation):
+                bar.set_height(line)
+                
+            SynergiesActivation = synergies[-1]
+            for bar, line in zip(self.synergiesBar, SynergiesActivation):
+                bar.set_height(line)
 
             # UPDATE THE LINES PLOTS
             # Muscles lines
             for line in self.MusclesLines:
                 if self.ShowMuscle[self.MusclesLines.index(line)] == True:
-                    line.set_data(self.x.Buffer, self.MusclesBuffer.Buffer[:, self.MusclesLines.index(line)])
+                    line.set_data(x, muscles[:, self.MusclesLines.index(line)])
                 else:
-                    line.set_data(self.x.Buffer, np.zeros(params.Pts2Display))
+                    line.set_data(x, np.zeros(params.Pts2Display))
             self.DotsMuscles.set_xlim([params.current_x - params.Time2Display, params.current_x])
 
             # Synergies lines
             for line in self.SynergiesLines:
                 if self.ShowSynergy[self.SynergiesLines.index(line)] == True:
-                    line.set_data(self.x.Buffer, self.SynergiesBuffer.Buffer[:, self.SynergiesLines.index(line)])
+                    line.set_data(x, synergies[:, self.SynergiesLines.index(line)])
                 else:
-                    line.set_data(self.x.Buffer, np.zeros(params.Pts2Display))
+                    line.set_data(x, np.zeros(params.Pts2Display))
             self.DotsSynergies.set_xlim([params.current_x - params.Time2Display, params.current_x])
         except Exception as e:
             msgbox.alert(f'Vis {e}')
@@ -315,6 +316,7 @@ class Visualization:
 MusclesStackSemaphore = threading.Semaphore(1)
 SinergiesStackSemaphore = threading.Semaphore(1)
 RequestSemaphore = threading.Semaphore(1)
+XSemaphore = threading.Semaphore(1)
 Socket_Lock = threading.Lock()
 
 # FUNCTIONS ------------------------------------------------------------------------------------------------
@@ -326,7 +328,7 @@ def RunAnimation():
     Connect()
     vis = Visualization()
     vis.Initialize()
-    ani = animation.FuncAnimation(vis.fig, vis.update, interval=1, cache_frame_data=False)
+    ani = animation.FuncAnimation(vis.fig, vis.update, repeat_delay = 15, cache_frame_data=False,)
     plt.show()
 
 if __name__ == '__main__':

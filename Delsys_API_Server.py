@@ -228,12 +228,12 @@ def API_Server(AeroInstance,emgPositionVector):
                     except Exception as e:
                         msgbox.alert(e)                    
                         
-                    serialized_data = json.dumps([1])
-                    serialized_data  += "~"
+                    serialized_data = pack.packb([1], use_bin_type = True)
+                    serialized_data  += b'END'
                     try:
                         conn.sendall(serialized_data)
                     except Exception as e:
-                        print(e)
+                        msgbox.alert(e)
                     API_Parameters.CalibrationStageFinished = True
 
                 elif data == "GET /JsonConfiguration":
@@ -241,20 +241,20 @@ def API_Server(AeroInstance,emgPositionVector):
                                   "Peaks": API_Parameters.Peaks,
                                    "synergy_CursorMap": API_Parameters.AnglesOutput,
                                    "SynergyBase": API_Parameters.SynergyBase}
-                    serialized_data = json.dumps(dictionary)  
-                    serialized_data  += "~" 
+                    serialized_data = pack.packb(dictionary, use_bin_type = True)  
+                    serialized_data  += b'END' 
                     try:
-                        conn.sendall(serialized_data.encode())
+                        conn.sendall(serialized_data)
                     except Exception as e:
-                        print(e)
+                        msgbox.alert(e)
 
                 elif data == "GET /ExperimentTimestamp":
-                    serialized_data = json.dumps(API_Parameters.ExperimentTimestamp)
-                    serialized_data  += "~"
+                    serialized_data = pack.packb(API_Parameters.ExperimentTimestamp, use_bin_type = True)
+                    serialized_data  += b'END' 
                     try:
-                        conn.sendall(serialized_data.encode())
+                        conn.sendall(serialized_data)
                     except Exception as e:
-                        print(e)
+                        msgbox.alert(e)
                                       
 
                 else:
