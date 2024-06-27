@@ -8,6 +8,10 @@ import socket
 import threading
 import json
 from multiprocessing import Process
+import msgpack as pack
+import pymsgbox as msgbox
+
+LastChunk = []
 
 # PARAMETERS -----------------------------------------------------------------------------------------------
 #-----------------------------------------------------------------------------------------------------------
@@ -26,38 +30,55 @@ def Connect():
             client_socket.connect((HOST, PORT_Client))
             notConnected = False
         except Exception as e:
-            print(e)
+            msgbox.alert(e)
 
 #-----------------------------------------------------------------------------------------------------------
 def Request(type):
+
+    response_data = []
     # Function to send a request and receive the data from the server
     request = "GET /" + type
-    client_socket.settimeout(3)
+    client_socket.settimeout(300)
     try:
         client_socket.sendall(request.encode())
         data = b''
         while True:
             try:
                 chunk = client_socket.recv(1024)
-                data += chunk
-                if b"~" in data:
+                if b'END' in chunk:
+                    lastchunk = chunk
+                    chunk = chunk[:-3]
+                    data += chunk
+                    print('                                                                                                                  delimiter found')
                     break  # Delimiter found
+                else:
+                    data += chunk
             except socket.timeout as e:
-                print(e)
+                msgbox.alert(e)
+                msgbox.alert(f'timeout{e}')
                 continue
             except socket.error as e:
-                print(e)
+                msgbox.alert(e)
                 continue
-
-        serialized_data = data.decode().rstrip("~") # Quit the delimiter and decode the received data
-        response_data = json.loads(serialized_data) # Get the original data
-
-        if response_data == []:
-            raise Exception("PM:No data received")
+            except Exception as e:
+                msgbox.alert(e)
+        try:
+            if data == b'\x90': 
+                raise Exception("PM:No data received")
+            else:
+                try:
+                    response_data = pack.unpackb(data, max_array_len = len(data), raw=False)
+                except Exception as e:
+                    msgbox.alert(lastchunk)
+                    raise Exception('Cannot unpack data')
+        except Exception as e:
+            #msgbox.alert(e)
+            raise Exception('Cannot unpack data')
+        
         return response_data
     
     except (socket.timeout, socket.error) as e:
-        print(f"Communication error: {e}")
+        msgbox.alert(f"Communication error: {e}")
         client_socket.close() #Close TCP/IP connection
 
 # CLASSES --------------------------------------------------------------------------------------------------
@@ -82,8 +103,10 @@ class Visualization:
         # SET THE PARAMETERS INITIAL VALUES
         self.connection_lost = False
         self.reconnect_successful = True
-
-        Parameters = Request("Parameters")
+        try:
+            Parameters = Request("Parameters")
+        except Exception as e:
+            msgbox.alert(e)
         params.MusclesNumber = int(Parameters[0])
         params.SynergiesNumber = int(Parameters[1])
         params.SampleRate = Parameters[2]
@@ -197,56 +220,60 @@ class Visualization:
 
     # UPDATE FUNCTION
     def update(self,frame):
-        # GET THE DATA FROM THE SERVER AND SAVE IT TO THE SHARED BUFFERS
         try:
-            MusclesActivation = Request("Muscles")
-            # This semaphore is put in place for a future implementation of a threading architecture 
-            # were one thread asks for data and the other continuously updates the plot
-            MusclesStackSemaphore.acquire() 
-            self.MusclesBuffer.add_matrix(MusclesActivation)
-            MusclesStackSemaphore.release()
-            
-            # This is to update the x axis, it is executed only once because all the lines share the same time frames
-            for line in MusclesActivation: 
-                params.current_x += params.TimeStep
-                self.x.add_point(params.current_x)
+            # GET THE DATA FROM THE SERVER AND SAVE IT TO THE SHARED BUFFERS
+            try:
+                MusclesActivation = Request("Muscles")
+                # This semaphore is put in place for a future implementation of a threading architecture 
+                # were one thread asks for data and the other continuously updates the plot
+                MusclesStackSemaphore.acquire() 
+                self.MusclesBuffer.add_matrix(MusclesActivation)
+                MusclesStackSemaphore.release()
+                
+                # This is to update the x axis, it is executed only once because all the lines share the same time frames
+                for line in MusclesActivation: 
+                    params.current_x += params.TimeStep
+                    self.x.add_point(params.current_x)
 
-            # UPDATE THE MUSCLES BAR
-            for bar, line in zip(self.musclesBar, MusclesActivation[-1]):
-                bar.set_height(line)
-            
+                # UPDATE THE MUSCLES BAR
+                for bar, line in zip(self.musclesBar, MusclesActivation[-1]):
+                    bar.set_height(line)
+                
+            except Exception as e:
+                msgbox.alert(e)
+
+            try:
+                SynergiesActivation = Request("Synergies")
+                SinergiesStackSemaphore.acquire()
+                self.SynergiesBuffer.add_matrix(SynergiesActivation)
+                SinergiesStackSemaphore.release()
+
+                # UPDATE THE SYNERGIES BAR
+                for bar, line in zip(self.synergiesBar, SynergiesActivation[-1]):
+                    bar.set_height(line)
+
+            except Exception as e:
+                msgbox.alert(e)
+                
+
+            # UPDATE THE LINES PLOTS
+            # Muscles lines
+            for line in self.MusclesLines:
+                if self.ShowMuscle[self.MusclesLines.index(line)] == True:
+                    line.set_data(self.x.Buffer, self.MusclesBuffer.Buffer[:, self.MusclesLines.index(line)])
+                else:
+                    line.set_data(self.x.Buffer, np.zeros(params.Pts2Display))
+            self.DotsMuscles.set_xlim([params.current_x - params.Time2Display, params.current_x])
+
+            # Synergies lines
+            for line in self.SynergiesLines:
+                if self.ShowSynergy[self.SynergiesLines.index(line)] == True:
+                    line.set_data(self.x.Buffer, self.SynergiesBuffer.Buffer[:, self.SynergiesLines.index(line)])
+                else:
+                    line.set_data(self.x.Buffer, np.zeros(params.Pts2Display))
+            self.DotsSynergies.set_xlim([params.current_x - params.Time2Display, params.current_x])
         except Exception as e:
-            print(e)
-
-        try:
-            SynergiesActivation = Request("Synergies")
-            SinergiesStackSemaphore.acquire()
-            self.SynergiesBuffer.add_matrix(SynergiesActivation)
-            SinergiesStackSemaphore.release()
-
-            # UPDATE THE SYNERGIES BAR
-            for bar, line in zip(self.synergiesBar, SynergiesActivation[-1]):
-                bar.set_height(line)
-
-        except Exception as e:
-             print(e)
-
-        # UPDATE THE LINES PLOTS
-        # Muscles lines
-        for line in self.MusclesLines:
-            if self.ShowMuscle[self.MusclesLines.index(line)] == True:
-                line.set_data(self.x.Buffer, self.MusclesBuffer.Buffer[:, self.MusclesLines.index(line)])
-            else:
-                line.set_data(self.x.Buffer, np.zeros(params.Pts2Display))
-        self.DotsMuscles.set_xlim([params.current_x - params.Time2Display, params.current_x])
-
-        # Synergies lines
-        for line in self.SynergiesLines:
-            if self.ShowSynergy[self.SynergiesLines.index(line)] == True:
-                line.set_data(self.x.Buffer, self.SynergiesBuffer.Buffer[:, self.SynergiesLines.index(line)])
-            else:
-                line.set_data(self.x.Buffer, np.zeros(params.Pts2Display))
-        self.DotsSynergies.set_xlim([params.current_x - params.Time2Display, params.current_x])
+            msgbox.alert(f'Vis {e}')
 
 # INSTANCES ------------------------------------------------------------------------------------------------
 #-----------------------------------------------------------------------------------------------------------

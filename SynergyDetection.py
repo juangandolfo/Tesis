@@ -92,6 +92,7 @@ def calculateSynergy(matrix):
             if vaf>0.9 and outputDefined==False:
                 output = (n_components, H, r_squared, vafs)
                 outputDefined = True'''
+        #msgbox.alert(f" H: {H},")
     
     #deteccion de codo
     ''' x = range(2, GlobalParameters.MusclesNumber+1)
@@ -108,6 +109,7 @@ def calculateSynergy(matrix):
     output = models[knee_point-2]'''
 
     #return output, vafs
+    msgbox.alert(models)
     return models, vafs, output
 
 def BarsGraphic(n, H, R2, vafs):

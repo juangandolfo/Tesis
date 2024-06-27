@@ -68,16 +68,8 @@ def API_Server(AeroInstance,emgPositionVector):
                 # Check if the received data is a GET request for "/data"
                 data = DataReceived.decode().strip()
                 #print(data)
-                if data == "GET /StartDataStreaming":
-                    serialized_data = json.dumps(1) # Serialize the object using json
-                    serialized_data  += "~"
-                    try:
-                        conn.sendall(serialized_data.encode())
-                        #print(serialized_data)
-                    except Exception as e:
-                        print(e)
-                elif data == "GET /data":
-                    print("Data requested")
+              
+                if data == "GET /data":
                     dataReady = AeroInstance.CheckDataQueue()
                     if dataReady:
                         try:
@@ -87,19 +79,15 @@ def API_Server(AeroInstance,emgPositionVector):
                             msgbox.alert(e)
                     else:
                         response_data=[]
-                        print("sending empty data")
-                    serialized_data = pack.packb(response_data,use_bin_type=True) # Serialize the object using json
+                    serialized_data = pack.packb(response_data,use_bin_type=True) # Serialize the object using msgpack
+
                     if API_Parameters.TerminateCalibrationFlag:
                         serialized_data  += b"TC" # Add a delimiter at the end
                         API_Parameters.TerminateCalibrationFlag = False
 
                     elif API_Parameters.CalibrationStageInitialized:
                             API_Parameters.CalibrationStageInitialized = False
-                            # if not BaseStarted:
-                            #     AeroInstance.Start()
-                            #     BaseStarted = True
-                            # else:
-                            #     pass
+
                             if API_Parameters.CalibrationStage == 1:
                                 serialized_data  += b"CS1" # Add a delimiter at the end
                             elif API_Parameters.CalibrationStage == 2:
@@ -108,47 +96,42 @@ def API_Server(AeroInstance,emgPositionVector):
                                 serialized_data  += b"CS3" # Add a delimiter at the end
                             elif API_Parameters.CalibrationStage == 4:
                                 serialized_data  += b"CS4" # Add a delimiter at the end
+
                     elif API_Parameters.CalibrationStageFinished:
                         API_Parameters.CalibrationStageFinished = False
                         serialized_data  += b"CSF" # Add a delimiter at the end
-                        #AeroInstance.Stop()
-                        #BaseStarted = False
+                        
                     else:
-                        serialized_data  = serialized_data + b'end' # Add a delimiter at the end
+                        serialized_data += b'END' # Add a delimiter at the end
                         #print(serialized_data)
                     try:
                         conn.sendall(serialized_data)
                     except Exception as e:
                         print("API sending", e)
 
-
                 elif data == "GET /SensorsNumber":
-                    print("Sensors number requested")
-                    serialized_data = json.dumps(API_Parameters.ChannelsNumber)
-                    serialized_data  += "~"
+                    serialized_data = pack.packb(API_Parameters.ChannelsNumber, use_bin_type=True)
+                    serialized_data  += b'END'
                     try:
-                        conn.sendall(serialized_data.encode())
-                        #print(serialized_data)
+                        conn.sendall(serialized_data)
                     except Exception as e:
                         print(e)
 
                 elif data == "GET /SampleRate":
-                    print("Sample rate requested")
-                    serialized_data = json.dumps(API_Parameters.SampleRate)
-                    serialized_data  += "~"
+                    serialized_data = pack.packb(API_Parameters.SampleRate, use_bin_type=True)
+                    serialized_data  += b'END'
                     try:
-                        conn.sendall(serialized_data.encode())
+                        conn.sendall(serialized_data)
                     except Exception as e:
                         print(e)
 
                 elif data == "GET /Angles":
                     API_Parameters.AnglesOutputSemaphore.acquire()
-                    serialized_data = json.dumps(API_Parameters.AnglesOutput)
+                    serialized_data = pack.packb(API_Parameters.AnglesOutput, use_bin_type=True)
                     API_Parameters.AnglesOutputSemaphore.release()
-                    #msgbox.alert(text = "The angles are: " + serialized_data, title = "Angles", button = "OK")
-                    serialized_data  += "~"
+                    serialized_data  += b'END'
                     try:
-                        conn.sendall(serialized_data.encode())
+                        conn.sendall(serialized_data)
                     except Exception as e:
                         print(e)
                     dataReady = AeroInstance.CheckDataQueue()
@@ -156,79 +139,82 @@ def API_Server(AeroInstance,emgPositionVector):
                         AeroInstance.PollData()
                 
                 elif data == "PLOT /Thresholds":
-                    serialized_data = json.dumps([1])
-                    serialized_data  += "~"
                     try:
-                        conn.sendall(serialized_data.encode())
+                        serialized_data = pack.packb([1], use_bin_type=True)
+                    except Exception as e:
+                        msgbox.alert(e)
+                    serialized_data  += b'END'
+                    try:
+                        conn.sendall(serialized_data)
                     except Exception as e:
                         print(e)
                     
-                    DataReceived = conn.recv(1024)
-                    API_Parameters.Thresholds = np.array(json.loads(DataReceived.decode().strip()))
+                    data = conn.recv(1024)
+                    API_Parameters.Thresholds = np.array(pack.unpackb(data.strip(), raw=False))
                     API_Parameters.PlotThresholds = True
                     try:
                         API_Parameters.PlotCalibrationSignal.signal.emit()
                     except Exception as e:
                         msgbox.alert(e)
-                    serialized_data = json.dumps([1])
-                    serialized_data  += "~"
+                    serialized_data = pack.packb([1], use_bin_type=True)
                     try:
-                        conn.sendall(serialized_data.encode())
+                        conn.sendall(serialized_data)
                     except Exception as e:
                         print(e)
 
                 elif data == "PLOT /Peaks":
-                    serialized_data = json.dumps([1])
-                    serialized_data  += "~"
+                    serialized_data = pack.packb([1], use_bin_type=True)
+                    serialized_data  += b'END'
                     try:
-                        conn.sendall(serialized_data.encode())
+                        conn.sendall(serialized_data)
                     except Exception as e:
                         print(e)
                     
                     DataReceived = conn.recv(1024)
-                    API_Parameters.Peaks = np.array(json.loads(DataReceived.decode().strip()))
+                    API_Parameters.Peaks = np.array(pack.unpackb(DataReceived.strip(),  raw=False))
                     API_Parameters.PlotPeaks = True
                     try:
                         API_Parameters.PlotCalibrationSignal.signal.emit()
                     except Exception as e:
                         msgbox.alert(e)
-                    serialized_data = json.dumps([1])
-                    serialized_data  += "~"
+                    serialized_data = pack.packb([1], use_bin_type=True)
                     try:
-                        conn.sendall(serialized_data.encode())
+                        conn.sendall(serialized_data)
                     except Exception as e:
                         print(e)
 
                 elif data == "PLOT /Detection":
-                    #msgbox.alert("Ploting Synergies")
-                    serialized_data = json.dumps([1])
-                    serialized_data  += "~"
+                    serialized_data = pack.packb([1], use_bin_type=True)
+                    serialized_data  += b'END'
                     try:
-                        conn.sendall(serialized_data.encode())
+                        conn.sendall(serialized_data)
                     except Exception as e:
                         print(e)
                     data = b''
                     while True:
                         try:
                             chunk = conn.recv(1024)
-                            data += chunk
-                            if b"~" in data:
-                                serialized_data = data.decode().rstrip("~")
+                            if b'END' in chunk:
+                                chunk = chunk[:-3]
+                                data += chunk
                                 break
+                            else:
+                                data += chunk
                         except Exception as e:
-                            print(e)
+                            msgbox.alert(e)
                             break
-                    
-                    API_Parameters.SynergiesModels = json.loads(serialized_data)
+                    try:
+                        API_Parameters.SynergiesModels = pack.unpackb(data, max_array_len = len(data), raw=False)
+                    except Exception as e:
+                        msgbox.alert(e)
                     API_Parameters.PlotModels = True
                     try:
                         API_Parameters.PlotCalibrationSignal.signal.emit()
                     except Exception as e:
                         msgbox.alert(e)
-                    serialized_data = json.dumps([1])
-                    serialized_data  += "~"
+                    serialized_data = pack.packb([1], use_bin_type=True)
                     try:
-                        conn.sendall(serialized_data.encode())
+                        conn.sendall(serialized_data)
                     except Exception as e:
                         print(e)                   
                 
@@ -245,7 +231,7 @@ def API_Server(AeroInstance,emgPositionVector):
                     serialized_data = json.dumps([1])
                     serialized_data  += "~"
                     try:
-                        conn.sendall(serialized_data.encode())
+                        conn.sendall(serialized_data)
                     except Exception as e:
                         print(e)
                     API_Parameters.CalibrationStageFinished = True
