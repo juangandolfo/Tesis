@@ -266,15 +266,21 @@ class CountdownWidget(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         layout = QVBoxLayout()
-        self.timer_label = QLabel("Remaining time: 5")
+        self.timer_label = QLabel(f"Remaining time: {API_Parameters.remaining_time}")
         self.timer_label.setStyleSheet('color: #000066;')
         layout.addWidget(self.timer_label)
         self.setLayout(layout)
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_timer)
-        #self.remaining_time = 30
 
     def start_countdown(self):
+        if API_Parameters.CalibrationStage == 1:
+            API_Parameters.remaining_time = API_Parameters.TimeCalibStage1
+        if API_Parameters.CalibrationStage == 2:
+            API_Parameters.remaining_time = API_Parameters.TimeCalibStage2
+        if API_Parameters.CalibrationStage == 3:
+            API_Parameters.remaining_time = API_Parameters.TimeCalibStage3
+
         self.remaining_time = API_Parameters.remaining_time
         self.timer_label.setText(f"Remaining time: {self.remaining_time}")
         self.timer.start(1000)
@@ -358,8 +364,9 @@ class CalibrationWindow(QMainWindow):
         self.start_stage_button.clicked.connect(self.start_countdown)
         self.set_synergy_base.clicked.connect(self.set_model)
 
-        self.figure = plt.figure()
+        self.figure = plt.figure() 
         self.canvas = FigureCanvas(self.figure)
+        self.colors = ['Red', 'Blue', 'Yellow', 'Green', 'Orange', 'Purple', 'Grey', 'Brown']
         
         API_Parameters.PlotCalibrationSignal.signal.connect(self.update_plot)
 
@@ -430,7 +437,6 @@ class CalibrationWindow(QMainWindow):
     
     def stage4_callback(self):
         self.stage_message_label.setText("Uploading calibration file ...")
-        # Show Start button for Stage 3 only
         self.start_stage_button.show()
         self.CalibrationStage = 4
         self.timer_widget.hide()  # Hide the countdown widget when stage changes
@@ -448,13 +454,16 @@ class CalibrationWindow(QMainWindow):
 
     def terminate_callback (self):
         API_Parameters.TerminateCalibrationFlag = True
-        API_Parameters.SaveCalibrationToJson(
-                                            API_Parameters.ChannelsNumber,
-                                            API_Parameters.Thresholds,
-                                            API_Parameters.Peaks,
-                                            API_Parameters.AnglesOutput,
-                                            API_Parameters.SynergyBase
-                                            )
+        try:
+            API_Parameters.SaveCalibrationToJson(
+                                                API_Parameters.ChannelsNumber,
+                                                API_Parameters.Thresholds,
+                                                API_Parameters.Peaks,
+                                                API_Parameters.AnglesOutput,
+                                                API_Parameters.SynergyBase
+                                                )
+        except Exception as e:
+            msgbox.alert(e)
         self.close()
 
     def show_angle_window(self):
@@ -500,26 +509,55 @@ class CalibrationWindow(QMainWindow):
             API_Parameters.PlotPeaks = False
 
         elif API_Parameters.PlotModels:
+            
             data = API_Parameters.SynergiesModels
-            gs = self.figure.add_gridspec(API_Parameters.ChannelsNumber, API_Parameters.ChannelsNumber - 1)  # 4 rows, 4 columns
+            gs = self.figure.add_gridspec(API_Parameters.ChannelsNumber + 1, API_Parameters.ChannelsNumber - 1)  
 
             subplots = []
             for j in range(2, API_Parameters.ChannelsNumber + 1):
                 for i in range (1, j+1):
                     ax = self.figure.add_subplot(gs[i-1, j-2])
                     ax.bar([str(index) for index in range(1, API_Parameters.ChannelsNumber + 1)], data[f'{j} Synergies'][i-1], color='#00008B', alpha=0.6)
-                    ax.set_xlabel('Muscles')  # X-axis label
-                    ax.set_ylabel('Muscle Activation (%)')  # Y-axis label
                     subplots.append(ax)
+                    ax.set_ylim(0, 1)  # Set y-axis limits to be between 0 and 0.5
+                    ax.set_xlim(-0.5, API_Parameters.ChannelsNumber-0.5) 
+                    ax.set_xticks(range(API_Parameters.ChannelsNumber))  # Ensure all ticks are visible
+                    ax.set_yticks([0, 0.5, 1])  # Ensure y-ticks are visible
                     if i == 1:
                         ax.set_title(f'{j} Synergies')
+                        if j == 2:
+                            ax.set_xlabel('Muscles')  # X-axis label
+                            ax.set_ylabel('Muscle Activation (%)')  # Y-axis label
+                            ax.set_xticklabels([str(index) for index in range(1, API_Parameters.ChannelsNumber +1)])
+                            ax.set_yticklabels([str(tick) for tick in [0, 0.5, 1]])
+                        else:
+                            ax.set_xticklabels([''] * API_Parameters.ChannelsNumber)  # Remove x-axis tick labels but keep the ticks
+                            ax.set_yticklabels([''] * 3)  # Remove y-axis tick labels but keep the ticks
+                    else:
+                        ax.set_xticklabels([''] * API_Parameters.ChannelsNumber)  # Remove x-axis tick labels but keep the ticks
+                        ax.set_yticklabels([''] * 3)  # Remove y-axis tick labels but keep the ticks
+                            
+            ax = self.figure.add_subplot(gs[API_Parameters.ChannelsNumber , 0])
+            x = list(range(2, API_Parameters.ChannelsNumber+1))  # Number of muscles
+            ax.plot(x, data['vafs'], marker='o', label='VAF Curve')
+            ax.set_xlabel('Number of Synergies')
+            ax.set_ylabel('VAF (%)')
+            ax.set_title('VAF vs Model')
 
-            #plt.tight_layout()  # Ensures subplots are nicely spaced
+            # Ensure the x-axis contains only integers
+            ax.set_xticks(np.arange(2, API_Parameters.ChannelsNumber + 1, 1))  # Set x-ticks from 2 to the number of channels
+            ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: '{:d}'.format(int(x))))  # Ensure x-ticks are displayed as integers
+
+            # Adjust the layout to expand subplots
+            self.figure.tight_layout()
+            self.figure.subplots_adjust(hspace=0.8, wspace=0.6)  # Adjust the spacing if needed
+
             self.synergies_lineedit_label.show()
             self.synergy_base_lineedit.show()
             self.set_synergy_base.show()
             API_Parameters.PlotModels = False
-
+            
+            '''
         elif API_Parameters.PlotAngles:
             angles = [lineedit.text() for lineedit in self.angle_lineedits]
             try:
@@ -529,43 +567,122 @@ class CalibrationWindow(QMainWindow):
             
             ax = self.figure.add_subplot(111, polar=True)
             
-
             for angle in angles:
                 theta = np.radians(angle)  # Convert to radians
                 ax.plot([0, theta], [0, 1], marker='o')  # Plot the vector
             ax.set_title("Choose the projection angle of each synergy")
+            '''
+        elif API_Parameters.PlotAngles:
+            try:
+                angles = [lineedit.text() for lineedit in self.angle_lineedits]
+                try:
+                    angles = [int(angle) for angle in angles if angle]
+                except ValueError:
+                    return  # Ignore invalid input
+                
+                gs = self.figure.add_gridspec(API_Parameters.SynergiesNumber, 2)  
+                # Plot Synergy Base ----------------------------------------------
+                for i in range (1, API_Parameters.SynergiesNumber+1):
+                    ax = self.figure.add_subplot(gs[i-1, 0])
+                    ax.bar(range(np.asarray(API_Parameters.SynergyBase).shape[1]), API_Parameters.SynergyBase[i-1], color=self.colors[i-1], alpha=0.6)
+                    ax.set_ylim(0, 1)  # Set y-axis limits to be between 0 and 0.5
+                    ax.set_xlim(-0.5, API_Parameters.ChannelsNumber-0.5)  
+                    ax.set_xticks(range(API_Parameters.ChannelsNumber))  # Ensure all ticks are visible
+                    ax.set_yticks([0, 0.5, 1])  # Ensure y-ticks are visible
+
+                    if i == 1:
+                        ax.set_title(f'Synergy Base ({API_Parameters.SynergiesNumber} Synegies)')
+                        ax.set_xlabel('Muscles')  # X-axis label
+                        ax.set_ylabel('Muscle Activation (%)')  # Y-axis label
+                        ax.set_xticklabels([str(index) for index in range(1, API_Parameters.ChannelsNumber +1)])
+                        ax.set_yticklabels([str(tick) for tick in [0, 0.5, 1]])
+                    else: 
+                        ax.set_xticklabels([''] * API_Parameters.ChannelsNumber)  # Remove x-axis tick labels but keep the ticks
+                        ax.set_yticklabels([''] * 3)  # Remove y-axis tick labels but keep the ticks
+            except Exception as e:
+                msgbox.alert(e)   
+            # Plot Projection Angles ----------------------------------------------
+            ax = self.figure.add_subplot(gs[:, 1], polar=True)
+            ax.set_title("Choose the projection angle of each synergy")
+            for i in range(len(angles)):
+                theta = np.radians(angles[i])  # Convert to radians
+                ax.plot([0, theta], [0, 1], marker='o', color=self.colors[i])  # Plot the vector
+            
+            # Adjust the layout to expand subplots
+            self.figure.tight_layout()
+            self.figure.subplots_adjust(hspace=0.8, wspace=0.6)  # Adjust the spacing if needed
+
+        elif API_Parameters.PlotUploadedConfig:
+            gs = self.figure.add_gridspec(API_Parameters.SynergiesNumber, 2)  
+            try:
+                # Plot Synergy Base ----------------------------------------------
+                for i in range (1, API_Parameters.SynergiesNumber+1):
+                    ax = self.figure.add_subplot(gs[i-1, 0])
+                    ax.bar(range(np.asarray(API_Parameters.SynergyBase).shape[1]), API_Parameters.SynergyBase[i-1], color=self.colors[i-1], alpha=0.6)
+                    ax.set_ylim(0, 1)  # Set y-axis limits to be between 0 and 0.5
+                    ax.set_xlim(-0.5, API_Parameters.ChannelsNumber-0.5) 
+                    ax.set_xticks(range(API_Parameters.ChannelsNumber))  # Ensure all ticks are visible
+                    ax.set_yticks([0, 0.5, 1])  # Ensure y-ticks are visible
+
+                    if i == 1:
+                        ax.set_title(f'Synergy Base ({API_Parameters.SynergiesNumber} Synegies)')
+                        ax.set_xlabel('Muscles')  # X-axis label
+                        ax.set_ylabel('Muscle Activation (%)')  # Y-axis label
+                        ax.set_xticklabels([str(index) for index in range(1, API_Parameters.ChannelsNumber+1)])
+                        ax.set_yticklabels([str(tick) for tick in [0, 0.5, 1]])
+                    else: 
+                        ax.set_xticklabels([''] * API_Parameters.ChannelsNumber)  # Remove x-axis tick labels but keep the ticks
+                        ax.set_yticklabels([''] * 3)  # Remove y-axis tick labels but keep the ticks
+                    
+                # Plot Projection Angles ----------------------------------------------
+                ax = self.figure.add_subplot(gs[:, 1], polar=True)
+                ax.set_title("Projection Angles")
+                for i in range(len(API_Parameters.AnglesOutput)):
+                    theta = np.radians(int(API_Parameters.AnglesOutput[i]))  # Convert to radians
+                    ax.plot([0, theta], [0, 1], marker='o', color=self.colors[i])  # Plot the vector
+                
+                # Adjust the layout to expand subplots
+                self.figure.tight_layout()
+                self.figure.subplots_adjust(hspace=0.8, wspace=0.6)  # Adjust the spacing if needed
+
+            except Exception as e:
+                msgbox.alert(f"Plotting Uploaded config1 {e}")
+            API_Parameters.PlotUploadedConfig = False
 
         else:
             msgbox.alert("Invalid Plot Mode")
 
-        self.figure.tight_layout() 
+        #self.figure.tight_layout() 
         self.canvas.draw()
     
     def set_model(self):
         self.SynergiesNumber = int(self.synergy_base_lineedit.text())
         if self.SynergiesNumber >= 2 and self.SynergiesNumber <= API_Parameters.ChannelsNumber:
             API_Parameters.SynergiesNumber = self.SynergiesNumber
+            API_Parameters.SynergyBase = API_Parameters.SynergiesModels[f'{self.SynergiesNumber} Synergies']
             self.show_angle_window()
+           
         else: 
             msgbox.alert("Invalid number of synegies. Close this window and choose the number of synergies again.")
 
     def save_angles(self):
+        AnglesOutput = []
+        AnglesCount = 0
         angles = [lineedit.text() for lineedit in self.angle_lineedits]
-        API_Parameters.PlotAngles = False
-        API_Parameters.AnglesOutputSemaphore.acquire()
-        API_Parameters.AnglesReady = 1
-        API_Parameters.AnglesOutputSemaphore.release()
-        API_Parameters.AnglesOutput = [] 
         for angle in angles:
             if angle != '':
-                API_Parameters.AnglesOutput.append(angle)
-        AnglesCount = len(API_Parameters.AnglesOutput)
-        #API_Parameters.AnglesOutput = angles
-        try:
-            API_Parameters.SynergyBase = API_Parameters.SynergiesModels[f'{AnglesCount} Synergies']
-        except Exception as e:
-            msgbox.alert(f"CollectDataWindow: {e}")
-            pass
+                AnglesCount = AnglesCount + 1
+                AnglesOutput.append(angle)
+        if AnglesCount != API_Parameters.SynergiesNumber:
+            msgbox.alert("The number of angles doesn't match with the number of synegies selected. Choose the angles again.")
+            self.show_angle_window()
+        else:
+            API_Parameters.PlotAngles = False
+            API_Parameters.AnglesOutputSemaphore.acquire()
+            API_Parameters.AnglesReady = 1
+            API_Parameters.AnglesOutput = AnglesOutput
+            API_Parameters.AnglesOutputSemaphore.release()
+           
             
 
 if __name__ == '__main__':
