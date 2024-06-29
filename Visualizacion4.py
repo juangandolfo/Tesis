@@ -43,8 +43,15 @@ def CloseConnection():
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 #-----------------------------------------------------------------------------------------------------------
+data = b''
+chunk = b''
+response_data = b''
 def Request(type):
     global LastChunk
+    global data
+    global chunk
+    global vacio
+    global response_data
     with Socket_Lock:
         response_data = []
         # Function to send a request and receive the data from the server
@@ -112,6 +119,8 @@ class Buffer:
 
 #-----------------------------------------------------------------------------------------------------------
 class Visualization:
+    fig = plt.figure()
+
     def Initialize(self):
         # SET THE PARAMETERS INITIAL VALUES
         self.connection_lost = False
@@ -131,7 +140,6 @@ class Visualization:
         
 
         # CREATE THE FIGURE AND AXIS OBJECTS
-        self.fig = plt.figure()
         gs = GridSpec.GridSpec(nrows=3, ncols=3, width_ratios=[3, 3, 1], height_ratios=[3, 1, 3])
 
 
@@ -205,7 +213,7 @@ class Visualization:
 
         self.muscles = self.MusclesBuffer.Buffer
         self.synergies = self.SynergiesBuffer.Buffer
-        xBuffer = self.x.Buffer        
+        self.xBuffer = self.x.Buffer        
 
         # CREATE THE LINE OBJECTS
         # Muscles lines
@@ -224,7 +232,8 @@ class Visualization:
         # CREATE THE BAR OBJECTS
         self.musclesBar = BarsMusculos.bar(range(params.MusclesNumber),range(params.MusclesNumber))
         self.synergiesBar = BarsSynergies.bar(range(params.SynergiesNumber),range(params.SynergiesNumber))
-    
+
+        
 
     # CALLBACK FUNCTIONS
     def MusclesMenu_CallBack(self, label):
@@ -273,7 +282,7 @@ class Visualization:
                     for line in MusclesRequest: 
                         params.current_x += params.TimeStep
                         self.x.add_point(params.current_x)
-                    xBuffer = self.x.Buffer
+                    self.xBuffer = self.x.Buffer
                     XSemaphore.release()
                 else:
                     print("                                                             X semaphore taken")
@@ -295,28 +304,29 @@ class Visualization:
             # Muscles lines
             for line in self.MusclesLines:
                 if self.ShowMuscle[self.MusclesLines.index(line)] == True:
-                    line.set_data(xBuffer, self.muscles[:, self.MusclesLines.index(line)])
+                    line.set_data(self.xBuffer, self.muscles[:, self.MusclesLines.index(line)])
                 else:
-                    line.set_data(xBuffer, np.zeros(params.Pts2Display))
+                    line.set_data(self.xBuffer, np.zeros(params.Pts2Display))
             if params.current_x > self.DotsMuscles.get_xlim()[1]:
                 self.DotsMuscles.set_xlim([params.current_x , params.current_x + params.Time2Display])
 
             # Synergies lines
             for line in self.SynergiesLines:
                 if self.ShowSynergy[self.SynergiesLines.index(line)] == True:
-                    line.set_data(xBuffer, self.synergies[:, self.SynergiesLines.index(line)])
+                    line.set_data(self.xBuffer, self.synergies[:, self.SynergiesLines.index(line)])
                 else:
-                    line.set_data(xBuffer, np.zeros(params.Pts2Display))
+                    line.set_data(self.xBuffer, np.zeros(params.Pts2Display))
             if params.current_x > self.DotsSynergies.get_xlim()[1]:
                 self.DotsSynergies.set_xlim([params.current_x, params.current_x + params.Time2Display])
 
             # self.DotsSynergies.set_xlim([params.current_x - params.Time2Display, params.current_x])
            
         except Exception as e:
+            print(e)
             msgbox.alert(f'Vis {e}')
         
         print((time.time() - start)*1000)
-
+       
 # INSTANCES ------------------------------------------------------------------------------------------------
 #-----------------------------------------------------------------------------------------------------------
 MusclesStackSemaphore = threading.Semaphore(1)
@@ -332,12 +342,13 @@ Socket_Lock = threading.Lock()
 #-----------------------------------------------------------------------------------------------------------
 
 def RunAnimation():
-    Connect()
-    vis = Visualization()
-    vis.Initialize()
-    ani = animation.FuncAnimation(vis.fig, vis.update,frames = 500, interval = 50, repeat = True, cache_frame_data=False)
-    plt.show()
-
+    try:
+        Connect()
+        vis = Visualization()
+        ani = animation.FuncAnimation(fig=vis.fig, func=vis.update, frames = 500, init_func=vis.Initialize, interval = 50, repeat = True)
+        plt.show()
+    except Exception as e:
+        msgbox.alert(e)
 if __name__ == '__main__':
     Animation_Process = Process(target=RunAnimation)
     Animation_Process.start()

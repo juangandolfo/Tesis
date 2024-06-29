@@ -2,7 +2,7 @@
 
 update_freq = 100
 # Define the number of points to display
-Time2Display = 2 # in seconds
+Time2Display = 5 # in seconds
 SampleRate = 2000
 definition = 1 / 1000
 TimeStep = 1 / SampleRate

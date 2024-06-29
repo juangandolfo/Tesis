@@ -28,6 +28,12 @@ PlotThresholds = False
 PlotPeaks = False
 PlotModels = False
 PlotAngles = False
+PlotUploadedConfig = False
+
+
+TimeCalibStage1 = 5
+TimeCalibStage2 = 7
+TimeCalibStage3 = 10
 
 remaining_time = 5
 
@@ -63,6 +69,7 @@ def UploadCalibrationFromJson():
     return Thresholds, Peaks, AnglesOutput, SynergiesModels
         
 def SaveCalibrationToJson(ChannelsNumber,Thresholds, Peaks, AnglesOutput, SynergyBase):
+
     global ExperimentTimestamp
     data = {
             'MusclesNumber': ChannelsNumber,
