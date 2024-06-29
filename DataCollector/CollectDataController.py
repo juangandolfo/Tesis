@@ -115,7 +115,6 @@ class PlottingManagement():
                         for channel in sensor["Channels"]:
                             channelName = sensor["Sticker"] + channel 
                             API_Parameters.SensorStickers.append(channelName)
-                            API_Parameters.SensorStickers.append(channelName)
                     else:
                         channelName = sensor["Sticker"] 
                         API_Parameters.SensorStickers.append(channelName)

@@ -8,6 +8,7 @@ ModoDelsys = True # True if we use the Delsys API Server, False if we use the AP
 Initialized = False
 
 MusclesNumber = 4
+SensorStickers = []
 
 RawData_BufferSize = 1000
 sampleRate = 1

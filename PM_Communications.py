@@ -254,6 +254,7 @@ def Processing_Module_Client():
                 pass
         # Request Number of cahnnels from host
         GlobalParameters.MusclesNumber = Request("GET /SensorsNumber")
+        GlobalParameters.SensorStickers = Request("GET /SensorStickers")
         GlobalParameters.sampleRate = Request("GET /SampleRate")
         GlobalParameters.ExperimentTimestamp = Request("GET /ExperimentTimestamp")
         try:
@@ -365,8 +366,6 @@ def Processing_Module_Client():
                                 angles.append(int(element))
                             GlobalParameters.synergy_CursorMap = angles
                             GlobalParameters.synergiesNumber = len(angles)
-                            GlobalParameters.UploadedFromJson = True
-
                                 
                     else:
                         try:

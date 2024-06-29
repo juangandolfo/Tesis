@@ -109,6 +109,14 @@ def API_Server(AeroInstance,emgPositionVector):
                         conn.sendall(serialized_data)
                     except Exception as e:
                         print(e)
+                
+                elif data == "GET /SensorStickers":
+                    serialized_data = pack.packb(API_Parameters.SensorStickers, use_bin_type=True)
+                    serialized_data  += b'END'
+                    try:
+                        conn.sendall(serialized_data)
+                    except Exception as e:
+                        print(e)
 
                 elif data == "GET /SampleRate":
                     serialized_data = pack.packb(API_Parameters.SampleRate, use_bin_type=True)
