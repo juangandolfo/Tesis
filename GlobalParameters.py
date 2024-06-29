@@ -31,6 +31,7 @@ y = np.sin(angles_rad)
 # Construct the projection matrix
 projectionMatrix = np.column_stack((x, y))
 
+RequestCalibrationTime = False
 AnglesRecieved = False
 RequestAngles = False
 PlotThresholds = False
@@ -46,6 +47,8 @@ Threshold = []
 
 TerminateCalibration = False
 CalibrationStage = 0
+
+TimeCalibStage3 = 10
 
 saveCSV = False
 ExperimentTimestamp = ''

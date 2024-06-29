@@ -230,6 +230,10 @@ class Visualization:
         self.SynergiesBuffer = Buffer(params.SynergiesNumber, params.Pts2Display)
         self.x = Buffer(params.Pts2Display, 1)
         self.x.Buffer = np.linspace(params.current_x - params.Time2Display, params.current_x, params.Pts2Display)
+
+        self.muscles = self.MusclesBuffer.Buffer
+        self.synergies = self.SynergiesBuffer.Buffer
+        self.xBuffer = self.x.Buffer
         
 
         # CREATE THE LINE OBJECTS
@@ -263,20 +267,20 @@ class Visualization:
     def update(self,frame):
         try:
             # GET THE DATA FROM THE SERVER AND SAVE IT TO THE SHARED BUFFERS
-            MusclesStackSemaphore.acquire()
-            muscles = self.MusclesBuffer.Buffer
-            MusclesStackSemaphore.release()
+            if MusclesStackSemaphore.acquire(blocking=False):
+                self.muscles = self.MusclesBuffer.Buffer
+                MusclesStackSemaphore.release()
 
-            SinergiesStackSemaphore.acquire()
-            synergies = self.SynergiesBuffer.Buffer
-            SinergiesStackSemaphore.release()
+            if SinergiesStackSemaphore.acquire(blocking=False):
+                self.synergies = self.SynergiesBuffer.Buffer
+                SinergiesStackSemaphore.release()
             
-            XSemaphore.acquire()
-            x = self.x.Buffer
-            XSemaphore.release()
+            if XSemaphore.acquire(blocking=False):
+                self.xBuffer = self.x.Buffer
+                XSemaphore.release()
 
             try:
-                MusclesActivation = muscles[-1]
+                MusclesActivation = self.muscles[-1]
                 # UPDATE THE MUSCLES BAR
                 for bar, line in zip(self.musclesBar, MusclesActivation):
                     bar.set_height(line)
@@ -284,7 +288,7 @@ class Visualization:
                 msgbox.alert(e)
 
             try:
-                SynergiesActivation = synergies[-1]
+                SynergiesActivation = self.synergies[-1]
                 # UPDATE THE SYNERGIES BAR
                 for bar, line in zip(self.synergiesBar, SynergiesActivation):
                     bar.set_height(line)
@@ -296,17 +300,17 @@ class Visualization:
             # Muscles lines
             for line in self.MusclesLines:
                 if self.ShowMuscle[self.MusclesLines.index(line)] == True:
-                    line.set_data(x, muscles[:, self.MusclesLines.index(line)])
+                    line.set_data(self.xBuffer, self.muscles[:, self.MusclesLines.index(line)])
                 else:
-                    line.set_data(self.x.Buffer, np.zeros(params.Pts2Display))
+                    line.set_data(self.xBuffer, np.zeros(params.Pts2Display))
             self.DotsMuscles.set_xlim([params.current_x - params.Time2Display, params.current_x])
 
             # Synergies lines
             for line in self.SynergiesLines:
                 if self.ShowSynergy[self.SynergiesLines.index(line)] == True:
-                    line.set_data(x, synergies[:, self.SynergiesLines.index(line)])
+                    line.set_data(self.xBuffer, self.synergies[:, self.SynergiesLines.index(line)])
                 else:
-                    line.set_data(x, np.zeros(params.Pts2Display))
+                    line.set_data(self.xBuffer, np.zeros(params.Pts2Display))
             self.DotsSynergies.set_xlim([params.current_x - params.Time2Display, params.current_x])
         except Exception as e:
             msgbox.alert(f'Vis {e}')
@@ -316,6 +320,7 @@ class Visualization:
 def DataCollector():
     while True:   
         # RequestSemaphore.acquire()
+        print("                                                     Data Collector Server")
         try:
             MusclesActivation = Request("Muscles")
         except Exception as e:

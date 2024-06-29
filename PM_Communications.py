@@ -263,9 +263,6 @@ def Processing_Module_Client():
             return
         PM_DS.PM_DataStruct.InitializeRawDataBuffer()
 
-        '''recieved = Request("StartDataStreaming")
-        if recieved == "[1]":
-            print("Data streaming started")'''
         # Loop to request data
         while True:
             print("                           PM Client live")
@@ -287,10 +284,17 @@ def Processing_Module_Client():
                             GlobalParameters.SynergyBase = GlobalParameters.modelsList[GlobalParameters.synergiesNumber-2][1]
                             GlobalParameters.SynergyBaseInverse = GlobalParameters.modelsList[GlobalParameters.synergiesNumber-2][2]
                             
-                            
                             # print("Angles recieved", angles)
                             #msgbox.alert(text = str(GlobalParameters.SynergyBase), title = "Angles", button = "OK")
                     
+                    elif GlobalParameters.RequestCalibrationTime == True:
+                        try: 
+                            response = Request("GET /CalibrationTime")
+                        except Exception as e:
+                            msgbox.alert(e)
+                        GlobalParameters.TimeCalibStage3 = response
+                        GlobalParameters.RequestCalibrationTime = False
+                        
                     elif GlobalParameters.PlotThresholds == True:
                         try: 
                             response = Request("PLOT /Thresholds")
@@ -330,7 +334,7 @@ def Processing_Module_Client():
                                 key = f'{i+2} Synergies'
                                 value = GlobalParameters.modelsList[i][1].tolist()
                                 DetectionModels[key] = value
-                            DetectionModels['vafs'] = GlobalParameters.vafs
+                            DetectionModels['vafs'] = (np.asarray(GlobalParameters.vafs)*100).tolist()
 
                             try:
                                 serialized_data = pack.packb(DetectionModels, use_bin_type=True) 

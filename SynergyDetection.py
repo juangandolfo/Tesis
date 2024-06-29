@@ -50,66 +50,69 @@ def calculateSynergy(matrix):
     vafs = []
     outputDefined = False
     # Perform NMF
-    for n_components in range(2, GlobalParameters.MusclesNumber+1):
-        #print("processing synergy detection")
-        #nndsvd is the initialization method that returns  a matrix with the largest dispersion.
-        #cd is the solver used because is compatible with nndsvd
-        model = NMF(n_components=n_components, init='nndsvd', tol= 1e-5,max_iter=20000, solver='cd')
-        #model = NMF(n_components=n_components, init='random', tol= 1e-5, max_iter=200000, solver='mu')
-        #print("Fitting model with ", n_components, " components")
-        W = model.fit_transform(matrix)
+    try:
+        for n_components in range(2, GlobalParameters.MusclesNumber+1):
+            #print("processing synergy detection")
+            #nndsvd is the initialization method that returns  a matrix with the largest dispersion.
+            #cd is the solver used because is compatible with nndsvd
+            model = NMF(n_components=n_components, init='nndsvd', tol= 1e-5,max_iter=20000, solver='cd')
+            #model = NMF(n_components=n_components, init='random', tol= 1e-5, max_iter=200000, solver='mu')
+            #print("Fitting model with ", n_components, " components")
+            W = model.fit_transform(matrix)
 
-        #H.append(model.components_)
-        H = np.matrix(model.components_)
+            #H.append(model.components_)
+            H = np.matrix(model.components_)
+            h_norm = H/np.max(H)
+            #H_Max = np.max(H[n_components-2])
+            #H_Normalized.append(H[n_components-2] / H_Max)
+            Reconstructed_matrix = model.inverse_transform(W)
 
-        #H_Max = np.max(H[n_components-2])
-        #H_Normalized.append(H[n_components-2] / H_Max)
-        Reconstructed_matrix = model.inverse_transform(W)
+            # pseudo inverse matrix of H
+            #numpy_H_pinv.append(np.linalg.pinv(H_Normalized[n_components-2]))
 
-        # pseudo inverse matrix of H
-        #numpy_H_pinv.append(np.linalg.pinv(H_Normalized[n_components-2]))
+            r_squared = skm.r2_score(np.asarray(matrix), np.asarray(Reconstructed_matrix) )
 
-        r_squared = skm.r2_score(np.asarray(matrix), np.asarray(Reconstructed_matrix) )
-
-        # i want to calculate the VAF
-        # the vaf is calculated as the sum of the squares of the difference between the original matrix and the reconstructed matrix for each element
-        vaf = 1 - (np.sum((matrix - Reconstructed_matrix) ** 2) / np.sum(matrix ** 2))
-        #print("VAF: ", vaf)
-        vafs.append(vaf)
-        H_inv = np.linalg.pinv(H)
-        models.append((n_components, H, H_inv, r_squared, vaf))
-        # Comparación directa de VAFs
-        if n_components == 2:
-            output = (n_components, H, H_inv,r_squared, vafs)
-        else:
-            #print(vaf, vafs[-2])
-            if vaf>vafs[-2]:
-                output = (n_components, H, H_inv, r_squared, vafs)
-        '''if n_components ==2:
-            output = (n_components, H, r_squared, vafs)
-        else:
-            #print(vaf, vafs[-2])
-            if vaf>0.9 and outputDefined==False:
+            # i want to calculate the VAF
+            # the vaf is calculated as the sum of the squares of the difference between the original matrix and the reconstructed matrix for each element
+            vaf = 1 - (np.sum((matrix - Reconstructed_matrix) ** 2) / np.sum(matrix ** 2))
+            #print("VAF: ", vaf)
+            vafs.append(vaf)
+            H_inv = np.linalg.pinv(h_norm)
+            models.append((n_components, h_norm, H_inv, r_squared, vaf))
+            msgbox.alert(f"{n_components} Synergies: {H}")
+            # Comparación directa de VAFs
+            if n_components == 2:
+                output = (n_components, h_norm, H_inv,r_squared, vafs)
+            else:
+                #print(vaf, vafs[-2])
+                if vaf>vafs[-2]:
+                    output = (n_components, h_norm, H_inv, r_squared, vafs)
+            '''if n_components ==2:
                 output = (n_components, H, r_squared, vafs)
-                outputDefined = True'''
-        #msgbox.alert(f" H: {H},")
-    
-    #deteccion de codo
-    ''' x = range(2, GlobalParameters.MusclesNumber+1)
-    y = vafs
+            else:
+                #print(vaf, vafs[-2])
+                if vaf>0.9 and outputDefined==False:
+                    output = (n_components, H, r_squared, vafs)
+                    outputDefined = True'''
+            #msgbox.alert(f" H: {H},")
+        
+        #deteccion de codo
+        ''' x = range(2, GlobalParameters.MusclesNumber+1)
+        y = vafs
 
-    # calculate and show knee/elbow
-    kneedle = kneed.KneeLocator(x,y,curve='concave',direction='increasing')
-    knee_point = kneedle.knee
-    print('Knee: ', knee_point)
-    if knee_point == None:
-        knee_point = 2
-        print('Knee: None')
-    print('Knee: ', knee_point)
-    output = models[knee_point-2]'''
+        # calculate and show knee/elbow
+        kneedle = kneed.KneeLocator(x,y,curve='concave',direction='increasing')
+        knee_point = kneedle.knee
+        print('Knee: ', knee_point)
+        if knee_point == None:
+            knee_point = 2
+            print('Knee: None')
+        print('Knee: ', knee_point)
+        output = models[knee_point-2]'''
 
-    #return output, vafs
-    msgbox.alert(models)
+        #return output, vafs
+    except Exception as e:
+        msgbox(e)
     return models, vafs, output
 
 def BarsGraphic(n, H, R2, vafs):

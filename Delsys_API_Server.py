@@ -69,7 +69,7 @@ def API_Server(AeroInstance,emgPositionVector):
                             response_data = FormattedDictionary_to_PythonDictionary(AeroInstance.PollData(),emgPositionVector)
                             #print(response_data)
                         except Exception as e:
-                            msgbox.alert(e)
+                            msgbox.alert(f"Poll Data: {e}, {response_data}")
                     else:
                         response_data=[]
                     serialized_data = pack.packb(response_data,use_bin_type=True) # Serialize the object using msgpack
@@ -112,6 +112,14 @@ def API_Server(AeroInstance,emgPositionVector):
 
                 elif data == "GET /SampleRate":
                     serialized_data = pack.packb(API_Parameters.SampleRate, use_bin_type=True)
+                    serialized_data  += b'END'
+                    try:
+                        conn.sendall(serialized_data)
+                    except Exception as e:
+                        print(e)
+
+                elif data == "GET /CalibrationTime":
+                    serialized_data = pack.packb(API_Parameters.TimeCalibStage3, use_bin_type=True)
                     serialized_data  += b'END'
                     try:
                         conn.sendall(serialized_data)
@@ -218,6 +226,7 @@ def API_Server(AeroInstance,emgPositionVector):
                         API_Parameters.Peaks = Peaks
                         API_Parameters.AnglesOutput = AnglesOutput
                         API_Parameters.SynergyBase = SynergyBase
+                        API_Parameters.SynergiesNumber = len(AnglesOutput)
                     except Exception as e:
                         msgbox.alert(e)                    
                         
@@ -227,6 +236,8 @@ def API_Server(AeroInstance,emgPositionVector):
                         conn.sendall(serialized_data)
                     except Exception as e:
                         msgbox.alert(e)
+                    API_Parameters.PlotUploadedConfig = True
+                    API_Parameters.PlotCalibrationSignal.signal.emit()
                     API_Parameters.CalibrationStageFinished = True
 
                 elif data == "GET /JsonConfiguration":
