@@ -229,13 +229,15 @@ def API_Server(AeroInstance,emgPositionVector):
                         API_Parameters.SynergiesNumber = len(AnglesOutput)
                     except Exception as e:
                         msgbox.alert(e)                    
-                        
+                    
                     serialized_data = pack.packb([1], use_bin_type = True)
                     serialized_data  += b'END'
+                    
                     try:
                         conn.sendall(serialized_data)
                     except Exception as e:
                         msgbox.alert(e)
+                    
                     API_Parameters.PlotUploadedConfig = True
                     API_Parameters.PlotCalibrationSignal.signal.emit()
                     API_Parameters.CalibrationStageFinished = True

@@ -113,12 +113,12 @@ class PlottingManagement():
                     if len(sensor["Channels"]) > 1:
                         for channel in sensor["Channels"]:
                             channelName = sensor["Sticker"] + channel 
-                            self.SensorStickers.append(channelName)
+                            API_Parameters.SensorStickers.append(channelName)
                     else:
                         channelName = sensor["Sticker"] 
                         API_Parameters.SensorStickers.append(channelName)
                     
-        print(self.SensorStickers)
+        
 
         self.SensorsFound = len(self.nameList)
         TrigBase.SelectAllSensors()

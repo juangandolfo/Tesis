@@ -134,8 +134,7 @@ def API_Server(AeroInstance, emgPositionVector):
                         print(e)
                     dataReady = AeroInstance.CheckDataQueue()
                     if dataReady:
-                        AeroInstance.PollData()
-                        
+                        AeroInstance.PollData()              
                 
                 elif data == "PLOT /Thresholds":
                     try:
@@ -233,6 +232,9 @@ def API_Server(AeroInstance, emgPositionVector):
                         conn.sendall(serialized_data)
                     except Exception as e:
                         msgbox.alert(f'{data} {e}')
+
+                    API_Parameters.PlotUploadedConfig = True
+                    API_Parameters.PlotCalibrationSignal.signal.emit()
                     API_Parameters.CalibrationStageFinished = True
 
                 elif data == "GET /JsonConfiguration":
@@ -254,6 +256,14 @@ def API_Server(AeroInstance, emgPositionVector):
                         conn.sendall(serialized_data)
                     except Exception as e:
                         msgbox.alert(f'{data} {e}') 
+                
+                elif data == "GET /CalibrationTime":
+                    serialized_data = pack.packb(API_Parameters.TimeCalibStage3, use_bin_type=True)
+                    serialized_data  += b'END'
+                    try:
+                        conn.sendall(serialized_data)
+                    except Exception as e:
+                        print(e)
 
                 else:
                    print("Invalid request", data)
