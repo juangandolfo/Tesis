@@ -295,7 +295,7 @@ def Processing_Module_Client():
                         try: 
                             response = Request("PLOT /Thresholds")
                         except Exception as e:
-                            print(e)
+                            msgbox.alert(f'PMC: Thresholds {e}')
                         if response[0] == 1:
                             try:
                                 serialized_data = pack.packb(GlobalParameters.Threshold.tolist(), use_bin_type=True) 
@@ -309,7 +309,7 @@ def Processing_Module_Client():
                         try: 
                             response = Request("PLOT /Peaks")
                         except Exception as e:
-                            print(e)
+                            msgbox.alert(f'PMC: Peaks {e}')
                         if response[0] == 1:
                             try:
                                 serialized_data = pack.packb(GlobalParameters.PeakActivation.tolist(), use_bin_type=True) 
@@ -323,7 +323,7 @@ def Processing_Module_Client():
                         try: 
                             response = Request("PLOT /Detection")
                         except Exception as e:
-                            print(e)
+                            msgbox.alert(f'PMC: Detection {e}')
                         if response[0] == 1:
                             DetectionModels = {}
                             for i in range(len(GlobalParameters.modelsList)):
@@ -349,7 +349,7 @@ def Processing_Module_Client():
                         try: 
                             response = Request("UPLOAD /Configurations")
                         except Exception as e:
-                            print(e)
+                            msgbox.alert(f'PMC: Configurations {e}')
                         if response[0] == 1:
                             configurationDictionary = Request("GET /JsonConfiguration")
                             GlobalParameters.Threshold = np.asarray(configurationDictionary['Thresholds'])
@@ -360,20 +360,13 @@ def Processing_Module_Client():
                             for element in synergy_CursorMap:
                                 angles.append(int(element))
                             GlobalParameters.synergy_CursorMap = angles
+                            GlobalParameters.synergiesNumber = len(angles)
                             GlobalParameters.UploadedFromJson = True
 
-                            # while not GlobalParameters.UploadedFromJsonFinished:
-                            #     continue
-                            # response = Request("SET /JsonConfigurationFinished")
-                            # if response[0] == 1:
-                            #     GlobalParameters.UploadedFromJsonFinished = False
-
-                            
                                 
                     else:
                         try:
                             data = Request("GET /data")
-                            # formated_data = Dictionary_to_matrix(data)
                             formated_data = np.asarray(data)
                             if GlobalParameters.DetectingSynergies == False:
                                 PM_DS.stack_lock.acquire()  # Acquire lock before accessing the stack
@@ -383,18 +376,18 @@ def Processing_Module_Client():
                                 #print("Detecting synergies")
                                 pass
                         except Exception as e:
-                            #print(e)
-                            pass
-                            #print(e)
+                            msgbox.alert(f"PMC: Data {e}")
                             pass
 
                 except Exception as e:
-                    print("PM Client", e)
+                    msgbox.alert(f"PM Client {e}")
                     #print(data)
 
             except socket.error as e:
-                print("Connection error:", e)
+                msgbox.alert(f"Connection error:{e}")
                 continue
+            except Exception as e:
+                msgbox.alert(f"PM Client {e}")
                 # Manage a connection error
             #time.sleep(0.001)
     except Exception as e:

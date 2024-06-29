@@ -3,17 +3,18 @@ import time
 from collections import deque
 import numpy as np
 from threading import Thread, Semaphore
-
-frequency = 3 # Sample rate
+import API_Parameters
+import pymsgbox as msgbox
+frequency = API_Parameters.SimulationFrequency  # Sample rate
 #csv_file = 'Infinito.csv'  # CSV file
-csv_file = 'Data_Source.csv'
+csv_file = API_Parameters.csvFile #'Data_Source.csv'
 
 # Initialize global stack
 stack = []
 stack_lock = Semaphore(1)  # Semaphore for stack access
 
 # Create channels ID
-channels = ['t', 'M1', 'M2', 'M3', 'M4', 'M5', 'M6', 'M7', 'M8']
+channels = ['M1', 'M2', 'M3', 'M4', 'M5', 'M6', 'M7', 'M8']
 
 class FormattedDictionary:
     def __init__(self, dictionary):
@@ -21,7 +22,29 @@ class FormattedDictionary:
         self.Keys=list(self.dictionary.keys())
     def __getitem__(self, key):
         return self.dictionary[key]
+    
+class channelObject:
+    def __init__(self,name):
+        self.Name = name + "EMG"
+        self.SampleRate = 2148
+        self.SamplesPerFrame = 1
+    
+class SensorsList:
+    def __init__(self):
+        self.SensorsList = []
+        with open(csv_file, 'r') as file:
+            csv_reader = csv.reader(file, delimiter=',')
+            row = next(csv_reader)
+            for channel in row:
+                sensorInstance = SensorObject(channel)
+                self.SensorsList.append(sensorInstance)     
+            self.Result = self.SensorsList
 
+class SensorObject:
+    def __init__(self,sensorName):
+        self.SensorName = sensorName
+        self.TrignoChannels = [channelObject(sensorName)]
+        
 class AeroPyNuevo:
     def __init__(self):
         self.stop_flag = False
@@ -33,7 +56,7 @@ class AeroPyNuevo:
     def StartStreaming(self):
         # Open CSV file
         with open(csv_file, 'r') as file:
-            csv_reader = csv.reader(file, delimiter=';')
+            csv_reader = csv.reader(file, delimiter=',')
             # Skip the headers row
             next(csv_reader)
             # Read each row of csv file
@@ -44,7 +67,7 @@ class AeroPyNuevo:
                 stack_lock.release()  # Release lock after modifying the stack
                 # lock after modifying the stack
                 
-                time.sleep(1/frequency)
+                time.sleep(1/frequency if frequency > 0 else 1)
                 # Check if stop flag is set
                 if self.stop_flag:
                     return
@@ -65,10 +88,11 @@ class AeroPyNuevo:
         data_dict = {}
         stack_lock.acquire()  # Acquire lock before accessing the stack
         # Get the data for each channel
-        for channel in channels[1:]:
+        for channel in self.Channels:
             #Use the following line if you want to have pairs of data (time,sample) for each channel instead of the time as another channel
-            channel_data = [row[channels.index(channel)] for row in stack]
+            channel_data = [row[self.Channels.index(channel)] for row in stack]
             data_dict[channel] = channel_data
+        
         stack.clear()
         stack_lock.release()  # Release lock after reading and clearing the stack
         data=FormattedDictionary(data_dict)
@@ -77,6 +101,43 @@ class AeroPyNuevo:
     def Stop(self):
         self.stop_flag = True
 
+    def ValidateBase(self,key, license):
+        pass
+
+    def GetPipelineState(self):
+        return 'Connected'	
+    
+    def ScanSensors(self):
+        self.SensorsList = SensorsList()
+        self.NumberOfChannels = len(self.SensorsList.SensorsList)
+        return self.SensorsList
+        
+    def GetSensorNames(self):
+        self.Channels = []
+        for i in range(len(self.SensorsList.SensorsList)):
+            self.Channels.append(self.SensorsList.SensorsList[i].SensorName)
+        return self.Channels
+        
+    def SelectAllSensors(self):
+        pass
+
+    def PairSensor(self):
+        print("Pairing sensor")
+        pass
+    
+    
+    def GetSensorObject(self,i):
+        
+        return self.SensorsList.SensorsList[i] 
+    
+    def SetSampleMode(self,curSensor,setMode):
+        pass
+
+    def GetAllSampleModes(self):
+        return ['EMG raw (2148Hz), +/-11mv, 10-850Hz' for i in range(self.NumberOfChannels)]
+    
+    def Configure(self):
+        pass
 
 aero_instance = AeroPyNuevo()
 #-------------------------------------------------------------------------------------------------------------

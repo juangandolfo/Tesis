@@ -5,11 +5,20 @@ from PySide2.QtCore import QObject, Signal
 import json
 import time
 
-ChannelsNumber = 0
 DelsysMode = True
-SampleRate = 0
-TerminateCalibrationFlag = False
+#csvFile = '202465_213928.csv'              #tiene 2 musculos
+#csvFile = 'Experiment-20240626-220405.csv' #tiene 3 musculos
+#csvFile = '202468_195248.csv'               #tiene 4 musculos
+csvFile = 'experimento_prueba.csv'
+csvFile = 'Experiments/' + csvFile
+SimulationFrequency = 2148
 
+KeysLen = 0
+ChannelsNumber = 0
+SampleRate = 0
+SensorStickers = []
+
+TerminateCalibrationFlag = False
 CalibrationStageInitialized = False
 CalibrationStageFinished = False
 CalibrationStage = 0
@@ -47,8 +56,9 @@ def TwoDigitString(number):
 def CreateExperimentName():
     global ExperimentTimestamp
     t = time.gmtime()
-    ExperimentTimestamp = str(t.tm_year) + TwoDigitString(t.tm_mon) + TwoDigitString(t.tm_mday) + "-" + TwoDigitString(t.tm_hour) + TwoDigitString(t.tm_min) + TwoDigitString(t.tm_sec)
-
+    UTF = -3
+    ExperimentTimestamp = str(t.tm_year) + TwoDigitString(t.tm_mon) + TwoDigitString(t.tm_mday) + "-" + TwoDigitString(t.tm_hour - UTF) + TwoDigitString(t.tm_min) + TwoDigitString(t.tm_sec)
+    
 def UploadCalibrationFromJson():
     # Load the configuration from a JSON file
     with open('Configuration.json') as file:

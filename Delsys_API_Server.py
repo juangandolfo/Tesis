@@ -24,22 +24,15 @@ def FormattedDictionary_to_PythonDictionary(formatted_dictionary, emgPositionVec
     
     for i in formatted_dictionary.Keys:
         keys.append(i)
-        
     '''for j in range(len(keys)):
         # outArr[j].append(np.asarray(formatted_dictionary[keys[j]], dtype='object'))
         # full data
     '''
     DataRows = min(set([len(formatted_dictionary[keys[i]]) for i in emgPositionVector]))
-    # set(len(row) for row in keys)
     DataColumns = len(emgPositionVector)
-    # DataRows = len(formatted_dictionary[keys[0]])
     OutMatrix = np.zeros((DataRows,DataColumns))
     for j in range(len(emgPositionVector)):
-        # outArr[j].append(np.asarray(formatted_dictionary[keys[j]], dtype='object')) # matrix
-        # python_dictionary[str(keys[j])] = np.asarray(formatted_dictionary[keys[j]]).tolist()
         OutMatrix[:,j] = np.asarray(formatted_dictionary[keys[emgPositionVector[j]]])[:DataRows]
-        # python_dictionary[str(keys[emgPositionVector[j]])] = np.asarray(OutMatrix[j]).tolist()
-    
     return OutMatrix.tolist()
 
 def API_Server(AeroInstance,emgPositionVector):
