@@ -107,18 +107,19 @@ class PlottingManagement():
         for i in range(len(self.nameList)):
             self.ActiveSerialNumbers.append(str(self.nameList[i]).split(" ")[0])
         
+        
         for SerialNumber in self.ActiveSerialNumbers:
             for sensor in SensorInformation.sensors:
                 if SerialNumber == sensor["SerialNumber"]:
                     if len(sensor["Channels"]) > 1:
                         for channel in sensor["Channels"]:
                             channelName = sensor["Sticker"] + channel 
-                            self.SensorStickers.append(channelName)
+                            API_Parameters.SensorStickers.append(channelName)
                     else:
                         channelName = sensor["Sticker"] 
                         API_Parameters.SensorStickers.append(channelName)
                     
-        print(self.SensorStickers)
+        print(API_Parameters.SensorStickers)
 
         self.SensorsFound = len(self.nameList)
         TrigBase.SelectAllSensors()
