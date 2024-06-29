@@ -11,9 +11,14 @@ from AeroPy.DataManager import *
 import subprocess
 import time
 import sys
-from API_Server_Nuevo import *
+#from API_Server_Nuevo import *
 from Aero_Nuevo import *
-import Delsys_API_Server
+import SensorInformation
+if API_Parameters.DelsysMode:
+    import Delsys_API_Server as API_Server
+else:
+    import API_Server_Nuevo as API_Server
+
 import API_Parameters
 import pymsgbox as msgbox
 
@@ -21,10 +26,11 @@ clr.AddReference("System.Collections")
 from System.Collections.Generic import List
 from System import Int32
 
-
-base = TrignoBase()
-TrigBase = base.BaseInstance
-
+if API_Parameters.DelsysMode:
+    base = TrignoBase()
+    TrigBase = base.BaseInstance
+else:
+    TrigBase = AeroPyNuevo()
 
 app.use_app('PySide2')
 
@@ -63,12 +69,12 @@ class PlottingManagement():
 
         time.sleep(3)
 
-        if API_Parameters.DelsysMode:
-            API_server_thread=Thread(target=Delsys_API_Server.API_Server, args=(TrigBase,self.dataStreamIdx), daemon=True)
-            API_server_thread.start()
-        else:
-            API_server_thread=Thread(target=API_Server.API_Server)
-            API_server_thread.start()
+        #if API_Parameters.DelsysMode:
+        #    API_server_thread=Thread(target=API_Server.API_Server, args=(TrigBase,self.dataStreamIdx), daemon=True)
+        #    API_server_thread.start()
+        #else:
+        API_server_thread=Thread(target=API_Server.API_Server, args=(TrigBase,self.dataStreamIdx), daemon=True)
+        API_server_thread.start()
 
 
 
@@ -95,6 +101,25 @@ class PlottingManagement():
 
         f = TrigBase.ScanSensors().Result
         self.nameList = TrigBase.GetSensorNames()
+        
+        self.ActiveSerialNumbers = []
+        API_Parameters.SensorStickers = []
+        for i in range(len(self.nameList)):
+            self.ActiveSerialNumbers.append(str(self.nameList[i]).split(" ")[0])
+        
+        for SerialNumber in self.ActiveSerialNumbers:
+            for sensor in SensorInformation.sensors:
+                if SerialNumber == sensor["SerialNumber"]:
+                    if len(sensor["Channels"]) > 1:
+                        for channel in sensor["Channels"]:
+                            channelName = sensor["Sticker"] + channel 
+                            self.SensorStickers.append(channelName)
+                    else:
+                        channelName = sensor["Sticker"] 
+                        API_Parameters.SensorStickers.append(channelName)
+                    
+        print(self.SensorStickers)
+
         self.SensorsFound = len(self.nameList)
         TrigBase.SelectAllSensors()
         return self.nameList
@@ -107,7 +132,6 @@ class PlottingManagement():
             TrigBase.Configure()
             self.sampleRates = [[] for i in range(self.SensorsFound)]
             self.samplesPerFrame = [[] for i in range(self.SensorsFound)]
-
 
             # ---- Discover sensor channels
             self.dataStreamIdx = []  # This list indexes into the sensor data array, selecting relevant data to visualize
