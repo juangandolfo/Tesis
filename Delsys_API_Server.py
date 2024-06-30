@@ -69,7 +69,7 @@ def API_Server(AeroInstance,emgPositionVector):
                             response_data = FormattedDictionary_to_PythonDictionary(AeroInstance.PollData(),emgPositionVector)
                             #print(response_data)
                         except Exception as e:
-                            msgbox.alert(f"Poll Data: {e}, {response_data}")
+                            print(f"Poll Data: {e}, {response_data}")
                     else:
                         response_data=[]
                     serialized_data = pack.packb(response_data,use_bin_type=True) # Serialize the object using msgpack

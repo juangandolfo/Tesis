@@ -26,7 +26,6 @@ def FormattedDictionary_to_PythonDictionary(formatted_dictionary, emgPositionVec
     
     for i in formatted_dictionary.Keys:
         keys.append(i)
-    print("                                                                                 len of keys: ",len(keys))
     '''for j in range(len(keys)):
         # outArr[j].append(np.asarray(formatted_dictionary[keys[j]], dtype='object'))
         # full data
@@ -65,7 +64,6 @@ def API_Server(AeroInstance, emgPositionVector):
                 
                 # Check if the received data is a GET request for "/data"
                 if data == "GET /data":
-                    print(data)
                     dataReady = AeroInstance.CheckDataQueue()
                     if dataReady:
                         try:
@@ -109,6 +107,15 @@ def API_Server(AeroInstance, emgPositionVector):
 
                 elif data == "GET /SensorsNumber":
                     serialized_data = pack.packb(API_Parameters.ChannelsNumber, use_bin_type=True)
+                    serialized_data  += b'END'
+                    try:
+                        conn.sendall(serialized_data)
+                    except Exception as e:
+                        print(e)
+
+                elif data == "GET /SensorStickers":
+                    API_Parameters.SensorStickers = ['M1', 'M2', 'M3']
+                    serialized_data = pack.packb(API_Parameters.SensorStickers, use_bin_type=True)
                     serialized_data  += b'END'
                     try:
                         conn.sendall(serialized_data)
@@ -223,6 +230,7 @@ def API_Server(AeroInstance, emgPositionVector):
                         API_Parameters.Peaks = Peaks
                         API_Parameters.AnglesOutput = AnglesOutput
                         API_Parameters.SynergyBase = SynergyBase
+                        API_Parameters.SynergiesNumber = len(AnglesOutput)
                     except Exception as e:
                         msgbox.alert(e)                    
                         

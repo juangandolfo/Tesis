@@ -40,9 +40,7 @@ PlotPeaks = False
 PlotSynergiesDetected = False
 UploadFromJson = False
 DetectingSynergies = False
-UploadedFromJson = False
-UploadedFromJsonFinished = False
-
+JsonReceived = False
 PeakActivation = []
 Threshold = []
 

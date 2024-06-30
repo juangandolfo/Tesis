@@ -235,11 +235,11 @@ def CalibrationProcessing():
             GlobalParameters.UploadFromJson = True
             while GlobalParameters.CalibrationStage == 4:
                 print("stage4")
-                if GlobalParameters.UploadedFromJson:
+                if GlobalParameters.JsonReceived:
+                    GlobalParameters.JsonReceived = False 
                     try:
                         GlobalParameters.SynergyBaseInverse = np.linalg.pinv(GlobalParameters.SynergyBase)
                         GlobalParameters.projectionMatrix = GlobalParameters.GenerateProjectionMatrix(GlobalParameters.synergy_CursorMap)    
-                        GlobalParameters.UploadedFromJsonFinished = True          
                     except Exception as e:
                         msgbox.alert(e)
                     

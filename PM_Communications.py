@@ -13,7 +13,6 @@ import threading
 
 synergies_Lock = threading.Lock()
 
-
 HOST = "127.0.0.1"  # Standard adress (localhost)
 PORT_Client = 6001  # Port to get data from the File API Server
 PORT_Server = 6002 # The port used by the PM Server
@@ -122,9 +121,8 @@ def Request(request):
 
 # Function to handle the connection with a client
 def Handle_Client(conn,addr):
-
     print(f"Connected by {addr}")
-    conn.settimeout(15)
+    conn.settimeout(3)
     try:
         while True:
             print("                                                      PM Server live")
@@ -153,6 +151,7 @@ def Handle_Client(conn,addr):
 
                 elif  data.decode().strip() == "GET /Muscles":
                     # with synergies_Lock:
+                        print("------------------------------------------------------GET /Muscles")
                         PM_DS.ProcessedDataBuffer_Semaphore.acquire()  # Acquire lock before accessing the stack
                         response_data = PM_DS.ProcessedDataBuffer.get_vectors(1)
                         PM_DS.ProcessedDataBuffer_Semaphore.release()  # Release lock after reading the stack
@@ -227,7 +226,7 @@ def Handle_Client(conn,addr):
                 print(f"Client {addr} timed out")
                 break
             except Exception as e:  
-                msgbox.alert(data)    
+                print(data)
     except (ConnectionResetError, ConnectionAbortedError) as e:
         print(f"Client {addr} connection lost: {e}")
 
@@ -366,7 +365,7 @@ def Processing_Module_Client():
                                 angles.append(int(element))
                             GlobalParameters.synergy_CursorMap = angles
                             GlobalParameters.synergiesNumber = len(angles)
-                                
+                            GlobalParameters.JsonReceived = True
                     else:
                         try:
                             data = Request("GET /data")

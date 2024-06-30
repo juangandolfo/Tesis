@@ -10,7 +10,7 @@ frequency = API_Parameters.SimulationFrequency  # Sample rate
 csv_file = API_Parameters.csvFile #'Data_Source.csv'
 
 # Initialize global stack
-stack = []
+stack = deque(maxlen = 1000)
 stack_lock = Semaphore(1)  # Semaphore for stack access
 
 # Create channels ID
@@ -66,7 +66,6 @@ class AeroPyNuevo:
                 stack.append(row)
                 stack_lock.release()  # Release lock after modifying the stack
                 # lock after modifying the stack
-                
                 time.sleep(1/frequency if frequency > 0 else 1)
                 # Check if stop flag is set
                 if self.stop_flag:

@@ -61,9 +61,9 @@ class Visual:
             newx = self.source.data['x'][-1] + 1 # Increment the time step on the x-axis of the graphs
             
             x = np.linspace(newx,newx+len(val),len(val))
-            y1 = val[:,0]
-            y2 = val[:,1]
-            y3 = val[:,2]
+            y1 = val[:,0] 
+            y2 = val[:,1] 
+            y3 = val[:,2] 
 
             new_data = dict(x=x, y1=y1, y2=y2, y3=y3)
             self.source.stream(new_data, rollover=10000) # Feed new data to the graphs and set the rollover period to be xx samples
