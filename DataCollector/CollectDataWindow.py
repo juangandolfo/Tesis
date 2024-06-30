@@ -298,8 +298,6 @@ class CountdownWidget(QWidget):
 
 class CalibrationWindow(QMainWindow):
 
-    #PlotCalibrationSignal = Signal()
-
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Calibration Window")
@@ -482,27 +480,18 @@ class CalibrationWindow(QMainWindow):
 
         if API_Parameters.PlotThresholds:
             ax = self.figure.add_subplot(111)
-            self.muscles_number = API_Parameters.ChannelsNumber
-            self.muscles_name = [f'Muscle {i+1}' for i in range(self.muscles_number)]  # Generate muscle names
-            bar_width = 0.3 
-            #positions = np.arange(len(self.muscles_name)) * 100 
             data = API_Parameters.Thresholds 
-            ax.bar(self.muscles_name, data, color = '#00008B')
+            ax.bar(API_Parameters.SensorStickers, data, color = '#00008B')
             ax.set_xlabel('Muscles')  # X-axis label
             ax.set_ylabel('Muscle Activation (mV)')  # Y-axis label
             ax.set_title('Detected thresholds')  # Plot title
-            #ax.set_xticks(positions)
-            #ax.set_xticklabels(self.muscles_name, rotation=45, ha='right') 
             API_Parameters.PlotThresholds = False
             
+                
         elif API_Parameters.PlotPeaks:
             ax = self.figure.add_subplot(111)
-            self.muscles_number = API_Parameters.ChannelsNumber
-            self.muscles_name = [f'Muscle {i+1}' for i in range(self.muscles_number)]  # Generate muscle names
-            bar_width = 0.3 
-            #positions = np.arange(len(self.muscles_name)) * 100 
             data = API_Parameters.Peaks 
-            ax.bar(self.muscles_name, data, color = '#00008B')
+            ax.bar(API_Parameters.SensorStickers, data, color = '#00008B')
             ax.set_xlabel('Muscles')  # X-axis label
             ax.set_ylabel('Muscle Activation (mV)')  # Y-axis label
             ax.set_title('Detected Peaks')  # Plot title
@@ -528,7 +517,7 @@ class CalibrationWindow(QMainWindow):
                         if j == 2:
                             ax.set_xlabel('Muscles')  # X-axis label
                             ax.set_ylabel('Muscle Activation (%)')  # Y-axis label
-                            ax.set_xticklabels([str(index) for index in range(1, API_Parameters.ChannelsNumber +1)])
+                            ax.set_xticklabels(API_Parameters.SensorStickers)
                             ax.set_yticklabels([str(tick) for tick in [0, 0.5, 1]])
                         else:
                             ax.set_xticklabels([''] * API_Parameters.ChannelsNumber)  # Remove x-axis tick labels but keep the ticks
@@ -557,21 +546,6 @@ class CalibrationWindow(QMainWindow):
             self.set_synergy_base.show()
             API_Parameters.PlotModels = False
             
-            '''
-        elif API_Parameters.PlotAngles:
-            angles = [lineedit.text() for lineedit in self.angle_lineedits]
-            try:
-                angles = [int(angle) for angle in angles if angle]
-            except ValueError:
-                return  # Ignore invalid input
-            
-            ax = self.figure.add_subplot(111, polar=True)
-            
-            for angle in angles:
-                theta = np.radians(angle)  # Convert to radians
-                ax.plot([0, theta], [0, 1], marker='o')  # Plot the vector
-            ax.set_title("Choose the projection angle of each synergy")
-            '''
         elif API_Parameters.PlotAngles:
             try:
                 angles = [lineedit.text() for lineedit in self.angle_lineedits]
@@ -594,7 +568,7 @@ class CalibrationWindow(QMainWindow):
                         ax.set_title(f'Synergy Base ({API_Parameters.SynergiesNumber} Synegies)')
                         ax.set_xlabel('Muscles')  # X-axis label
                         ax.set_ylabel('Muscle Activation (%)')  # Y-axis label
-                        ax.set_xticklabels([str(index) for index in range(1, API_Parameters.ChannelsNumber +1)])
+                        ax.set_xticklabels(API_Parameters.SensorStickers)
                         ax.set_yticklabels([str(tick) for tick in [0, 0.5, 1]])
                     else: 
                         ax.set_xticklabels([''] * API_Parameters.ChannelsNumber)  # Remove x-axis tick labels but keep the ticks
@@ -614,39 +588,36 @@ class CalibrationWindow(QMainWindow):
 
         elif API_Parameters.PlotUploadedConfig:
             gs = self.figure.add_gridspec(API_Parameters.SynergiesNumber, 2)  
-            try:
-                # Plot Synergy Base ----------------------------------------------
-                for i in range (1, API_Parameters.SynergiesNumber+1):
-                    ax = self.figure.add_subplot(gs[i-1, 0])
-                    ax.bar(range(np.asarray(API_Parameters.SynergyBase).shape[1]), API_Parameters.SynergyBase[i-1], color=self.colors[i-1], alpha=0.6)
-                    ax.set_ylim(0, 1)  # Set y-axis limits to be between 0 and 0.5
-                    ax.set_xlim(-0.5, API_Parameters.ChannelsNumber-0.5) 
-                    ax.set_xticks(range(API_Parameters.ChannelsNumber))  # Ensure all ticks are visible
-                    ax.set_yticks([0, 0.5, 1])  # Ensure y-ticks are visible
+            
+            # Plot Synergy Base ----------------------------------------------
+            for i in range (1, API_Parameters.SynergiesNumber+1):
+                ax = self.figure.add_subplot(gs[i-1, 0])
+                ax.bar(range(np.asarray(API_Parameters.SynergyBase).shape[1]), API_Parameters.SynergyBase[i-1], color=self.colors[i-1], alpha=0.6)
+                ax.set_ylim(0, 1)  # Set y-axis limits to be between 0 and 0.5
+                ax.set_xlim(-0.5, API_Parameters.ChannelsNumber-0.5) 
+                ax.set_xticks(range(API_Parameters.ChannelsNumber))  # Ensure all ticks are visible
+                ax.set_yticks([0, 0.5, 1])  # Ensure y-ticks are visible
 
-                    if i == 1:
-                        ax.set_title(f'Synergy Base ({API_Parameters.SynergiesNumber} Synegies)')
-                        ax.set_xlabel('Muscles')  # X-axis label
-                        ax.set_ylabel('Muscle Activation (%)')  # Y-axis label
-                        ax.set_xticklabels([str(index) for index in range(1, API_Parameters.ChannelsNumber+1)])
-                        ax.set_yticklabels([str(tick) for tick in [0, 0.5, 1]])
-                    else: 
-                        ax.set_xticklabels([''] * API_Parameters.ChannelsNumber)  # Remove x-axis tick labels but keep the ticks
-                        ax.set_yticklabels([''] * 3)  # Remove y-axis tick labels but keep the ticks
-                    
-                # Plot Projection Angles ----------------------------------------------
-                ax = self.figure.add_subplot(gs[:, 1], polar=True)
-                ax.set_title("Projection Angles")
-                for i in range(len(API_Parameters.AnglesOutput)):
-                    theta = np.radians(int(API_Parameters.AnglesOutput[i]))  # Convert to radians
-                    ax.plot([0, theta], [0, 1], marker='o', color=self.colors[i])  # Plot the vector
+                if i == 1:
+                    ax.set_title(f'Synergy Base ({API_Parameters.SynergiesNumber} Synegies)')
+                    ax.set_xlabel('Muscles')  # X-axis label
+                    ax.set_ylabel('Muscle Activation (%)')  # Y-axis label
+                    ax.set_xticklabels(API_Parameters.SensorStickers)
+                    ax.set_yticklabels([str(tick) for tick in [0, 0.5, 1]])
+                else: 
+                    ax.set_xticklabels([''] * API_Parameters.ChannelsNumber)  # Remove x-axis tick labels but keep the ticks
+                    ax.set_yticklabels([''] * 3)  # Remove y-axis tick labels but keep the ticks
                 
-                # Adjust the layout to expand subplots
-                self.figure.tight_layout()
-                self.figure.subplots_adjust(hspace=0.8, wspace=0.6)  # Adjust the spacing if needed
-
-            except Exception as e:
-                msgbox.alert(f"Plotting Uploaded config1 {e}")
+            # Plot Projection Angles ----------------------------------------------
+            ax = self.figure.add_subplot(gs[:, 1], polar=True)
+            ax.set_title("Projection Angles")
+            for i in range(len(API_Parameters.AnglesOutput)):
+                theta = np.radians(int(API_Parameters.AnglesOutput[i]))  # Convert to radians
+                ax.plot([0, theta], [0, 1], marker='o', color=self.colors[i])  # Plot the vector
+            
+            # Adjust the layout to expand subplots
+            self.figure.tight_layout()
+            self.figure.subplots_adjust(hspace=0.8, wspace=0.6)  # Adjust the spacing if needed
             API_Parameters.PlotUploadedConfig = False
 
         else:
