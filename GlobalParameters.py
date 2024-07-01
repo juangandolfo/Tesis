@@ -38,9 +38,9 @@ RequestAngles = False
 PlotThresholds = False
 PlotPeaks = False
 PlotSynergiesDetected = False
-UploadFromJson = False
 DetectingSynergies = False
-UploadedFromJson = False
+UploadFromJson = False
+JsonRecieved = False
 UploadedFromJsonFinished = False
 
 PeakActivation = []

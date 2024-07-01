@@ -366,6 +366,8 @@ def Processing_Module_Client():
                                 angles.append(int(element))
                             GlobalParameters.synergy_CursorMap = angles
                             GlobalParameters.synergiesNumber = len(angles)
+                            
+                            GlobalParameters.JsonRecieved = True
                                 
                     else:
                         try:
