@@ -22,8 +22,9 @@ class Visual:
             )
         self.tools = "pan,box_zoom,wheel_zoom,reset" # Set pan, zoom, etc., options for the plot
         
-        self.MusclesNumber = 8
-        self.SynergiesNumber = 8
+        self.MusclesNumber = 3
+        self.SynergiesNumber = 3
+        self.yAxisMax = 10.0
         self.colors = ["firebrick", "indigo", "green", "blue", "orange", "purple", "brown", "pink"]
         self.ChannelName = ["Channel 1", "Channel 2", "Channel 3", "Channel 4", "Channel 5", "Channel 6", "Channel 7", "Channel 8"]
         self.sampleRate = 2148
@@ -32,7 +33,7 @@ class Visual:
         self.plot_options = dict(width=800, height=200, tools=[self.hover, self.tools]) # Set plot width, height, and other plot options
         self.bar_options = dict(width=400, height=200, tools=[self.hover, self.tools]) # Set plot width, height, and other plot options
         self.updateValue = True # Internal state for updating of plots
-        self.MuscleSource, self.SynergySource, self.LinePlots, self.BarPlots = self.definePlot() # Define various plots. Return handles for data source (self.source) and combined plot (self.pAll)
+        self.MuscleSource, self.SynergySource, self.LinePlots, self.BarPlots, self.MusclesBarData, self.synergiesBarData = self.definePlot() # Define various plots. Return handles for data source (self.source) and combined plot (self.pAll)
         self.doc = curdoc() # Save curdoc() to make sure all threads see the same document. curdoc() refers to the Bokeh web document
         self.layout() # Set the checkboxes and overall layout of the webpage 
         self.prev_y1 = 0
@@ -43,24 +44,27 @@ class Visual:
         MusclesPlot = figure(**self.plot_options, title="Activaciones Musculares")
         MusclesPlot.xaxis.axis_label = "Tiempo (s)"
         MusclesPlot.yaxis.axis_label = "Activación (%)"
-        MusclesPlot.y_range = Range1d(start=0.0, end=1.0)
+        MusclesPlot.y_range = Range1d(start=0.0, end=self.yAxisMax)
 
         MusclesBarPlot = figure(**self.bar_options, title="Activaciones Musculares")
-        x = [1, 2, 3, 4, 5]
-        top = [1, 2, 3, 4, 5]
+        x = [i for i in range(1, self.MusclesNumber+1)]
+        top = [i for i in range(1, self.MusclesNumber+1)]
         width = 0.5
-        # plotting the graph
-        MusclesBar = MusclesBarPlot.vbar(x,
-                top = top,
-                width = width)    
+        MusclesBar = MusclesBarPlot.vbar(x,top = top,width = width)    
         MusclesBarData = MusclesBar.data_source.data
-        MusclesBarData['top'] = [5, 4, 3, 1, 0]
        
         # Define SynergiesPlot
         SynergiesPlot = figure(**self.plot_options, x_range=MusclesPlot.x_range, title="Computed Value") # Link x-axis of first and second graph
         SynergiesPlot.xaxis.axis_label = "Tiempo (s)"
         SynergiesPlot.yaxis.axis_label = "Activación (%)"
-        SynergiesPlot.y_range = Range1d(start=0.0, end=1.0)
+        SynergiesPlot.y_range = Range1d(start=0.0, end=self.yAxisMax)
+
+        SynergiesBarPlot = figure(**self.bar_options, title="Activaciones Musculares")
+        x = [i for i in range(1, self.SynergiesNumber+1)]
+        top = [i for i in range(1, self.SynergiesNumber+1)]
+        width = 0.5
+        SynergiesBar = SynergiesBarPlot.vbar(x,top = top,width = width)    
+        SynergiesBarData = SynergiesBar.data_source.data
 
         # SynergiesPlot.extra_y_ranges = {"class": Range1d(start=-1, end=2)} # Add a secondary y-axis
         # SynergiesPlot.add_layout(LinearAxis(y_range_name="class", axis_label="Classification"), 'right') # Name and place the secondary y-axis on the right vertical edge of the graph
@@ -70,7 +74,6 @@ class Visual:
         for i in range(0, self.MusclesNumber):
             muscleData[f'y{i}'] = [0]
         MuscleSource = ColumnDataSource(data=muscleData)
-        
         
         synergyData = {'x': [0]}
         for i in range(0, self.SynergiesNumber):
@@ -100,9 +103,9 @@ class Visual:
         SynergiesPlot.legend.click_policy = "hide"  # Plot line may be hidden by clicking the legend marker
         # Combine all plots into a gridplot for better vertical alignment
         LinePlots = gridplot([[MusclesPlot],[SynergiesPlot]], height=270, width=800, toolbar_location="below")
-        BarPlots = gridplot([[MusclesBarPlot],[None]], height=270, width=400, toolbar_location="below")
+        BarPlots = gridplot([[MusclesBarPlot],[SynergiesBarPlot]], height=270, width=400, toolbar_location="below")
 
-        return MuscleSource, SynergySource, LinePlots, BarPlots # Return handles to data source and gridplot
+        return MuscleSource, SynergySource, LinePlots, BarPlots, MusclesBarData, SynergiesBarData # Return handles to data source and gridplot
 
     @gen.coroutine
     def update(self, MusclesActivations, SynergiesActivations):
@@ -114,9 +117,16 @@ class Visual:
             
             MusclesDictionary = {'x': np.linspace(Musclesx, Musclesx + MuscleActivationsSize*self.timeStep, MuscleActivationsSize)}
             for i in range(self.MusclesNumber):
-                MusclesDictionary[f'y{i}'] = MusclesActivations[:,i]+i*0.1
+                if MusclesActivations == []:
+                    MusclesDictionary[f'y{i}'] = []
+                else:
+                    MusclesDictionary[f'y{i}'] = MusclesActivations[:,i]+i*0.1
     
             self.MuscleSource.stream(MusclesDictionary, rollover=10000) # Feed new data to the graphs and set the rollover period to be xx samples
+            
+            # Update the Muscles Bar plot
+            if MusclesActivations != []:
+                self.MusclesBarData['top'] = [MusclesActivations[-1,i]+0.1*i for i in range(self.MusclesNumber)]
 
             # Update the Synergies plot
             Synergiesx = self.MuscleSource.data['x'][-1] + self.timeStep
@@ -124,9 +134,16 @@ class Visual:
             
             SynergiesDictionary = {'x': np.linspace(Synergiesx, Synergiesx + SynergiesActivationsSize*self.timeStep, SynergiesActivationsSize)}
             for i in range(0, self.SynergiesNumber):
-                SynergiesDictionary[f'y{i}'] = SynergiesActivations[:,i] * 0.1 + i*0.1
+                if SynergiesActivations == []:
+                    SynergiesDictionary[f'y{i}'] = []
+                else:
+                    SynergiesDictionary[f'y{i}'] = SynergiesActivations[:,i] + i*0.1
 
             self.SynergySource.stream(SynergiesDictionary, rollover=10000) # Feed new data to the graphs and set the rollover period to be xx samples
+
+            # Update the synergies Bar plot
+            if SynergiesActivations != []:
+                self.synergiesBarData['top'] = [SynergiesActivations[-1,i]+0.1*i for i in range(self.SynergiesNumber)]
 
 
     def checkbox1Handler(self, attr, old, new):

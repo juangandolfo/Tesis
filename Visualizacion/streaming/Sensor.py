@@ -24,7 +24,7 @@ def Connect():
             client_socket.connect((HOST, PORT_Client))
             notConnected = False
         except Exception as e:
-            msgbox.alert(f'Connect: {e}')
+            print(f'Connect: {e}')
 
 def CloseConnection():
     global client_socket
@@ -36,6 +36,8 @@ data = b''
 chunk = b''
 response_data = b''
 vacio = pack.packb(b'\x90', use_bin_type = True)
+
+
 def Request(type):
     global LastChunk
     global data
@@ -98,14 +100,19 @@ class Sensor(threading.Thread):
         self.SynergiesActivations = 0 
         self.running = running # Store the current state of the Flag
         self.callbackFunc = callbackFunc # Store the callback function
-        
-        self.MusclesNumber = 8
-        self.SynergiesNumber = 8
+        self.MusclesNumber = 3 # Request("")
+        self.SynergiesNumber = 3
 
     def run(self):
         while self.running.is_set(): # Continue grabbing data from sensor while Flag is set
-            time.sleep(0.10)  # Time to sleep in seconds, emulating some sensor process taking time
-            self.MusclesActivations = np.random.random((np.random.randint(100,200),self.MusclesNumber))*0.01 # Generate random integers to emulate data from sensor
-            self.SynergiesActivations = np.random.random((np.random.randint(100,200),self.SynergiesNumber))*0.01 # Generate random integers to emulate data from sensor
+            time.sleep(0.001)  # Time to sleep in seconds, emulating some sensor process taking time
+            # self.MusclesActivations = np.random.random((np.random.randint(10,20),self.MusclesNumber))*0.1 # Generate random integers to emulate data from sensor
+            self.SynergiesActivations = np.random.random((np.random.randint(10,20),self.SynergiesNumber))*0.1 # Generate random integers to emulate data from sensor
+            
+            MusclesRequest = Request("Muscles")
+            if MusclesRequest == []:
+                print("no data received from muscles")
+            self.MusclesActivations = np.asarray(MusclesRequest)
+            
             self.callbackFunc.doc.add_next_tick_callback(partial(self.callbackFunc.update, self.MusclesActivations,self.SynergiesActivations)) # Call Bokeh webVisual to inform that new data is available
         print("Sensor thread killed") # Print to indicate that the thread has ended
