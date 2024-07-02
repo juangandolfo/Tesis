@@ -100,19 +100,17 @@ class Sensor(threading.Thread):
         self.SynergiesActivations = 0 
         self.running = running # Store the current state of the Flag
         self.callbackFunc = callbackFunc # Store the callback function
-        self.MusclesNumber = 3 # Request("")
-        self.SynergiesNumber = 3
+        
+        self.MusclesNumber = 5
+        self.SynergiesNumber = 4
 
     def run(self):
         while self.running.is_set(): # Continue grabbing data from sensor while Flag is set
-            time.sleep(0.001)  # Time to sleep in seconds, emulating some sensor process taking time
-            # self.MusclesActivations = np.random.random((np.random.randint(10,20),self.MusclesNumber))*0.1 # Generate random integers to emulate data from sensor
-            self.SynergiesActivations = np.random.random((np.random.randint(10,20),self.SynergiesNumber))*0.1 # Generate random integers to emulate data from sensor
-            
-            MusclesRequest = Request("Muscles")
-            if MusclesRequest == []:
-                print("no data received from muscles")
-            self.MusclesActivations = np.asarray(MusclesRequest)
-            
+            start = time.time()
+            time.sleep(0.016)  # Time to sleep in seconds, emulating some sensor process taking time
+            self.MusclesActivations = Request('Muscles')
+            self.SynergiesActivations = Request('Synergies')
+            #self.MusclesActivations = np.random.random((np.random.randint(100,200),self.MusclesNumber))*0.01 # Generate random integers to emulate data from sensor
+            #self.SynergiesActivations = np.random.random((np.random.randint(100,200),self.SynergiesNumber))*0.01 # Generate random integers to emulate data from sensor
             self.callbackFunc.doc.add_next_tick_callback(partial(self.callbackFunc.update, self.MusclesActivations,self.SynergiesActivations)) # Call Bokeh webVisual to inform that new data is available
         print("Sensor thread killed") # Print to indicate that the thread has ended

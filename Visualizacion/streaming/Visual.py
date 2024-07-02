@@ -27,8 +27,10 @@ class Visual:
         self.yAxisMax = 10.0
         self.colors = ["firebrick", "indigo", "green", "blue", "orange", "purple", "brown", "pink"]
         self.ChannelName = ["Channel 1", "Channel 2", "Channel 3", "Channel 4", "Channel 5", "Channel 6", "Channel 7", "Channel 8"]
-        self.sampleRate = 2148
+        self.sampleRate = 2148/20
         self.timeStep = 1/self.sampleRate
+        self.seconds = 4
+        self.seconds2Display = int(self.seconds*self.sampleRate)
 
         self.plot_options = dict(width=800, height=200, tools=[self.hover, self.tools]) # Set plot width, height, and other plot options
         self.bar_options = dict(width=400, height=200, tools=[self.hover, self.tools]) # Set plot width, height, and other plot options
@@ -119,14 +121,17 @@ class Visual:
             for i in range(self.MusclesNumber):
                 if MusclesActivations == []:
                     MusclesDictionary[f'y{i}'] = []
+                elif np.asarray(MusclesActivations).shape[0] == 1:
+                    try:
+                        MusclesDictionary[f'y{i}'] = [np.asarray(MusclesActivations)[0][i]]
+                    except Exception as e:
+                        print("Muscle ACtivations: ",MusclesActivations)
+                        MusclesDictionary[f'x'] = []
+                        MusclesDictionary[f'y{i}'] = []
                 else:
-                    MusclesDictionary[f'y{i}'] = MusclesActivations[:,i]+i*0.1
+                    MusclesDictionary[f'y{i}'] = np.asarray(MusclesActivations)[:,i]
     
-            self.MuscleSource.stream(MusclesDictionary, rollover=10000) # Feed new data to the graphs and set the rollover period to be xx samples
-            
-            # Update the Muscles Bar plot
-            if MusclesActivations != []:
-                self.MusclesBarData['top'] = [MusclesActivations[-1,i]+0.1*i for i in range(self.MusclesNumber)]
+            self.MuscleSource.stream(MusclesDictionary, rollover=self.seconds2Display) # Feed new data to the graphs and set the rollover period to be xx samples
 
             # Update the Synergies plot
             Synergiesx = self.MuscleSource.data['x'][-1] + self.timeStep
@@ -136,10 +141,12 @@ class Visual:
             for i in range(0, self.SynergiesNumber):
                 if SynergiesActivations == []:
                     SynergiesDictionary[f'y{i}'] = []
+                elif np.asarray(SynergiesActivations).shape[0] == 1:
+                    SynergiesDictionary[f'y{i}'] = [np.asarray(SynergiesActivations)[0][i]]
                 else:
-                    SynergiesDictionary[f'y{i}'] = SynergiesActivations[:,i] + i*0.1
+                    SynergiesDictionary[f'y{i}'] = np.asarray(SynergiesActivations)[:,i]
 
-            self.SynergySource.stream(SynergiesDictionary, rollover=10000) # Feed new data to the graphs and set the rollover period to be xx samples
+            self.SynergySource.stream(SynergiesDictionary, rollover=self.seconds2Display) # Feed new data to the graphs and set the rollover period to be xx samples
 
             # Update the synergies Bar plot
             if SynergiesActivations != []:
