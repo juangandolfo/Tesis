@@ -22,12 +22,14 @@ class Visual:
             )
         self.tools = "pan,box_zoom,wheel_zoom,reset" # Set pan, zoom, etc., options for the plot
         
-        self.MusclesNumber = 8
-        self.SynergiesNumber = 8
+        self.MusclesNumber = 5
+        self.SynergiesNumber = 4
         self.colors = ["firebrick", "indigo", "green", "blue", "orange", "purple", "brown", "pink"]
         self.ChannelName = ["Channel 1", "Channel 2", "Channel 3", "Channel 4", "Channel 5", "Channel 6", "Channel 7", "Channel 8"]
-        self.sampleRate = 2148
+        self.sampleRate = 2148/20
         self.timeStep = 1/self.sampleRate
+        self.seconds = 4
+        self.seconds2Display = int(self.seconds*self.sampleRate)
 
         self.plot_options = dict(width=800, height=200, tools=[self.hover, self.tools]) # Set plot width, height, and other plot options
         self.bar_options = dict(width=400, height=200, tools=[self.hover, self.tools]) # Set plot width, height, and other plot options
@@ -43,7 +45,7 @@ class Visual:
         MusclesPlot = figure(**self.plot_options, title="Activaciones Musculares")
         MusclesPlot.xaxis.axis_label = "Tiempo (s)"
         MusclesPlot.yaxis.axis_label = "Activación (%)"
-        MusclesPlot.y_range = Range1d(start=0.0, end=1.0)
+        MusclesPlot.y_range = Range1d(start=0.0, end=10.0)
 
         MusclesBarPlot = figure(**self.bar_options, title="Activaciones Musculares")
         x = [1, 2, 3, 4, 5]
@@ -114,9 +116,19 @@ class Visual:
             
             MusclesDictionary = {'x': np.linspace(Musclesx, Musclesx + MuscleActivationsSize*self.timeStep, MuscleActivationsSize)}
             for i in range(self.MusclesNumber):
-                MusclesDictionary[f'y{i}'] = MusclesActivations[:,i]+i*0.1
+                if MusclesActivations == []:
+                    MusclesDictionary[f'y{i}'] = []
+                elif np.asarray(MusclesActivations).shape[0] == 1:
+                    try:
+                        MusclesDictionary[f'y{i}'] = [np.asarray(MusclesActivations)[0][i]]
+                    except Exception as e:
+                        print("Muscle ACtivations: ",MusclesActivations)
+                        MusclesDictionary[f'x'] = []
+                        MusclesDictionary[f'y{i}'] = []
+                else:
+                    MusclesDictionary[f'y{i}'] = np.asarray(MusclesActivations)[:,i]
     
-            self.MuscleSource.stream(MusclesDictionary, rollover=10000) # Feed new data to the graphs and set the rollover period to be xx samples
+            self.MuscleSource.stream(MusclesDictionary, rollover=self.seconds2Display) # Feed new data to the graphs and set the rollover period to be xx samples
 
             # Update the Synergies plot
             Synergiesx = self.MuscleSource.data['x'][-1] + self.timeStep
@@ -124,9 +136,14 @@ class Visual:
             
             SynergiesDictionary = {'x': np.linspace(Synergiesx, Synergiesx + SynergiesActivationsSize*self.timeStep, SynergiesActivationsSize)}
             for i in range(0, self.SynergiesNumber):
-                SynergiesDictionary[f'y{i}'] = SynergiesActivations[:,i] * 0.1 + i*0.1
+                if SynergiesActivations == []:
+                    SynergiesDictionary[f'y{i}'] = []
+                elif np.asarray(SynergiesActivations).shape[0] == 1:
+                    SynergiesDictionary[f'y{i}'] = [np.asarray(SynergiesActivations)[0][i]]
+                else:
+                    SynergiesDictionary[f'y{i}'] = np.asarray(SynergiesActivations)[:,i]
 
-            self.SynergySource.stream(SynergiesDictionary, rollover=10000) # Feed new data to the graphs and set the rollover period to be xx samples
+            self.SynergySource.stream(SynergiesDictionary, rollover=self.seconds2Display) # Feed new data to the graphs and set the rollover period to be xx samples
 
 
     def checkbox1Handler(self, attr, old, new):

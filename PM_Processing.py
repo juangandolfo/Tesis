@@ -84,6 +84,8 @@ def Processing():
         file = open(FileName, 'w', newline='')
         writer = csv.writer(file)
         writer.writerow([f'Muscle {i+1}' for i in range(GlobalParameters.MusclesNumber)])
+
+    SubSamplingCounter = 0
     while True:
         print("PM: Processing live")
         PM_DS.stack_lock.acquire()
@@ -103,18 +105,21 @@ def Processing():
             reshapedData = NormalizedData.reshape(-1,1)
             #LastNormalizedData = NormalizedData
 
-            PM_DS.ProcessedDataBuffer_Semaphore.acquire()
-            PM_DS.ProcessedDataBuffer.add_vector(ProcessedData)
-            PM_DS.ProcessedDataBuffer_Semaphore.release()
-
-
             PM_DS.SynergyBase_Semaphore.acquire()
             SynergyActivations = np.array(DataProcessing.MapActivation(GlobalParameters.SynergyBaseInverse,reshapedData).T)
             PM_DS.SynergyBase_Semaphore.release()
+            
+            if SubSamplingCounter > 2148/20:
+                PM_DS.ProcessedDataBuffer_Semaphore.acquire()
+                PM_DS.ProcessedDataBuffer.add_vector(ProcessedData)
+                PM_DS.ProcessedDataBuffer_Semaphore.release()
 
-            PM_DS.SynergiesBuffer_Semaphore.acquire()
-            PM_DS.SynergiesBuffer.add_vector(SynergyActivations)
-            PM_DS.SynergiesBuffer_Semaphore.release()
+                PM_DS.SynergiesBuffer_Semaphore.acquire()
+                PM_DS.SynergiesBuffer.add_vector(SynergyActivations)
+                PM_DS.SynergiesBuffer_Semaphore.release()
+                SubSamplingCounter = 0
+            else:
+                SubSamplingCounter += 1
 
             NewMovement = DataProcessing.UpdatePosition(SynergyActivations, GlobalParameters.projectionMatrix).reshape(2,)
 
