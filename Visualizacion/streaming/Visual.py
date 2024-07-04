@@ -32,7 +32,8 @@ class Visual:
         self.timeStep = 1/self.sampleRate
         self.seconds = 4
         self.points2Display = int(self.seconds*self.sampleRate)
-        self.start = time.time()
+        self.MusclesStart = time.time()
+        self.SynergiesStart = time.time()
         
         self.plot_options = dict(width=800, height=200, tools=[self.hover, self.tools]) # Set plot width, height, and other plot options
         self.bar_options = dict(width=400, height=200, tools=[self.hover, self.tools]) # Set plot width, height, and other plot options
@@ -129,12 +130,12 @@ class Visual:
             if MusclesActivations == []:
                    MusclesDictionary['x'] = []
             elif np.asarray(MusclesActivations).shape[0] == 1:
-                MusclesDictionary['x'] = [MusclesLastX + time.time() - self.start]
-                self.start = time.time()
+                MusclesDictionary['x'] = [MusclesLastX + time.time() - self.MusclesStart]
+                self.MusclesStart = time.time()
             else:
-                x = np.linspace(MusclesLastX, MusclesLastX + time.time() - self.start, MuscleActivationsSize, endpoint=False)
+                x = np.linspace(MusclesLastX, MusclesLastX + time.time() - self.MusclesStart, MuscleActivationsSize, endpoint=False)
                 MusclesDictionary['x'] = x + (x[1]-x[0]) 
-                self.start = time.time()
+                self.MusclesStart = time.time()
             
             # try:
             #     print(x, time.time() - self.start)
@@ -161,10 +162,20 @@ class Visual:
                 self.MusclesBarData['top'] = np.asarray(MusclesActivations)[-1]
 
             # Update the Synergies plot
-            Synergiesx = self.MuscleSource.data['x'][-1] + self.timeStep
+            SynergiesLastX = self.SynergySource.data['x'][-1] 
             SynergiesActivationsSize = len(SynergiesActivations)
             
-            SynergiesDictionary = {'x': np.linspace(Synergiesx, Synergiesx + SynergiesActivationsSize*self.timeStep, SynergiesActivationsSize)}
+            SynergiesDictionary = {}
+            if SynergiesActivations == []:
+                SynergiesDictionary['x'] = []
+            elif np.asarray(SynergiesActivations).shape[0] == 1:
+                SynergiesDictionary['x'] = [SynergiesLastX + time.time() - self.SynergiesStart]
+                self.SynergiesStart = time.time()
+            else:
+                x = np.linspace(SynergiesLastX, SynergiesLastX + time.time() - self.SynergiesStart, SynergiesActivationsSize, endpoint=False)
+                SynergiesDictionary['x'] = x + (x[1]-x[0]) 
+                self.SynergiesStart = time.time()
+            
             for i in range(0, self.SynergiesNumber):
                 if SynergiesActivations == []:
                     SynergiesDictionary[f'y{i}'] = []
@@ -178,10 +189,10 @@ class Visual:
             # Update the synergies Bar plot
             if SynergiesActivations == []:
                 pass
-            elif np.asarray(MusclesActivations).shape[0] == 1:
+            elif np.asarray(SynergiesActivations).shape[0] == 1:
                 self.synergiesBarData['top'] = np.asarray(SynergiesActivations)[0] #[i for i in self.SynergiesNumber]
             else:
-                np.asarray(SynergiesActivations)[-1]
+                self.synergiesBarData['top'] = np.asarray(SynergiesActivations)[-1]
 
 
     def checkbox1Handler(self, attr, old, new):
