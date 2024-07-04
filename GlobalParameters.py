@@ -5,6 +5,9 @@ from scipy.signal import butter
 import pymsgbox as msgbox
 
 ModoDelsys = True # True if we use the Delsys API Server, False if we use the API Server from the PM.
+SubSamplingRate = 100
+saveCSV = True
+
 Initialized = False
 
 MusclesNumber = 4
@@ -12,6 +15,7 @@ SensorStickers = []
 
 RawData_BufferSize = 1000
 sampleRate = 1
+Subsampling_NumberOfSamples = sampleRate/SubSamplingRate 
 SynergyConfigurationFile = 'SynergyConfigurationFromExcel.csv'
 if MusclesNumber == 4:
     synergy_CursorMap = [30,210,120,300]
@@ -39,6 +43,7 @@ PlotThresholds = False
 PlotPeaks = False
 PlotSynergiesDetected = False
 DetectingSynergies = False
+UploadFromJson = False
 JsonReceived = False
 PeakActivation = []
 Threshold = []
@@ -48,7 +53,7 @@ CalibrationStage = 0
 
 TimeCalibStage3 = 10
 
-saveCSV = False
+
 ExperimentTimestamp = ''
 
 #LPF

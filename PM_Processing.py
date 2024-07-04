@@ -91,6 +91,8 @@ def Processing():
         PM_DS.stack_lock.acquire()
         RawData = PM_DS.PM_DataStruct.circular_stack.get_oldest_vector(1)
         PM_DS.stack_lock.release()     
+        SubSamplingCounter += 1
+        counter += 1
 
         if RawData != []:
             
@@ -109,7 +111,8 @@ def Processing():
             SynergyActivations = np.array(DataProcessing.MapActivation(GlobalParameters.SynergyBaseInverse,reshapedData).T)
             PM_DS.SynergyBase_Semaphore.release()
             
-            if SubSamplingCounter > 2148/20:
+            if SubSamplingCounter > GlobalParameters.Subsampling_NumberOfSamples-1:
+                print(counter)
                 PM_DS.ProcessedDataBuffer_Semaphore.acquire()
                 PM_DS.ProcessedDataBuffer.add_vector(ProcessedData)
                 PM_DS.ProcessedDataBuffer_Semaphore.release()
@@ -118,9 +121,7 @@ def Processing():
                 PM_DS.SynergiesBuffer.add_vector(SynergyActivations)
                 PM_DS.SynergiesBuffer_Semaphore.release()
                 SubSamplingCounter = 0
-            else:
-                SubSamplingCounter += 1
-
+                
             NewMovement = DataProcessing.UpdatePosition(SynergyActivations, GlobalParameters.projectionMatrix).reshape(2,)
 
             PM_DS.PositionOutput_Semaphore.acquire()

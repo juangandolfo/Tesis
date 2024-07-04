@@ -58,7 +58,6 @@ def API_Server(AeroInstance,emgPositionVector):
                     DataReceived = conn.recv(1024)
                 except Exception as e:
                     print("API", e)
-                # Check if the received data is a GET request for "/data"
                 data = DataReceived.decode().strip()
                 #print(data)
               

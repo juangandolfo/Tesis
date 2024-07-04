@@ -151,7 +151,7 @@ def Handle_Client(conn,addr):
 
                 elif  data.decode().strip() == "GET /Muscles":
                     # with synergies_Lock:
-                        print("------------------------------------------------------GET /Muscles")
+                        #print("------------------------------------------------------GET /Muscles")
                         PM_DS.ProcessedDataBuffer_Semaphore.acquire()  # Acquire lock before accessing the stack
                         response_data = PM_DS.ProcessedDataBuffer.get_vectors(1)
                         PM_DS.ProcessedDataBuffer_Semaphore.release()  # Release lock after reading the stack
@@ -200,12 +200,10 @@ def Handle_Client(conn,addr):
                         if serialized_data[-3:] == b'END':
                             conn.sendall(serialized_data)
                         else: 
-                            msgbox.alert('fail')
-                            #msgbox.alert(serialized_data)
-                        #print("Data sent:", response_data)
+                            msgbox.alert('fail')         
 
                 elif data.decode().strip() == "GET /Parameters":
-                        response_data = [GlobalParameters.MusclesNumber,GlobalParameters.synergiesNumber,GlobalParameters.sampleRate] #PM_DS.PM_DataStruct.circular_stack.get_vectors(3)
+                        response_data = [GlobalParameters.MusclesNumber,GlobalParameters.synergiesNumber,GlobalParameters.SubSamplingRate] #PM_DS.PM_DataStruct.circular_stack.get_vectors(3)
                         
                         if response_data == []:
                             #print("Empty data")
@@ -234,7 +232,7 @@ def Handle_Client(conn,addr):
         msgbox.alert(f'PM Comms Server {e}')
     finally:
         conn.close()
-        # msgbox.alert(f"Connection with {addr} closed")
+        msgbox.alert(f"Connection with {addr} closed")
     
 
 
@@ -255,6 +253,7 @@ def Processing_Module_Client():
         GlobalParameters.MusclesNumber = Request("GET /SensorsNumber")
         GlobalParameters.SensorStickers = Request("GET /SensorStickers")
         GlobalParameters.sampleRate = Request("GET /SampleRate")
+        GlobalParameters.Subsampling_NumberOfSamples = GlobalParameters.sampleRate/GlobalParameters.SubSamplingRate
         GlobalParameters.ExperimentTimestamp = Request("GET /ExperimentTimestamp")
         try:
             GlobalParameters.Initialize()

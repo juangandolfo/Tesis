@@ -45,6 +45,9 @@ class PlottingManagement():
         self.Index = None
         self.newTransform = None
 
+        self.VisualizationProcess = 0
+        self.CursorProcess = 0
+
     def streaming(self):
         """This is the data processing thread"""
         self.emg_queue = deque()
@@ -186,13 +189,21 @@ class PlottingManagement():
 
     def StartVisualization_Callback(self):
         try:
-            subprocess.run([sys.executable, 'Visualizacion4.py'])
+            if self.VisualizationProcess == 0:
+                self.VisualizationProcess = subprocess.Popen('bokeh serve --show Visualizacion/streaming')
+            else:
+                self.VisualizationProcess.terminate()
+                self.VisualizationProcess = 0
         except Exception as e:
             msgbox.alert(e)
 
     def StartCursor_Callback(self):
         try:
-            subprocess.run([sys.executable, 'Cursor.py'])
+            if self.CursorProcess == 0:
+                self.CursorProcess = subprocess.Popen(sys.executable + ' Cursor.py')
+            else:
+                self.CursorProcess.terminate()
+                self.CursorProcess = 0
         except Exception as e:
             msgbox.alert(e)
         

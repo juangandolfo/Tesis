@@ -4,9 +4,10 @@ from bokeh.layouts import gridplot, column, row
 from bokeh.models.widgets import CheckboxGroup, Div
 from bokeh.io import curdoc
 from tornado import gen
-
 import numpy as np
-
+import VisualizationParameters as params
+import pymsgbox as msgbox
+import time 
 class Visual:
     def __init__(self, callbackFunc, running):
         self.text1 = Div(text="""<h1 style=color:blue">Visualizacion de musculos y sinergias</h1>""", width=900, height=25) # Text to be displayed at the top of the webpage
@@ -22,16 +23,17 @@ class Visual:
             )
         self.tools = "pan,box_zoom,wheel_zoom,reset" # Set pan, zoom, etc., options for the plot
         
-        self.MusclesNumber = 3
-        self.SynergiesNumber = 3
+        self.MusclesNumber = params.MusclesNumber
+        self.SynergiesNumber = params.SynergiesNumber
         self.yAxisMax = 10.0
         self.colors = ["firebrick", "indigo", "green", "blue", "orange", "purple", "brown", "pink"]
         self.ChannelName = ["Channel 1", "Channel 2", "Channel 3", "Channel 4", "Channel 5", "Channel 6", "Channel 7", "Channel 8"]
-        self.sampleRate = 2148/20
+        self.sampleRate = params.SampleRate
         self.timeStep = 1/self.sampleRate
         self.seconds = 4
-        self.seconds2Display = int(self.seconds*self.sampleRate)
-
+        self.points2Display = int(self.seconds*self.sampleRate)
+        self.start = time.time()
+        
         self.plot_options = dict(width=800, height=200, tools=[self.hover, self.tools]) # Set plot width, height, and other plot options
         self.bar_options = dict(width=400, height=200, tools=[self.hover, self.tools]) # Set plot width, height, and other plot options
         self.updateValue = True # Internal state for updating of plots
@@ -43,6 +45,7 @@ class Visual:
 
     def definePlot(self):
         # Define MusclesPlot 
+
         MusclesPlot = figure(**self.plot_options, title="Activaciones Musculares")
         MusclesPlot.xaxis.axis_label = "Tiempo (s)"
         MusclesPlot.yaxis.axis_label = "Activación (%)"
@@ -52,7 +55,8 @@ class Visual:
         x = [i for i in range(1, self.MusclesNumber+1)]
         top = [i for i in range(1, self.MusclesNumber+1)]
         width = 0.5
-        MusclesBar = MusclesBarPlot.vbar(x,top = top,width = width)    
+        MusclesBarPlot.y_range = Range1d(start=0.0, end=self.yAxisMax)
+        MusclesBar = MusclesBarPlot.vbar(x,top = top,width = width)
         MusclesBarData = MusclesBar.data_source.data
        
         # Define SynergiesPlot
@@ -65,6 +69,7 @@ class Visual:
         x = [i for i in range(1, self.SynergiesNumber+1)]
         top = [i for i in range(1, self.SynergiesNumber+1)]
         width = 0.5
+        SynergiesBarPlot.y_range = Range1d(start=0.0, end=self.yAxisMax)
         SynergiesBar = SynergiesBarPlot.vbar(x,top = top,width = width)    
         SynergiesBarData = SynergiesBar.data_source.data
 
@@ -82,27 +87,27 @@ class Visual:
             synergyData[f'y{i}'] = [0]
         SynergySource = ColumnDataSource(data=synergyData)
         
-        # Define graphs for each plot
-        # Muscles Plot
+        # Muscles Plot Lines
         MuscleLines = []
         items = []
         for i in range(self.MusclesNumber):
             MuscleLines.append(MusclesPlot.line(x='x', y=f'y{i}', source=MuscleSource, color=self.colors[i], line_width=1))
             items.append([self.ChannelName[i], [MuscleLines[i]]])
-        legend = Legend(items=items, location=(10, -5))
+        legend = Legend(items=items, location=(10, 30))
         MusclesPlot.add_layout(legend, 'right')
         MusclesPlot.legend.click_policy = "hide" # Plot line may be hidden by clicking the legend marker 
         
-        #Synergies Plot
+        #Synergies Plot Lines
         SynergiesLines = []
         items = []
         for i in range(self.SynergiesNumber):
             SynergiesLines.append(SynergiesPlot.line(x='x', y=f'y{i}', source=SynergySource, color=self.colors[i], line_width=1))
             items.append([f"Synergy {i+1}", [SynergiesLines[i]]])
-        legend = Legend(items=items, location=(10, -5))
+        legend = Legend(items=items, location=(10, 30))
 
         SynergiesPlot.add_layout(legend, 'right')
         SynergiesPlot.legend.click_policy = "hide"  # Plot line may be hidden by clicking the legend marker
+        
         # Combine all plots into a gridplot for better vertical alignment
         LinePlots = gridplot([[MusclesPlot],[SynergiesPlot]], height=270, width=800, toolbar_location="below")
         BarPlots = gridplot([[MusclesBarPlot],[SynergiesBarPlot]], height=270, width=400, toolbar_location="below")
@@ -114,24 +119,46 @@ class Visual:
         if self.updateValue: # Update the plots only if the 'self.updateValue' is True
             
             # Update the Muscles plot
-            Musclesx = self.MuscleSource.data['x'][-1] + self.timeStep # Increment the time step on the x-axis of the graphs
-            MuscleActivationsSize = len(MusclesActivations)
+            MusclesLastX = self.MuscleSource.data['x'][-1]  # Increment the time step on the x-axis of the graphs
             
-            MusclesDictionary = {'x': np.linspace(Musclesx, Musclesx + MuscleActivationsSize*self.timeStep, MuscleActivationsSize)}
+
+            
+            MuscleActivationsSize = len(MusclesActivations)
+            MusclesDictionary = {}
+            
+            if MusclesActivations == []:
+                   MusclesDictionary['x'] = []
+            elif np.asarray(MusclesActivations).shape[0] == 1:
+                MusclesDictionary['x'] = [MusclesLastX + time.time() - self.start]
+                self.start = time.time()
+            else:
+                x = np.linspace(MusclesLastX, MusclesLastX + time.time() - self.start, MuscleActivationsSize, endpoint=False)
+                MusclesDictionary['x'] = x + (x[1]-x[0]) 
+                self.start = time.time()
+            
+            # try:
+            #     print(x, time.time() - self.start)
+            # except:
+            #     self.start = time.time()
+            # self.start = time.time()
+            #  MusclesDictionary = {'x': np.linspace(Musclesx, Musclesx + MuscleActivationsSize*self.timeStep, MuscleActivationsSize)}
+            
             for i in range(self.MusclesNumber):
                 if MusclesActivations == []:
                     MusclesDictionary[f'y{i}'] = []
                 elif np.asarray(MusclesActivations).shape[0] == 1:
-                    try:
-                        MusclesDictionary[f'y{i}'] = [np.asarray(MusclesActivations)[0][i]]
-                    except Exception as e:
-                        print("Muscle ACtivations: ",MusclesActivations)
-                        MusclesDictionary[f'x'] = []
-                        MusclesDictionary[f'y{i}'] = []
+                    MusclesDictionary[f'y{i}'] = [np.asarray(MusclesActivations)[0][i]]    
                 else:
                     MusclesDictionary[f'y{i}'] = np.asarray(MusclesActivations)[:,i]
     
-            self.MuscleSource.stream(MusclesDictionary, rollover=self.seconds2Display) # Feed new data to the graphs and set the rollover period to be xx samples
+            self.MuscleSource.stream(MusclesDictionary, rollover=self.points2Display) # Feed new data to the graphs and set the rollover period to be xx samples
+
+            if MusclesActivations == []:
+                pass
+            elif np.asarray(MusclesActivations).shape[0] == 1:
+                self.MusclesBarData['top'] = np.asarray(MusclesActivations)[0] #[i for i in self.SynergiesNumber]
+            else:
+                self.MusclesBarData['top'] = np.asarray(MusclesActivations)[-1]
 
             # Update the Synergies plot
             Synergiesx = self.MuscleSource.data['x'][-1] + self.timeStep
@@ -146,11 +173,15 @@ class Visual:
                 else:
                     SynergiesDictionary[f'y{i}'] = np.asarray(SynergiesActivations)[:,i]
 
-            self.SynergySource.stream(SynergiesDictionary, rollover=self.seconds2Display) # Feed new data to the graphs and set the rollover period to be xx samples
+            self.SynergySource.stream(SynergiesDictionary, rollover=self.points2Display) # Feed new data to the graphs and set the rollover period to be xx samples
 
             # Update the synergies Bar plot
-            if SynergiesActivations != []:
-                self.synergiesBarData['top'] = [SynergiesActivations[-1,i]+0.1*i for i in range(self.SynergiesNumber)]
+            if SynergiesActivations == []:
+                pass
+            elif np.asarray(MusclesActivations).shape[0] == 1:
+                self.synergiesBarData['top'] = np.asarray(SynergiesActivations)[0] #[i for i in self.SynergiesNumber]
+            else:
+                np.asarray(SynergiesActivations)[-1]
 
 
     def checkbox1Handler(self, attr, old, new):

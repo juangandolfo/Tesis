@@ -476,9 +476,9 @@ class CalibrationWindow(QMainWindow):
         self.update_plot()
 
     def update_plot(self):
-        self.figure.clear()
 
         if API_Parameters.PlotThresholds:
+            self.figure.clear()
             ax = self.figure.add_subplot(111)
             data = API_Parameters.Thresholds 
             ax.bar(API_Parameters.SensorStickers, data, color = '#00008B')
@@ -489,6 +489,7 @@ class CalibrationWindow(QMainWindow):
             
                 
         elif API_Parameters.PlotPeaks:
+            self.figure.clear()
             ax = self.figure.add_subplot(111)
             data = API_Parameters.Peaks 
             ax.bar(API_Parameters.SensorStickers, data, color = '#00008B')
@@ -498,7 +499,7 @@ class CalibrationWindow(QMainWindow):
             API_Parameters.PlotPeaks = False
 
         elif API_Parameters.PlotModels:
-            
+            self.figure.clear()            
             data = API_Parameters.SynergiesModels
             gs = self.figure.add_gridspec(API_Parameters.ChannelsNumber + 1, API_Parameters.ChannelsNumber - 1)  
 
@@ -547,6 +548,7 @@ class CalibrationWindow(QMainWindow):
             API_Parameters.PlotModels = False
             
         elif API_Parameters.PlotAngles:
+            self.figure.clear()
             try:
                 angles = [lineedit.text() for lineedit in self.angle_lineedits]
                 try:
@@ -587,6 +589,7 @@ class CalibrationWindow(QMainWindow):
             self.figure.subplots_adjust(hspace=0.8, wspace=0.6)  # Adjust the spacing if needed
 
         elif API_Parameters.PlotUploadedConfig:
+            self.figure.clear()
             gs = self.figure.add_gridspec(API_Parameters.SynergiesNumber, 2)  
             
             # Plot Synergy Base ----------------------------------------------
@@ -621,9 +624,8 @@ class CalibrationWindow(QMainWindow):
             API_Parameters.PlotUploadedConfig = False
 
         else:
-            msgbox.alert("Invalid Plot Mode")
+            print("Invalid Plot Mode")
 
-        #self.figure.tight_layout() 
         self.canvas.draw()
     
     def set_model(self):
