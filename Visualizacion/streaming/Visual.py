@@ -1,5 +1,5 @@
 from bokeh.plotting import figure
-from bokeh.models import LinearAxis, Range1d, HoverTool, ColumnDataSource, Legend
+from bokeh.models import LinearAxis, Range1d, HoverTool, ColumnDataSource, Legend, FactorRange
 from bokeh.layouts import gridplot, column, row
 from bokeh.models.widgets import CheckboxGroup, Div
 from bokeh.io import curdoc
@@ -51,12 +51,13 @@ class Visual:
         MusclesPlot.yaxis.axis_label = "Activación (%)"
         MusclesPlot.y_range = Range1d(start=0.0, end=self.yAxisMax)
 
-        MusclesBarPlot = figure(**self.bar_options, title="Activaciones Musculares")
+        # labels = ["A", "B", "C", "D"]
+        MusclesBarPlot = figure(**self.bar_options, title="Activaciones Musculares", x_range=FactorRange(*params.SensorStickers))
         x = [i for i in range(1, self.MusclesNumber+1)]
         top = [i for i in range(1, self.MusclesNumber+1)]
         width = 0.5
         MusclesBarPlot.y_range = Range1d(start=0.0, end=self.yAxisMax)
-        MusclesBar = MusclesBarPlot.vbar(x,top = top,width = width)
+        MusclesBar = MusclesBarPlot.vbar(x=params.SensorStickers,top = top,width = width)
         MusclesBarData = MusclesBar.data_source.data
        
         # Define SynergiesPlot
