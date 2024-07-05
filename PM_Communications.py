@@ -203,8 +203,14 @@ def Handle_Client(conn,addr):
                             msgbox.alert('fail')         
 
                 elif data.decode().strip() == "GET /Parameters":
-                        response_data = [GlobalParameters.MusclesNumber,GlobalParameters.synergiesNumber,GlobalParameters.SubSamplingRate] #PM_DS.PM_DataStruct.circular_stack.get_vectors(3)
-                        
+                        # response_data = [GlobalParameters.MusclesNumber,GlobalParameters.synergiesNumber,GlobalParameters.SubSamplingRate,GlobalParameters.SensorStickers] #PM_DS.PM_DataStruct.circular_stack.get_vectors(3)
+                        # response_data = [GlobalParameters.MusclesNumber,GlobalParameters.synergiesNumber,GlobalParameters.SubSamplingRate] #PM_DS.PM_DataStruct.circular_stack.get_vectors(3)
+                        response_data = {
+                            'MusclesNumber': GlobalParameters.MusclesNumber,
+                            'SynergiesNumber': GlobalParameters.synergiesNumber,
+                            'SubSamplingRate': GlobalParameters.SubSamplingRate,
+                            'SensorStickers': GlobalParameters.SensorStickers
+                        }
                         if response_data == []:
                             #print("Empty data")
                             response_data = []
@@ -358,6 +364,7 @@ def Processing_Module_Client():
                             GlobalParameters.Threshold = np.asarray(configurationDictionary['Thresholds'])
                             GlobalParameters.PeakActivation = np.asarray(configurationDictionary['Peaks'])
                             GlobalParameters.SynergyBase = np.asarray(configurationDictionary['SynergyBase'])
+                            GlobalParameters.SensorStickers = configurationDictionary['SensorStickers']
                             synergy_CursorMap = np.asarray(configurationDictionary['synergy_CursorMap'])
                             angles = []
                             for element in synergy_CursorMap:

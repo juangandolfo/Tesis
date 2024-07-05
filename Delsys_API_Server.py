@@ -228,11 +228,12 @@ def API_Server(AeroInstance,emgPositionVector):
                 
                 elif data == "UPLOAD /Configurations":
                     try:
-                        Thresholds, Peaks, AnglesOutput, SynergyBase = API_Parameters.UploadCalibrationFromJson()
+                        Thresholds, Peaks, AnglesOutput, SynergyBase, SensorStickers = API_Parameters.UploadCalibrationFromJson()
                         API_Parameters.Thresholds = Thresholds
                         API_Parameters.Peaks = Peaks
                         API_Parameters.AnglesOutput = AnglesOutput
                         API_Parameters.SynergyBase = SynergyBase
+                        API_Parameters.SensorStickers = SensorStickers
                         API_Parameters.SynergiesNumber = len(AnglesOutput)
                     except Exception as e:
                         msgbox.alert(e)                    
@@ -253,7 +254,8 @@ def API_Server(AeroInstance,emgPositionVector):
                     dictionary = {"Thresholds": API_Parameters.Thresholds,
                                   "Peaks": API_Parameters.Peaks,
                                    "synergy_CursorMap": API_Parameters.AnglesOutput,
-                                   "SynergyBase": API_Parameters.SynergyBase}
+                                   "SynergyBase": API_Parameters.SynergyBase,
+                                   "SensorStickers": API_Parameters.SensorStickers}
                     serialized_data = pack.packb(dictionary, use_bin_type = True)  
                     serialized_data  += b'END' 
                     try:

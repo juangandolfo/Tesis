@@ -458,7 +458,8 @@ class CalibrationWindow(QMainWindow):
                                                 API_Parameters.Thresholds,
                                                 API_Parameters.Peaks,
                                                 API_Parameters.AnglesOutput,
-                                                API_Parameters.SynergyBase
+                                                API_Parameters.SynergyBase,
+                                                API_Parameters.SensorStickers
                                                 )
         except Exception as e:
             msgbox.alert(e)

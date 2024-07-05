@@ -76,9 +76,10 @@ def UploadCalibrationFromJson():
             Peaks = data['Peaks']
             AnglesOutput = data['Angles']
             SynergiesModels= data['SynergyBase']
-    return Thresholds, Peaks, AnglesOutput, SynergiesModels
+            SensorStickers = data['SensorStickers']
+    return Thresholds, Peaks, AnglesOutput, SynergiesModels, SensorStickers
         
-def SaveCalibrationToJson(ChannelsNumber,Thresholds, Peaks, AnglesOutput, SynergyBase):
+def SaveCalibrationToJson(ChannelsNumber,Thresholds, Peaks, AnglesOutput, SynergyBase, SensorStickers):
 
     global ExperimentTimestamp
     data = {
@@ -86,7 +87,8 @@ def SaveCalibrationToJson(ChannelsNumber,Thresholds, Peaks, AnglesOutput, Synerg
             'Thresholds': np.asarray(Thresholds).tolist(),
             'Peaks': np.asarray(Peaks).tolist() ,
             'Angles': np.asarray(AnglesOutput).tolist(),
-            'SynergyBase': np.asarray(SynergyBase).tolist()
+            'SynergyBase': np.asarray(SynergyBase).tolist(),
+            'SensorStickers': SensorStickers
             }
     json_array = json.dumps(data, sort_keys=True, indent=4)
     f = open('Configuration.json', 'w')

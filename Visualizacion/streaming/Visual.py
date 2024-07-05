@@ -27,7 +27,6 @@ class Visual:
         self.SynergiesNumber = params.SynergiesNumber
         self.yAxisMax = 10.0
         self.colors = ["firebrick", "indigo", "green", "blue", "orange", "purple", "brown", "pink"]
-        self.ChannelName = ["Channel 1", "Channel 2", "Channel 3", "Channel 4", "Channel 5", "Channel 6", "Channel 7", "Channel 8"]
         self.sampleRate = params.SampleRate
         self.timeStep = 1/self.sampleRate
         self.seconds = 4
@@ -93,7 +92,7 @@ class Visual:
         items = []
         for i in range(self.MusclesNumber):
             MuscleLines.append(MusclesPlot.line(x='x', y=f'y{i}', source=MuscleSource, color=self.colors[i], line_width=1))
-            items.append([self.ChannelName[i], [MuscleLines[i]]])
+            items.append([params.SensorStickers[i], [MuscleLines[i]]])
         legend = Legend(items=items, location=(10, 30))
         MusclesPlot.add_layout(legend, 'right')
         MusclesPlot.legend.click_policy = "hide" # Plot line may be hidden by clicking the legend marker 
