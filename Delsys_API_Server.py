@@ -17,7 +17,7 @@ HOST = "127.0.0.1"  # Standard adress (localhost)
 PORT = 6001  # Port to listen on (non-privileged ports are > 1023)
 
 
-def FormattedDictionary_to_PythonDictionary(formatted_dictionary, emgPositionVector):
+def DictionaryToMatrix(formatted_dictionary, emgPositionVector):
     python_dictionary = {}
     #outArr = [[] for i in range(len(formatted_dictionary.Keys))] # matrix
     keys = []
@@ -65,7 +65,7 @@ def API_Server(AeroInstance,emgPositionVector):
                     dataReady = AeroInstance.CheckDataQueue()
                     if dataReady:
                         try:
-                            response_data = FormattedDictionary_to_PythonDictionary(AeroInstance.PollData(),emgPositionVector)
+                            response_data = DictionaryToMatrix(AeroInstance.PollData(),emgPositionVector)
                             #print(response_data)
                         except Exception as e:
                             print(f"Poll Data: {e}, {response_data}")

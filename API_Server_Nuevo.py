@@ -12,7 +12,7 @@ import pymsgbox as msgbox
 HOST = "127.0.0.1"  # Standard adress (localhost)
 PORT = 6001  # Port to listen on (non-privileged ports are > 1023)
 
-def FormattedDictionary_to_PythonDictionary(formatted_dictionary, emgPositionVector):
+def DictionaryToMatrix(formatted_dictionary, emgPositionVector):
     '''python_dictionary = {}
     for key in formatted_dictionary.Keys:
         try:
@@ -68,7 +68,7 @@ def API_Server(AeroInstance, emgPositionVector):
                     if dataReady:
                         try:
                             result = AeroInstance.PollData()
-                            response_data = FormattedDictionary_to_PythonDictionary(result,emgPositionVector)
+                            response_data = DictionaryToMatrix(result,emgPositionVector)
                         except Exception as e:
                             msgbox.alert(e)
                             # msgbox.alert(f'{data} {e} {result} {emgPositionVector}')
@@ -156,6 +156,7 @@ def API_Server(AeroInstance, emgPositionVector):
                     
                     data = conn.recv(1024)
                     API_Parameters.Thresholds = np.array(pack.unpackb(data.strip(), raw=False))
+                    msgbox.alert(f"thresholds API: {API_Parameters.Thresholds}")
                     API_Parameters.PlotThresholds = True
                     try:
                         API_Parameters.PlotCalibrationSignal.signal.emit()
