@@ -33,6 +33,7 @@ class Visual:
         self.points2Display = int(self.seconds*self.sampleRate)
         self.MusclesStart = time.time()
         self.SynergiesStart = time.time()
+        params.SynergiesStickers = [f"Synergy {i+1}" for i in range(self.SynergiesNumber)]
         
         self.plot_options = dict(width=800, height=200, tools=[self.hover, self.tools]) # Set plot width, height, and other plot options
         self.bar_options = dict(width=400, height=200, tools=[self.hover, self.tools]) # Set plot width, height, and other plot options
@@ -45,11 +46,16 @@ class Visual:
 
     def definePlot(self):
         # Define MusclesPlot 
-
         MusclesPlot = figure(**self.plot_options, title="Activaciones Musculares")
         MusclesPlot.xaxis.axis_label = "Tiempo (s)"
         MusclesPlot.yaxis.axis_label = "Activación (%)"
         MusclesPlot.y_range = Range1d(start=0.0, end=self.yAxisMax)
+       
+        # Define SynergiesPlot
+        SynergiesPlot = figure(**self.plot_options, x_range=MusclesPlot.x_range, title="Computed Value") # Link x-axis of first and second graph
+        SynergiesPlot.xaxis.axis_label = "Tiempo (s)"
+        SynergiesPlot.yaxis.axis_label = "Activación (%)"
+        SynergiesPlot.y_range = Range1d(start=0.0, end=self.yAxisMax)
 
         # labels = ["A", "B", "C", "D"]
         MusclesBarPlot = figure(**self.bar_options, title="Activaciones Musculares", x_range=FactorRange(*params.SensorStickers))
@@ -59,19 +65,15 @@ class Visual:
         MusclesBarPlot.y_range = Range1d(start=0.0, end=self.yAxisMax)
         MusclesBar = MusclesBarPlot.vbar(x=params.SensorStickers,top = top,width = width)
         MusclesBarData = MusclesBar.data_source.data
-       
-        # Define SynergiesPlot
-        SynergiesPlot = figure(**self.plot_options, x_range=MusclesPlot.x_range, title="Computed Value") # Link x-axis of first and second graph
-        SynergiesPlot.xaxis.axis_label = "Tiempo (s)"
-        SynergiesPlot.yaxis.axis_label = "Activación (%)"
-        SynergiesPlot.y_range = Range1d(start=0.0, end=self.yAxisMax)
 
-        SynergiesBarPlot = figure(**self.bar_options, title="Activaciones Musculares")
+        SynergiesBarPlot = figure(**self.bar_options, title="Activaciones Musculares",x_range=FactorRange(*params.SynergiesStickers))
+        # SynergiesBarPlot = figure(**self.bar_options, title="Activaciones Musculares")
         x = [i for i in range(1, self.SynergiesNumber+1)]
         top = [i for i in range(1, self.SynergiesNumber+1)]
         width = 0.5
         SynergiesBarPlot.y_range = Range1d(start=0.0, end=self.yAxisMax)
-        SynergiesBar = SynergiesBarPlot.vbar(x,top = top,width = width)    
+        SynergiesBar = SynergiesBarPlot.vbar(x=params.SynergiesStickers,top = top,width = width)    
+        # SynergiesBar = SynergiesBarPlot.vbar(x,top = top,width = width)    
         SynergiesBarData = SynergiesBar.data_source.data
 
         # SynergiesPlot.extra_y_ranges = {"class": Range1d(start=-1, end=2)} # Add a secondary y-axis
@@ -103,7 +105,7 @@ class Visual:
         items = []
         for i in range(self.SynergiesNumber):
             SynergiesLines.append(SynergiesPlot.line(x='x', y=f'y{i}', source=SynergySource, color=self.colors[i], line_width=1))
-            items.append([f"Synergy {i+1}", [SynergiesLines[i]]])
+            items.append([params.SynergiesStickers[i], [SynergiesLines[i]]])
         legend = Legend(items=items, location=(10, 30))
 
         SynergiesPlot.add_layout(legend, 'right')
@@ -122,8 +124,6 @@ class Visual:
             # Update the Muscles plot
             MusclesLastX = self.MuscleSource.data['x'][-1]  # Increment the time step on the x-axis of the graphs
             
-
-            
             MuscleActivationsSize = len(MusclesActivations)
             MusclesDictionary = {}
             
@@ -136,13 +136,6 @@ class Visual:
                 x = np.linspace(MusclesLastX, MusclesLastX + time.time() - self.MusclesStart, MuscleActivationsSize, endpoint=False)
                 MusclesDictionary['x'] = x + (x[1]-x[0]) 
                 self.MusclesStart = time.time()
-            
-            # try:
-            #     print(x, time.time() - self.start)
-            # except:
-            #     self.start = time.time()
-            # self.start = time.time()
-            #  MusclesDictionary = {'x': np.linspace(Musclesx, Musclesx + MuscleActivationsSize*self.timeStep, MuscleActivationsSize)}
             
             for i in range(self.MusclesNumber):
                 if MusclesActivations == []:
