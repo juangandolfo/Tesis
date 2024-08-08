@@ -149,6 +149,7 @@ class PlottingManagement():
                         self.sampleRates[i].append((selectedSensor.TrignoChannels[channel].SampleRate,
                                                     selectedSensor.TrignoChannels[channel].Name))
                         self.samplesPerFrame[i].append(selectedSensor.TrignoChannels[channel].SamplesPerFrame)
+                       
                         # ---- Collect the EMG channels for visualization, excluding skin check channels
                         if "EMG" in selectedSensor.TrignoChannels[channel].Name:
 
@@ -164,6 +165,7 @@ class PlottingManagement():
                             else:
                                 self.dataStreamIdx.append(idxVal)
                                 plotCount += 1
+                                API_Parameters.Channels_ID.append(selectedSensor.TrignoChannels[channel].Id)
 
                         idxVal += 1
             print(self.dataStreamIdx)

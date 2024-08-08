@@ -33,7 +33,7 @@ class CollectDataWindow(QWidget):
 
         #---- Connect the controller to the GUI
         self.CallbackConnector = PlottingManagement()
-
+    
     #-----------------------------------------------------------------------
     #---- GUI Components
     def ButtonPanel(self):
@@ -623,7 +623,7 @@ class CalibrationWindow(QMainWindow):
             self.figure.tight_layout()
             self.figure.subplots_adjust(hspace=0.8, wspace=0.6)  # Adjust the spacing if needed
             API_Parameters.PlotUploadedConfig = False
-
+            
         else:
             print("Invalid Plot Mode")
 

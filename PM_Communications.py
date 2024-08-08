@@ -372,6 +372,7 @@ def Processing_Module_Client():
                             GlobalParameters.synergy_CursorMap = angles
                             GlobalParameters.synergiesNumber = len(angles)
                             GlobalParameters.JsonReceived = True
+                    
                     else:
                         try:
                             data = Request("GET /data")

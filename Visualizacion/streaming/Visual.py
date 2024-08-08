@@ -10,7 +10,7 @@ import pymsgbox as msgbox
 import time 
 class Visual:
     def __init__(self, callbackFunc, running):
-        self.text1 = Div(text="""<h1 style=color:blue">Visualizacion de musculos y sinergias</h1>""", width=900, height=25) # Text to be displayed at the top of the webpage
+        self.text1 = Div(text="""<h1 style=color:blue">Muscles and Synergies Activation</h1>""", width=900, height=25) # Text to be displayed at the top of the webpage
         self.EmptyContainerTitle = Div(text="""<h1 style="color:blue"></h1>""", width=900, height=20) # Empty container to create space between the text and checkboxes
         self.EmptyContainerLeft = Div(text="""<h1 style="color:blue"></h1>""", width=10, height=1000) # Empty container to create space between the checkboxes and the graphs
         self.running = running # Store the current state of the Flag
@@ -25,7 +25,7 @@ class Visual:
         
         self.MusclesNumber = params.MusclesNumber
         self.SynergiesNumber = params.SynergiesNumber
-        self.yAxisMax = 10.0
+        self.yAxisMax = 1.0
         self.colors = ["firebrick", "indigo", "green", "blue", "orange", "purple", "brown", "pink"]
         self.sampleRate = params.SampleRate
         self.timeStep = 1/self.sampleRate
@@ -46,19 +46,19 @@ class Visual:
 
     def definePlot(self):
         # Define MusclesPlot 
-        MusclesPlot = figure(**self.plot_options, title="Activaciones Musculares")
-        MusclesPlot.xaxis.axis_label = "Tiempo (s)"
-        MusclesPlot.yaxis.axis_label = "Activación (%)"
+        MusclesPlot = figure(**self.plot_options, title="Muscles Activation")
+        MusclesPlot.xaxis.axis_label = "Time (s)"
+        MusclesPlot.yaxis.axis_label = "Activation (%)"
         MusclesPlot.y_range = Range1d(start=0.0, end=self.yAxisMax)
        
         # Define SynergiesPlot
-        SynergiesPlot = figure(**self.plot_options, x_range=MusclesPlot.x_range, title="Computed Value") # Link x-axis of first and second graph
-        SynergiesPlot.xaxis.axis_label = "Tiempo (s)"
-        SynergiesPlot.yaxis.axis_label = "Activación (%)"
+        SynergiesPlot = figure(**self.plot_options, x_range=MusclesPlot.x_range, title="Synergies Activation") # Link x-axis of first and second graph
+        SynergiesPlot.xaxis.axis_label = "Time (s)"
+        SynergiesPlot.yaxis.axis_label = "Activation (%)"
         SynergiesPlot.y_range = Range1d(start=0.0, end=self.yAxisMax)
 
         # labels = ["A", "B", "C", "D"]
-        MusclesBarPlot = figure(**self.bar_options, title="Activaciones Musculares", x_range=FactorRange(*params.SensorStickers))
+        MusclesBarPlot = figure(**self.bar_options, title="Muscles Activation", x_range=FactorRange(*params.SensorStickers))
         x = [i for i in range(1, self.MusclesNumber+1)]
         top = [i for i in range(1, self.MusclesNumber+1)]
         width = 0.5
@@ -66,7 +66,7 @@ class Visual:
         MusclesBar = MusclesBarPlot.vbar(x=params.SensorStickers,top = top,width = width)
         MusclesBarData = MusclesBar.data_source.data
 
-        SynergiesBarPlot = figure(**self.bar_options, title="Activaciones Musculares",x_range=FactorRange(*params.SynergiesStickers))
+        SynergiesBarPlot = figure(**self.bar_options, title="Synergies Activation",x_range=FactorRange(*params.SynergiesStickers))
         # SynergiesBarPlot = figure(**self.bar_options, title="Activaciones Musculares")
         x = [i for i in range(1, self.SynergiesNumber+1)]
         top = [i for i in range(1, self.SynergiesNumber+1)]

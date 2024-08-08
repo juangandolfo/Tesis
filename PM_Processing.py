@@ -101,10 +101,11 @@ def Processing():
                 file.flush()
 
             RectifiedData = DataProcessing.Rectify(RawData)
-            ProcessedData = DataProcessing.LowPassFilter(RectifiedData)
-            NormalizedData = DataProcessing.Normalize(ProcessedData, GlobalParameters.PeakActivation, GlobalParameters.MusclesNumber, GlobalParameters.Threshold)
-            #ProcessedData = DataProcessing.DummyLowPassFilter(NormalizedData, LastNormalizedData)
-            reshapedData = NormalizedData.reshape(-1,1)
+            #ProcessedData = DataProcessing.LowPassFilter(RectifiedData)
+            #NormalizedData = DataProcessing.Normalize(ProcessedData, GlobalParameters.PeakActivation, GlobalParameters.MusclesNumber, GlobalParameters.Threshold)
+            NormalizedData = DataProcessing.Normalize(RectifiedData, GlobalParameters.PeakActivation, GlobalParameters.MusclesNumber, GlobalParameters.Threshold)
+            ProcessedData = DataProcessing.LowPassFilter(NormalizedData)
+            reshapedData = ProcessedData.reshape(-1,1)
             #LastNormalizedData = NormalizedData
 
             PM_DS.SynergyBase_Semaphore.acquire()

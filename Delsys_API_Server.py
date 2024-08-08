@@ -22,17 +22,24 @@ def DictionaryToMatrix(formatted_dictionary, emgPositionVector):
     #outArr = [[] for i in range(len(formatted_dictionary.Keys))] # matrix
     keys = []
     
-    for i in formatted_dictionary.Keys:
-        keys.append(i)
-    '''for j in range(len(keys)):
-        # outArr[j].append(np.asarray(formatted_dictionary[keys[j]], dtype='object'))
-        # full data
-    '''
-    DataRows = min(set([len(formatted_dictionary[keys[i]]) for i in emgPositionVector]))
-    DataColumns = len(emgPositionVector)
+    # for i in formatted_dictionary.Keys:
+    #     keys.append(i)
+    # '''for j in range(len(keys)):
+    #     # outArr[j].append(np.asarray(formatted_dictionary[keys[j]], dtype='object'))
+    #     # full data
+    # '''
+    # DataRows = min(set([len(formatted_dictionary[keys[i]]) for i in emgPositionVector]))
+    # DataColumns = len(emgPositionVector)
+    # OutMatrix = np.zeros((DataRows,DataColumns))
+    # for j in range(len(emgPositionVector)):
+    #     OutMatrix[:,j] = np.asarray(formatted_dictionary[keys[emgPositionVector[j]]])[:DataRows]
+
+    DataRows = min(set([len(formatted_dictionary[ID]) for ID in API_Parameters.Channels_ID]))
+    DataColumns = len(API_Parameters.Channels_ID)
     OutMatrix = np.zeros((DataRows,DataColumns))
-    for j in range(len(emgPositionVector)):
-        OutMatrix[:,j] = np.asarray(formatted_dictionary[keys[emgPositionVector[j]]])[:DataRows]
+    for j in range(len(API_Parameters.Channels_ID)):
+        OutMatrix[:,j] = np.asarray(formatted_dictionary[API_Parameters.Channels_ID[j]])[:DataRows]
+
     return OutMatrix.tolist()
 
 def API_Server(AeroInstance,emgPositionVector):
@@ -271,7 +278,6 @@ def API_Server(AeroInstance,emgPositionVector):
                     except Exception as e:
                         msgbox.alert(e)
                                       
-
                 else:
                    print("Invalid request", data)
                    pass

@@ -17,6 +17,7 @@ KeysLen = 0
 ChannelsNumber = 0
 SampleRate = 0
 SensorStickers = []
+Channels_ID = []
 
 TerminateCalibrationFlag = False
 CalibrationStageInitialized = False
