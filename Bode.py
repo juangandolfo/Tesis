@@ -1,27 +1,39 @@
-def plot_z_transform(b, a, fs, cutoff):
-    w, h = freqz(b, a, worN=8000)
-    w = w * fs / (2 * np.pi)  # Convert from rad/sample to Hz
+import numpy as np
+from scipy.signal import butter, freqz
+import matplotlib.pyplot as plt
 
-    plt.figure(figsize=(12, 6))
+# Parámetros del filtro
+LPF_cutoff = 40       # Frecuencia de corte en Hz
+LPF_order = 4         # Orden del filtro
+sampleRate = 1000     # Frecuencia de muestreo en Hz
 
-    # Magnitude plot
-    plt.subplot(2, 1, 1)
-    plt.plot(w, 20 * np.log10(abs(h)), 'b')
-    plt.axvline(cutoff, color='r', linestyle='--')  # Mark the cutoff frequency
-    plt.title('Digital Filter Frequency Response')
-    plt.xlabel('Frequency [Hz]')
-    plt.ylabel('Magnitude [dB]')
-    plt.grid()
-    plt.legend(['Frequency Response', f'Cutoff Frequency: {cutoff} Hz'])
+# Calcular la frecuencia de Nyquist y la frecuencia de corte normalizada
+nyquist = 0.5 * sampleRate
+normal_cutoff = LPF_cutoff / nyquist
 
-    # Phase plot
-    plt.subplot(2, 1, 2)
-    plt.plot(w, np.angle(h), 'r')
-    plt.axvline(cutoff, color='r', linestyle='--')  # Mark the cutoff frequency
-    plt.xlabel('Frequency [Hz]')
-    plt.ylabel('Phase [radians]')
-    plt.grid()
-    plt.legend(['Phase Response', f'Cutoff Frequency: {cutoff} Hz'])
+# Crear el filtro pasa-bajos usando butter
+coefficient2, coefficient1 = butter(LPF_order, normal_cutoff, btype='low', analog=False)
 
-    plt.tight_layout()
-    plt.show()
+# Obtener la respuesta en frecuencia del filtro
+w, h = freqz(coefficient2, coefficient1, worN=8000)
+
+# Crear el gráfico de Bode
+plt.figure(figsize=(10, 6))
+
+# Magnitud en dB
+plt.subplot(2, 1, 1)
+plt.plot(w * nyquist / np.pi, 20 * np.log10(abs(h)), 'b')
+plt.title('Diagrama de Bode del Filtro Pasa-Bajos')
+plt.xlabel('Frecuencia (Hz)')
+plt.ylabel('Magnitud (dB)')
+plt.grid()
+
+# Fase en grados
+plt.subplot(2, 1, 2)
+plt.plot(w * nyquist / np.pi, np.angle(h, deg=True), 'b')
+plt.xlabel('Frecuencia (Hz)')
+plt.ylabel('Fase (grados)')
+plt.grid()
+
+# Mostrar el gráfico
+plt.show()
