@@ -136,8 +136,8 @@ def Handle_Client(conn,addr):
                 # Check if the received data is a GET request for "/data"
                 if  data.decode().strip() == "GET /data1":
                     PM_DS.PositionOutput_Semaphore.acquire()
-                    response_data = np.trunc(GlobalParameters.CursorMovement_Gain*PM_DS.PM_DataStruct.positionOutput)
-                    PM_DS.PM_DataStruct.positionOutput = PM_DS.PM_DataStruct.positionOutput - response_data/GlobalParameters.CursorMovement_Gain
+                    response_data = np.trunc(PM_DS.PM_DataStruct.positionOutput)
+                    PM_DS.PM_DataStruct.positionOutput = PM_DS.PM_DataStruct.positionOutput - response_data
                     PM_DS.PositionOutput_Semaphore.release()
 
                     if response_data == []:

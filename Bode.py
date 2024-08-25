@@ -1,18 +1,23 @@
 import numpy as np
+import scipy
 from scipy.signal import butter, freqz
 import matplotlib.pyplot as plt
 
 # Parámetros del filtro
 LPF_cutoff = 40       # Frecuencia de corte en Hz
 LPF_order = 4         # Orden del filtro
-sampleRate = 1000     # Frecuencia de muestreo en Hz
+sampleRate = 2148     # Frecuencia de muestreo en Hz
+
+coefficient2 = [0.5]  # Numerator coefficients (b)
+coefficient1 = [1, -0.5]  # Denominator coefficients (a)
 
 # Calcular la frecuencia de Nyquist y la frecuencia de corte normalizada
 nyquist = 0.5 * sampleRate
 normal_cutoff = LPF_cutoff / nyquist
 
 # Crear el filtro pasa-bajos usando butter
-coefficient2, coefficient1 = butter(LPF_order, normal_cutoff, btype='low', analog=False)
+#coefficient2, coefficient1 = butter(LPF_order, normal_cutoff, btype='low', analog=False)
+#coefficient2, coefficient1 = scipy.signal.iirfilter(N = 2, Wn = [40], ftype = 'butter',fs= sampleRate, btype='Lowpass')
 
 # Obtener la respuesta en frecuencia del filtro
 w, h = freqz(coefficient2, coefficient1, worN=8000)
