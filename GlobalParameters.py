@@ -10,7 +10,7 @@ saveCSV = True
 
 Initialized = False
 
-MusclesNumber = 4
+MusclesNumber = 8
 SensorStickers = []
 
 RawData_BufferSize = 1000
@@ -47,6 +47,9 @@ UploadFromJson = False
 JsonReceived = False
 PeakActivation = []
 Threshold = []
+
+PingResponse = 0
+PingRequested = False
 
 TerminateCalibration = False
 CalibrationStage = 0
