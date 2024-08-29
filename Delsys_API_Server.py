@@ -277,7 +277,15 @@ def API_Server(AeroInstance,emgPositionVector):
                         conn.sendall(serialized_data)
                     except Exception as e:
                         msgbox.alert(e)
-                                      
+
+                elif data == "GET /Ping":
+                    serialized_data = pack.packb([1], use_bin_type = True)
+                    serialized_data  += b'END' 
+                    try:
+                        conn.sendall(serialized_data)
+                    except Exception as e:
+                        msgbox.alert(e)
+
                 else:
                    print("Invalid request", data)
                    pass

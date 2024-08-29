@@ -100,8 +100,10 @@ class Sensor(threading.Thread):
         self.SynergiesActivations = [] 
         self.running = running # Store the current state of the Flag
         self.callbackFunc = callbackFunc # Store the callback function
+        
+        self.pingRequested = False
+        self.pingtime = []
        
-
     def run(self):
 
         while self.running.is_set(): # Continue grabbing data from sensor while Flag is set
@@ -109,6 +111,19 @@ class Sensor(threading.Thread):
             time.sleep(0.016)  # Time to sleep in seconds, emulating some sensor process taking time
             self.MusclesActivations = Request('Muscles')
             self.SynergiesActivations = Request('Synergies')
-            
+
+            if self.pingRequested == True:
+                response = Request('PingUpdate')
+                if response[0] == 1:
+                    self.pingtime.append(time.time() - PingRequest)
+                    self.pingRequested = False
+                    print(f'Ping: {self.pingtime}')
+
+            else:
+                PingRequest = time.time()
+                response = Request('Ping')
+                if response[0] == 1:
+                    self.pingRequested = True
+                
             self.callbackFunc.doc.add_next_tick_callback(partial(self.callbackFunc.update, self.MusclesActivations,self.SynergiesActivations)) # Call Bokeh webVisual to inform that new data is available
         print("Sensor thread killed") # Print to indicate that the thread has ended

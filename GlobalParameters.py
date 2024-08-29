@@ -48,6 +48,9 @@ JsonReceived = False
 PeakActivation = []
 Threshold = []
 
+PingResponse = 0
+PingRequested = False
+
 TerminateCalibration = False
 CalibrationStage = 0
 TimeCalibStage3 = 10

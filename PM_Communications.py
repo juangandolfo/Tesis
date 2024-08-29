@@ -226,6 +226,28 @@ def Handle_Client(conn,addr):
                         serialized_data  += b'END' # Add a delimiter at the end
                         conn.sendall(serialized_data)
 
+                elif data.decode().strip() == "GET /Ping":
+                    GlobalParameters.PingRequested = True
+                    response_data = [1]
+                    try:
+                        serialized_data = pack.packb(response_data, use_bin_type=True) 
+                    except Exception as e:  
+                        msgbox.alert(e)
+                    serialized_data  += b'END'
+
+                    conn.sendall(serialized_data)
+
+                elif data.decode().strip() == "GET /PingUpdate":
+                    response_data = [GlobalParameters.PingResponse]
+                    GlobalParameters.PingResponse = 0
+                    try:
+                        serialized_data = pack.packb(response_data, use_bin_type=True) 
+                    except Exception as e:  
+                        msgbox.alert(e)
+                    serialized_data  += b'END'
+
+                    conn.sendall(serialized_data)
+
                 else:
                     #print("Invalid request")
                     pass
@@ -380,6 +402,15 @@ def Processing_Module_Client():
                             GlobalParameters.synergiesNumber = len(angles)
                             GlobalParameters.JsonReceived = True
                     
+                    elif GlobalParameters.PingRequested == True:
+                        try: 
+                            response = Request("GET /Ping")
+                        except Exception as e:
+                            msgbox.alert(f'PMC: Ping {e}')
+                        if response[0] == 1:
+                            GlobalParameters.PingResponse = 1
+                            GlobalParameters.PingRequested = False
+
                     else:
                         try:
                             t1 = time.time()
