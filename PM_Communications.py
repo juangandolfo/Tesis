@@ -10,6 +10,7 @@ import LocalCircularBufferVector as Buffer
 import pymsgbox as msgbox
 from io import BytesIO
 import threading
+import pandas as pd
 
 synergies_Lock = threading.Lock()
 
@@ -123,15 +124,17 @@ def Request(request):
 def Handle_Client(conn,addr):
     print(f"Connected by {addr}")
     conn.settimeout(3)
+    
     try:
         while True:
+            time.sleep(0.025)
             print("                                                      PM Server live")
             try:
                 data = conn.recv(1024)
                 if not data:
                     # No data received, client has likely disconnected
                     print(f"Client {addr} disconnected")
-                    break
+                    continue
 
                 # Check if the received data is a GET request for "/data"
                 if  data.decode().strip() == "GET /data1":
@@ -226,11 +229,13 @@ def Handle_Client(conn,addr):
                 else:
                     #print("Invalid request")
                     pass
+                
             except socket.timeout:
                 print(f"Client {addr} timed out")
                 break
             except Exception as e:  
                 print(data)
+            
     except (ConnectionResetError, ConnectionAbortedError) as e:
         print(f"Client {addr} connection lost: {e}")
 
@@ -268,6 +273,8 @@ def Processing_Module_Client():
             return
         PM_DS.PM_DataStruct.InitializeRawDataBuffer()
 
+        RequestTimes = []
+        counter3 = 0
         # Loop to request data
         while True:
             print("                           PM Client live")
@@ -375,23 +382,34 @@ def Processing_Module_Client():
                     
                     else:
                         try:
+                            t1 = time.time()
                             data = Request("GET /data")
+                            RequestTimes.append(time.time()-t1)
+                            counter3 += 1
+                            if counter3>3000:
+                                try:
+                                    frame = pd.DataFrame(RequestTimes).to_csv('./RequestTime.csv')
+                                    # Save the DataFrame to a CSV file
+                                    counter3 = 0
+                                    RequestTimes = []
+                                    msgbox.alert("guardo RT")
+                                except Exception as e:
+                                    msgbox.alert(e)
                             formated_data = np.asarray(data)
                             if GlobalParameters.DetectingSynergies == False:
                                 PM_DS.stack_lock.acquire()  # Acquire lock before accessing the stack
                                 PM_DS.PM_DataStruct.circular_stack.add_matrix(formated_data)
                                 PM_DS.stack_lock.release()  # Release lock after reading the stack
+                                time.sleep(0.025)            
                             else:
                                 #print("Detecting synergies")
                                 pass
                         except Exception as e:
                             msgbox.alert(f"PMC: Data {e}")
                             pass
-
                 except Exception as e:
                     msgbox.alert(f"PM Client {e}")
                     #print(data)
-
             except socket.error as e:
                 msgbox.alert(f"Connection error:{e}")
                 continue
@@ -405,6 +423,7 @@ def Processing_Module_Client():
 
 def Processing_Module_Server():
     server_socket.bind((HOST, PORT_Server))
+    
     # Listen the inner connections:
     print("Server listening on", HOST, "port", PORT_Server)
     server_socket.listen(2)
@@ -413,12 +432,12 @@ def Processing_Module_Server():
         try:
             # Accept the connection and open a thread to handle the client.
             conn, addr = server_socket.accept()
+            conn.setblocking(False)
             thread = Thread(target = Handle_Client, args=(conn, addr))
             thread.start()
         except Exception as e:
             print(f"Error accepting connections: {e}")
             break
     
-
 PM_Client_thread = Thread(target=Processing_Module_Client,daemon=True)
 PM_Server_thread = Thread(target=Processing_Module_Server,daemon=True)
