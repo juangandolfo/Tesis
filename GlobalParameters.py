@@ -10,10 +10,10 @@ saveCSV = True
 
 Initialized = False
 
-MusclesNumber = 4
+MusclesNumber = 8
 SensorStickers = []
 
-RawData_BufferSize = 1000
+RawData_BufferSize = 500
 sampleRate = 1
 Subsampling_NumberOfSamples = sampleRate/SubSamplingRate 
 SynergyConfigurationFile = 'SynergyConfigurationFromExcel.csv'
@@ -50,7 +50,6 @@ Threshold = []
 
 TerminateCalibration = False
 CalibrationStage = 0
-
 TimeCalibStage3 = 10
 
 
@@ -103,3 +102,4 @@ def GenerateProjectionMatrix(angles):
     # Construct the projection matrix
     projectionMatrix = np.column_stack((x, y))
     return projectionMatrix
+

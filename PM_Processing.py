@@ -2,6 +2,7 @@ import PM_DataStructure as PM_DS
 import LocalCircularBufferVector as Buffer
 import numpy as np
 from threading import Thread
+import threading
 import GlobalParameters
 import time
 import SynergyDetection as SD
@@ -13,6 +14,8 @@ import scipy
 import pymsgbox as msgbox
 import csv
 import json
+import pandas as pd
+import psutil
 
 class DataProcessing:
 
@@ -46,7 +49,7 @@ class DataProcessing:
         return y
 
     def CreateLPF(self, fs, MusclesNumber):
-        self.b, self.a = scipy.signal.iirfilter(N = 2, Wn = [10], ftype = 'butter',fs= fs, btype='Lowpass')
+        self.b, self.a = scipy.signal.iirfilter(N = 2, Wn = [40], ftype = 'butter',fs= fs, btype='Lowpass')
         self.signal = np.zeros((len(self.b), MusclesNumber))
         self.filtered_signal = np.zeros((len(self.a)-1, MusclesNumber))
 
@@ -70,10 +73,11 @@ class DataProcessing:
 DataProcessing = DataProcessing()
 
 def Processing():
+    PM_DS.PM_DataStruct.circular_stack.reset_counter()
     # create buffer for synergies
     PM_DS.InitializeVisualizationBuffers()
     GlobalParameters.projectionMatrix = GlobalParameters.GenerateProjectionMatrix(GlobalParameters.synergy_CursorMap)
-    DataProcessing.CreateLPF(GlobalParameters.sampleRate, GlobalParameters.MusclesNumber)
+    #DataProcessing.CreateLPF(GlobalParameters.sampleRate, GlobalParameters.MusclesNumber)
     #LastNormalizedData = [0 for i in range(GlobalParameters.MusclesNumber)]
     processedSum = 0
     counter = 0
@@ -86,10 +90,22 @@ def Processing():
         writer.writerow([f'Muscle {i+1}' for i in range(GlobalParameters.MusclesNumber)])
 
     SubSamplingCounter = 0
+    ExecutionTime = []
+    t1 = 0
+    counter2 = 0
+
+    ''' 
+    PM_DS.stack_lock.acquire()
+    PM_DS.PM_DataStruct.circular_stack.get_vectors(1)
+    PM_DS.stack_lock.release()
+    '''
+
     while True:
         print("PM: Processing live")
         PM_DS.stack_lock.acquire()
+        ExecutionTime.append(time.time() - t1)
         RawData = PM_DS.PM_DataStruct.circular_stack.get_oldest_vector(1)
+        t1 = time.time()
         PM_DS.stack_lock.release()     
         SubSamplingCounter += 1
         counter += 1
@@ -128,14 +144,32 @@ def Processing():
             PM_DS.PositionOutput_Semaphore.acquire()
             PM_DS.PM_DataStruct.positionOutput = PM_DS.PM_DataStruct.positionOutput + GlobalParameters.CursorMovement_Gain*NewMovement/GlobalParameters.sampleRate
             PM_DS.PositionOutput_Semaphore.release()
+        
+        if counter2 > 3000:
+            
+            '''frame = pd.DataFrame(ExecutionTime).to_csv('./Processing_ExecTime.csv')
+            #frame2 = pd.DataFrame(PM_DS.PM_DataStruct.circular_stack.get_counter()).to_csv('./Count.csv')
+            msgbox.alert(PM_DS.PM_DataStruct.circular_stack.get_counter())'''
+            # Create a DataFrame with ExecutionTime and the counter
+            frame = pd.DataFrame({
+                'ExecutionTime': ExecutionTime,
+                'Counter': [PM_DS.PM_DataStruct.circular_stack.get_counter()] * len(ExecutionTime)  # Add the counter as a new column
+            })
 
-
+            # Save the DataFrame to a CSV file
+            frame.to_csv('./Processing_ExecTime.csv', index=False)
+            PM_DS.PM_DataStruct.circular_stack.reset_counter()
+            counter2 = 0
+            ExecutionTime = []
+        else: 
+            counter2+=1
+            
 
 def CalibrationProcessing():
 
     while(GlobalParameters.Initialized == False):
        pass
-
+    DataProcessing.CreateLPF(GlobalParameters.sampleRate, GlobalParameters.MusclesNumber)
     print("PM: Calibration Processing live")
     while not GlobalParameters.TerminateCalibration:
 
@@ -148,7 +182,7 @@ def CalibrationProcessing():
             PM_DS.stack_lock.release()
 
             thresholds = np.zeros(GlobalParameters.MusclesNumber)
-            LastData = np.zeros((1,GlobalParameters.MusclesNumber))
+            #LastData = np.zeros((1,GlobalParameters.MusclesNumber))
             Peaks = [[] for _ in range(GlobalParameters.MusclesNumber)]
 
             while(GlobalParameters.CalibrationStage == 1):
@@ -159,8 +193,9 @@ def CalibrationProcessing():
                 if DataBatch != []:
                     RectifiedMuscleData = DataProcessing.Rectify(DataBatch)
                     for row in range(len(DataBatch)):
-                        DataBatch[row]= DataProcessing.DummyLowPassFilter(RectifiedMuscleData[row], LastData)
-                        LastData = RectifiedMuscleData[row]
+                        #DataBatch[row]= DataProcessing.DummyLowPassFilter(RectifiedMuscleData[row], LastData)
+                        DataBatch[row]= DataProcessing.LowPassFilter(RectifiedMuscleData[row])
+                        #LastData = RectifiedMuscleData[row]
 
                     for muscle in range(GlobalParameters.MusclesNumber):
                         Peaks[muscle].append(np.max(DataBatch[:,muscle]))
@@ -178,7 +213,7 @@ def CalibrationProcessing():
             PM_DS.PM_DataStruct.circular_stack.get_vectors(1)
             PM_DS.stack_lock.release()
 
-            LastData = np.zeros((1,GlobalParameters.MusclesNumber))
+            #LastData = np.zeros((1,GlobalParameters.MusclesNumber))
 
             while(GlobalParameters.CalibrationStage == 2):
                 PM_DS.stack_lock.acquire()
@@ -187,8 +222,9 @@ def CalibrationProcessing():
                 PM_DS.stack_lock.release()
                 if RawData != []:
                     RectifiedData = DataProcessing.Rectify(RawData)
-                    ProcessedData = DataProcessing.DummyLowPassFilter(RectifiedData, LastData).reshape(-1,1)
-                    LastData = RectifiedData
+                    #ProcessedData = DataProcessing.DummyLowPassFilter(RectifiedData, LastData).reshape(-1,1)
+                    ProcessedData = DataProcessing.LowPassFilter(RectifiedData).reshape(-1,1)
+                    #LastData = RectifiedData
 
                     for i in range(GlobalParameters.MusclesNumber):
                         if ProcessedData[i] > GlobalParameters.PeakActivation[i]:
@@ -219,6 +255,7 @@ def CalibrationProcessing():
                     RectifiedData = DataProcessing.Rectify(RawData)
                     NormalizedData = DataProcessing.Normalize(RectifiedData, GlobalParameters.PeakActivation, GlobalParameters.MusclesNumber, GlobalParameters.Threshold)
                     ProcessedData = DataProcessing.DummyLowPassFilter(NormalizedData, LastData)
+                    #ProcessedData = DataProcessing.LowPassFilter(NormalizedData)
                     LastData = NormalizedData
 
                     aux_buffer = np.roll(aux_buffer, -1, axis=0)    # Roll the buffer to make space for the new vector
@@ -229,7 +266,7 @@ def CalibrationProcessing():
             try: 
                 GlobalParameters.modelsList, GlobalParameters.vafs, GlobalParameters.output= SD.calculateSynergy(aux_buffer)
             except Exception as e:
-                msgbox.alert("Cannot detect synergies")
+                msgbox.alert(f"Cannot detect synergies: {e}")
 
             GlobalParameters.DetectingSynergies = False
             GlobalParameters.SynergyBase = GlobalParameters.output[1]
@@ -249,11 +286,11 @@ def CalibrationProcessing():
                         GlobalParameters.projectionMatrix = GlobalParameters.GenerateProjectionMatrix(GlobalParameters.synergy_CursorMap)    
                     except Exception as e:
                         msgbox.alert(e)
-                    
                     break
 
     print("PM: Calibration terminated")
     PM_Processing.start()
+    
 
 PM_Calibration = Thread(target=CalibrationProcessing,daemon=True)
 PM_Processing = Thread(target=Processing,daemon=True)

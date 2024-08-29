@@ -12,6 +12,8 @@ class CircularBufferVector:
         self.VisualizationEmpty = True
         self.CursorHead = self.capacity
         self.CursorEmpty = True
+        self.Counter = 0
+        
 
     def add_matrix(self, matrix):
         for row in matrix:    
@@ -26,7 +28,11 @@ class CircularBufferVector:
             self.buffer[-1] = vector
 
             self.CursorHead = max(self.CursorHead - 1, 0)
-            self.VisualizationHead = max(self.VisualizationHead - 1, 0)
+            #self.VisualizationHead = max(self.VisualizationHead - 1, 0)
+            self.VisualizationHead = self.VisualizationHead -1 
+            if self.VisualizationHead < 0:
+                self.Counter+= 1
+                self.VisualizationHead = 0
             self.head = max(self.head - 1, 0)
 
             self.VisualizationEmpty = False
@@ -77,6 +83,12 @@ class CircularBufferVector:
 
         return Data
     
+    def get_counter(self):
+        return self.Counter
+    
+    def reset_counter(self):
+        self.Counter = 0
+
 '''buff = CircularBufferVector(7, 3)
 data = np.array([[1,2,3],[4,5,6],[7,8,9],[10,11,12],[13,14,15]])
 buff.add_matrix(data)

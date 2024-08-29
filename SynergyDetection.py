@@ -79,7 +79,6 @@ def calculateSynergy(matrix):
             vafs.append(vaf)
             H_inv = np.linalg.pinv(h_norm)
             models.append((n_components, h_norm, H_inv, r_squared, vaf))
-            msgbox.alert(f"{n_components} Synergies: {H}")
             # Comparación directa de VAFs
             if n_components == 2:
                 output = (n_components, h_norm, H_inv,r_squared, vafs)
