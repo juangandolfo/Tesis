@@ -6,6 +6,7 @@ from functools import partial
 import pymsgbox as msgbox
 import msgpack as pack
 import socket
+import pandas as pd
 
 # PARAMETERS -----------------------------------------------------------------------------------------------
 #-----------------------------------------------------------------------------------------------------------
@@ -105,25 +106,35 @@ class Sensor(threading.Thread):
         self.pingtime = []
        
     def run(self):
-
+        counter = 0
         while self.running.is_set(): # Continue grabbing data from sensor while Flag is set
             start = time.time()
             time.sleep(0.016)  # Time to sleep in seconds, emulating some sensor process taking time
             self.MusclesActivations = Request('Muscles')
             self.SynergiesActivations = Request('Synergies')
 
-            if self.pingRequested == True:
-                response = Request('PingUpdate')
-                if response[0] == 1:
-                    self.pingtime.append(time.time() - PingRequest)
-                    self.pingRequested = False
-                    print(f'Ping: {self.pingtime}')
-
-            else:
-                PingRequest = time.time()
-                response = Request('Ping')
-                if response[0] == 1:
-                    self.pingRequested = True
+            # if self.pingRequested == True:
+            #     response = Request('PingUpdate')
+            #     if response[0] == 1:
+            #         self.pingtime.append(time.time() - response[1])
+            #         counter += 1
+            #         self.pingRequested = False
+            #         print(f'Ping: {self.pingtime}')
+            # else:
+            #     PingRequest = time.time()
+            #     response = Request('Ping')
+            #     if response[0] == 1:
+            #         self.pingRequested = True
+            
+            # if counter>1000:
+            #     try:
+            #         frame = pd.DataFrame(self.pingtime).to_csv('./PingTimes_Ej2.csv')
+            #         # Save the DataFrame to a CSV file
+            #         counter = 0
+            #         self.pingtime = []
+            #         msgbox.alert('Ping times saved')
+            #     except Exception as e:
+            #         msgbox.alert(e)
                 
             self.callbackFunc.doc.add_next_tick_callback(partial(self.callbackFunc.update, self.MusclesActivations,self.SynergiesActivations)) # Call Bokeh webVisual to inform that new data is available
         print("Sensor thread killed") # Print to indicate that the thread has ended

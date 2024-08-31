@@ -238,7 +238,7 @@ def Handle_Client(conn,addr):
                     conn.sendall(serialized_data)
 
                 elif data.decode().strip() == "GET /PingUpdate":
-                    response_data = [GlobalParameters.PingResponse]
+                    response_data = [GlobalParameters.PingResponse, GlobalParameters.PingTimeFromDataServer]
                     GlobalParameters.PingResponse = 0
                     try:
                         serialized_data = pack.packb(response_data, use_bin_type=True) 
@@ -409,6 +409,7 @@ def Processing_Module_Client():
                             msgbox.alert(f'PMC: Ping {e}')
                         if response[0] == 1:
                             GlobalParameters.PingResponse = 1
+                            GlobalParameters.PingTimeFromDataServer = response[1]
                             GlobalParameters.PingRequested = False
 
                     else:
@@ -423,7 +424,6 @@ def Processing_Module_Client():
                                     # Save the DataFrame to a CSV file
                                     counter3 = 0
                                     RequestTimes = []
-                                    msgbox.alert("guardo RT")
                                 except Exception as e:
                                     msgbox.alert(e)
                             formated_data = np.asarray(data)

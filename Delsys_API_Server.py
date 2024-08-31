@@ -279,7 +279,7 @@ def API_Server(AeroInstance,emgPositionVector):
                         msgbox.alert(e)
 
                 elif data == "GET /Ping":
-                    serialized_data = pack.packb([1], use_bin_type = True)
+                    serialized_data = pack.packb([1,time.time()], use_bin_type = True)
                     serialized_data  += b'END' 
                     try:
                         conn.sendall(serialized_data)

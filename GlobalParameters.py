@@ -50,6 +50,7 @@ Threshold = []
 
 PingResponse = 0
 PingRequested = False
+PingTimeFromDataServer = 0.0
 
 TerminateCalibration = False
 CalibrationStage = 0

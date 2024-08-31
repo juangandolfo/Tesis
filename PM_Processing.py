@@ -15,7 +15,6 @@ import pymsgbox as msgbox
 import csv
 import json
 import pandas as pd
-import psutil
 
 class DataProcessing:
 
