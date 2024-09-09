@@ -33,11 +33,35 @@ Dentro del archivo se deben popular las variables "Key" y "License" con la infor
 
 #### Uso de la herramienta
 
-Una vez que la herramienta esté configurada e instalada, puedes iniciarla ejecutando el archivo 
+Una vez que la herramienta esté configurada e instalada, se debe seleccionar en que modo se desea que trabaje la herramienta, modo Delsys o modo simulación. El modo elegido seleccionará la fuente de los datos. Para cambiar de modos se debe acceder al archivo: 
+    
+    .\GlobalParameters.py
+
+Dentro de este archivo se debe modificar la varaible *ModoDelsys*. Para seleccionar el modo que toma datos de la estación de adquisición de datos se debe modificar la linea por:
+
+    ModoDelsys = True
+
+Si, en cambio, se desea tomar datos de un archivo, se debe modificar por:
+
+    ModoDelsys = False
+
+Y también se debe indicar el nombre del archivo dónde están almacenados los datos. Este archivo debe estar guardado dentro de la carpeta:
+
+    .\Experiments
+
+Para apuntar el colector de datos simulados a este archivo se debe modificar dentro del archivo:
+
+    .\API_Parameters.py
+
+Ingresando, en formato string, el nombre del archivo en la variable *csvFile* (recordar inculir la extensión del archivo .csv), como por ejemplo:
+
+    csvFile = 'Ejemplo.csv'
+
+Luego se inicializa la herramienta ejecutando el archivo:
 
     .\Executable.py. 
 
-Asegúrate de tener la estación de adquisición de datos conectada y configurada correctamente. Al iniciar, se presentará un panel de control para gestionar la configuración del sistema y comenzar con el entrenamiento. 
+Asegúrate de tener la estación de adquisición de datos conectada correctamente. Al iniciar, se presentará un panel de control para gestionar la configuración del sistema y comenzar con el entrenamiento. 
 
 #### Recomendaciones
 Este proyecto utiliza muchos recursos por lo que se recomienda cerrar otras aplicaciones que consuman muchos recursos para asegurar un funcionamiento óptimo de la herramienta.
