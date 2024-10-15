@@ -48,13 +48,13 @@ class Visual:
         # Define MusclesPlot 
         MusclesPlot = figure(**self.plot_options, title="Muscles Activation")
         MusclesPlot.xaxis.axis_label = "Time (s)"
-        MusclesPlot.yaxis.axis_label = "Activation (%)"
+        MusclesPlot.yaxis.axis_label = "Relative Activation"
         MusclesPlot.y_range = Range1d(start=0.0, end=self.yAxisMax)
        
         # Define SynergiesPlot
         SynergiesPlot = figure(**self.plot_options, x_range=MusclesPlot.x_range, title="Synergies Activation") # Link x-axis of first and second graph
         SynergiesPlot.xaxis.axis_label = "Time (s)"
-        SynergiesPlot.yaxis.axis_label = "Activation (%)"
+        SynergiesPlot.yaxis.axis_label = "Relative Activation"
         SynergiesPlot.y_range = Range1d(start=0.0, end=self.yAxisMax)
 
         # labels = ["A", "B", "C", "D"]
