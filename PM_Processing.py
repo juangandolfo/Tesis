@@ -72,39 +72,31 @@ class DataProcessing:
 DataProcessing = DataProcessing()
 
 def Processing():
-    PM_DS.PM_DataStruct.circular_stack.reset_counter()
+    # PM_DS.PM_DataStruct.circular_stack.reset_counter()
     # create buffer for synergies
     PM_DS.InitializeVisualizationBuffers()
     GlobalParameters.projectionMatrix = GlobalParameters.GenerateProjectionMatrix(GlobalParameters.synergy_CursorMap)
-    #DataProcessing.CreateLPF(GlobalParameters.sampleRate, GlobalParameters.MusclesNumber)
-    #LastNormalizedData = [0 for i in range(GlobalParameters.MusclesNumber)]
-    processedSum = 0
+    
     counter = 0
     print("PM: Processing live")
     if GlobalParameters.saveCSV:
-        today = time.gmtime()
         FileName = './Experiments/Experiment-' + GlobalParameters.ExperimentTimestamp + ".csv"
         file = open(FileName, 'w', newline='')
         writer = csv.writer(file)
         writer.writerow([f'Muscle {i+1}' for i in range(GlobalParameters.MusclesNumber)])
 
     SubSamplingCounter = 0
-    ExecutionTime = []
-    t1 = 0
-    counter2 = 0
+    #ExecutionTime = []
+    #t1 = 0
+    #counter2 = 0
 
-    ''' 
-    PM_DS.stack_lock.acquire()
-    PM_DS.PM_DataStruct.circular_stack.get_vectors(1)
-    PM_DS.stack_lock.release()
-    '''
-
+    
     while True:
         print("PM: Processing live")
         PM_DS.stack_lock.acquire()
-        ExecutionTime.append(time.time() - t1)
+        #ExecutionTime.append(time.time() - t1)
         RawData = PM_DS.PM_DataStruct.circular_stack.get_oldest_vector(1)
-        t1 = time.time()
+        #t1 = time.time()
         PM_DS.stack_lock.release()     
         SubSamplingCounter += 1
         counter += 1
@@ -116,13 +108,10 @@ def Processing():
                 file.flush()
 
             RectifiedData = DataProcessing.Rectify(RawData)
-            #ProcessedData = DataProcessing.LowPassFilter(RectifiedData)
-            #NormalizedData = DataProcessing.Normalize(ProcessedData, GlobalParameters.PeakActivation, GlobalParameters.MusclesNumber, GlobalParameters.Threshold)
             NormalizedData = DataProcessing.Normalize(RectifiedData, GlobalParameters.PeakActivation, GlobalParameters.MusclesNumber, GlobalParameters.Threshold)
             ProcessedData = DataProcessing.LowPassFilter(NormalizedData)
             reshapedData = ProcessedData.reshape(-1,1)
-            #LastNormalizedData = NormalizedData
-
+            
             PM_DS.SynergyBase_Semaphore.acquire()
             SynergyActivations = np.array(DataProcessing.MapActivation(GlobalParameters.SynergyBaseInverse,reshapedData).T)
             PM_DS.SynergyBase_Semaphore.release()
@@ -144,24 +133,24 @@ def Processing():
             PM_DS.PM_DataStruct.positionOutput = PM_DS.PM_DataStruct.positionOutput + GlobalParameters.CursorMovement_Gain*NewMovement/GlobalParameters.sampleRate
             PM_DS.PositionOutput_Semaphore.release()
         
-        if counter2 > 3000:
+        # if counter2 > 3000:
             
-            '''frame = pd.DataFrame(ExecutionTime).to_csv('./Processing_ExecTime.csv')
-            #frame2 = pd.DataFrame(PM_DS.PM_DataStruct.circular_stack.get_counter()).to_csv('./Count.csv')
-            msgbox.alert(PM_DS.PM_DataStruct.circular_stack.get_counter())'''
-            # Create a DataFrame with ExecutionTime and the counter
-            frame = pd.DataFrame({
-                'ExecutionTime': ExecutionTime,
-                'Counter': [PM_DS.PM_DataStruct.circular_stack.get_counter()] * len(ExecutionTime)  # Add the counter as a new column
-            })
+        #     '''frame = pd.DataFrame(ExecutionTime).to_csv('./Processing_ExecTime.csv')
+        #     #frame2 = pd.DataFrame(PM_DS.PM_DataStruct.circular_stack.get_counter()).to_csv('./Count.csv')
+        #     msgbox.alert(PM_DS.PM_DataStruct.circular_stack.get_counter())'''
+        #     # Create a DataFrame with ExecutionTime and the counter
+        #     frame = pd.DataFrame({
+        #         'ExecutionTime': ExecutionTime,
+        #         'Counter': [PM_DS.PM_DataStruct.circular_stack.get_counter()] * len(ExecutionTime)  # Add the counter as a new column
+        #     })
 
-            # Save the DataFrame to a CSV file
-            frame.to_csv('./Processing_ExecTime.csv', index=False)
-            PM_DS.PM_DataStruct.circular_stack.reset_counter()
-            counter2 = 0
-            ExecutionTime = []
-        else: 
-            counter2+=1
+        #     # Save the DataFrame to a CSV file
+        #     frame.to_csv('./Processing_ExecTime.csv', index=False)
+        #     PM_DS.PM_DataStruct.circular_stack.reset_counter()
+        #     counter2 = 0
+        #     ExecutionTime = []
+        # else: 
+        #     counter2+=1
             
 
 def CalibrationProcessing():
@@ -203,7 +192,7 @@ def CalibrationProcessing():
                 thresholds[muscle] = np.median(np.array(Peaks[muscle]))
 
             print("Thresholds:", thresholds)
-            GlobalParameters.Threshold = thresholds
+            GlobalParameters.Threshold = thresholds*1.1
             GlobalParameters.PlotThresholds = True
 
         elif GlobalParameters.CalibrationStage == 2:
@@ -230,6 +219,7 @@ def CalibrationProcessing():
                             GlobalParameters.PeakActivation[i] = ProcessedData[i]
                 print("stage2")
             print("Peaks:", GlobalParameters.PeakActivation)
+            GlobalParameters.PeakActivation = GlobalParameters.PeakActivation*0.9
             GlobalParameters.PlotPeaks = True
 
         elif GlobalParameters.CalibrationStage == 3:

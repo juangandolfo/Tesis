@@ -11,7 +11,7 @@ import time
 class Visual:
     def __init__(self, callbackFunc, running):
         self.text1 = Div(text="""<h1 style=color:blue">Muscles and Synergies Activation</h1>""", width=900, height=25) # Text to be displayed at the top of the webpage
-        self.EmptyContainerTitle = Div(text="""<h1 style="color:blue"></h1>""", width=900, height=20) # Empty container to create space between the text and checkboxes
+        self.EmptyContainerTitle = Div(text="""<h1 style="color:blue"></h1>""", width=450, height=20) # Empty container to create space between the text and checkboxes
         self.EmptyContainerLeft = Div(text="""<h1 style="color:blue"></h1>""", width=10, height=1000) # Empty container to create space between the checkboxes and the graphs
         self.running = running # Store the current state of the Flag
         self.callbackFunc = callbackFunc # Store the callback function

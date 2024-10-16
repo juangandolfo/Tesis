@@ -113,6 +113,7 @@ class Sensor(threading.Thread):
             self.MusclesActivations = Request('Muscles')
             self.SynergiesActivations = Request('Synergies')
 
+            # Ping implementation to measure the comms latency 
             # if self.pingRequested == True:
             #     response = Request('PingUpdate')
             #     if response[0] == 1:

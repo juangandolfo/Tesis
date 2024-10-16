@@ -6,7 +6,7 @@ import pymsgbox as msgbox
 
 ModoDelsys = True # True if we use the Delsys API Server, False if we use the API Server from the PM.
 SubSamplingRate = 100
-saveCSV = True
+saveCSV = False
 
 Initialized = False
 
@@ -21,7 +21,7 @@ if MusclesNumber == 4:
     synergy_CursorMap = [30,210,120,300]
 else:
     synergy_CursorMap = [30,120]
-CursorMovement_Gain = 1000
+CursorMovement_Gain = 500
 SynergyBase = np.identity(MusclesNumber)
 SynergyBaseInverse = np.linalg.pinv(SynergyBase)
 modelsList = []

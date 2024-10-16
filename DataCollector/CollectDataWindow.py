@@ -311,13 +311,13 @@ class CalibrationWindow(QMainWindow):
 
         layout = QVBoxLayout()
 
-        self.stage1_button = QPushButton("Stage 1")
+        self.stage1_button = QPushButton("1 - Base Noise")
         self.stage1_button.setFixedSize(240, 30)  # Set a fixed size for the button
         self.stage1_button.setStyleSheet('QPushButton {color: #000066;}')
-        self.stage2_button = QPushButton("Stage 2")
+        self.stage2_button = QPushButton("2 - Maximum Activations")
         self.stage2_button.setFixedSize(240, 30)  # Set a fixed size for the button
         self.stage2_button.setStyleSheet('QPushButton {color: #000066;}')
-        self.stage3_button = QPushButton("Stage 3")
+        self.stage3_button = QPushButton("3 - Synergy Basis")
         self.stage3_button.setFixedSize(240, 30)  # Set a fixed size for the button
         self.stage3_button.setStyleSheet('QPushButton {color: #000066;}')
         self.upload_calibration_button = QPushButton("Upload Last Calibration")
@@ -326,7 +326,7 @@ class CalibrationWindow(QMainWindow):
         self.terminate_button = QPushButton("Terminate Calibration")
         self.terminate_button.setFixedSize(240, 30)  # Set a fixed size for the button
         self.terminate_button.setStyleSheet('QPushButton {color: #000066;}')
-        self.set_synergy_base = QPushButton("Set Synergies Base")
+        self.set_synergy_base = QPushButton("Set Synergies Basis")
         self.set_synergy_base.setFixedSize(240, 30)  # Set a fixed size for the button
         self.set_synergy_base.setStyleSheet('QPushButton {color: #000066;}')
         self.set_synergy_base.hide()
@@ -413,28 +413,28 @@ class CalibrationWindow(QMainWindow):
         main_layout.setStretch(1, 1)
 
     def stage1_callback(self):
-        self.stage_message_label.setText("Calibration Stage 1: Activation Threshold Detection")
+        self.stage_message_label.setText("Calibration Stage 1: Activation Threshold Detection \nHold as still as possible to detect the baseline noise of each sensor. Try not to activate any muscles during the countdown.")
         # Show Start button for Stage 1 only
         self.start_stage_button.show()
         self.CalibrationStage = 1
         self.timer_widget.hide()  #Hide the countdown widget when stage changes
 
     def stage2_callback(self):
-        self.stage_message_label.setText("Calibration Stage 2: Activation Peaks Detection")
+        self.stage_message_label.setText("Calibration Stage 2: Activation Peaks Detection \nTry to activate each muscle to its maximum during the countdown to determine the maximum activation.")
         # Show Start button for Stage 2 only
         self.start_stage_button.show()
         self.CalibrationStage = 2
         self.timer_widget.hide()  # Hide the countdown widget when stage changes
 
     def stage3_callback(self):
-        self.stage_message_label.setText("Calibration Stage 3: Synergies Detection")
+        self.stage_message_label.setText("Calibration Stage 3: Synergies Detection \nIn this stage, muscle synergies will be detected. During the countdown, try to activate all the involved muscles with random movements.")
         # Show Start button for Stage 3 only
         self.start_stage_button.show()
         self.CalibrationStage = 3
         self.timer_widget.hide()  # Hide the countdown widget when stage changes
     
     def stage4_callback(self):
-        self.stage_message_label.setText("Uploading calibration file ...")
+        self.stage_message_label.setText("Press Start to upload the calibration from the Configuration.json file located in the root of the project.")
         self.start_stage_button.show()
         self.CalibrationStage = 4
         self.timer_widget.hide()  # Hide the countdown widget when stage changes
@@ -518,7 +518,7 @@ class CalibrationWindow(QMainWindow):
                         ax.set_title(f'{j} Synergies')
                         if j == 2:
                             ax.set_xlabel('Muscles')  # X-axis label
-                            ax.set_ylabel('Muscle Activation (%)')  # Y-axis label
+                            ax.set_ylabel('Relative Activation')  # Y-axis label
                             ax.set_xticklabels(API_Parameters.SensorStickers)
                             ax.set_yticklabels([str(tick) for tick in [0, 0.5, 1]])
                         else:
@@ -568,9 +568,9 @@ class CalibrationWindow(QMainWindow):
                     ax.set_yticks([0, 0.5, 1])  # Ensure y-ticks are visible
 
                     if i == 1:
-                        ax.set_title(f'Synergy Base ({API_Parameters.SynergiesNumber} Synegies)')
+                        ax.set_title(f'Synergy Basis ({API_Parameters.SynergiesNumber} Synergies)')
                         ax.set_xlabel('Muscles')  # X-axis label
-                        ax.set_ylabel('Muscle Activation (%)')  # Y-axis label
+                        ax.set_ylabel('Reltive Activation')  # Y-axis label
                         ax.set_xticklabels(API_Parameters.SensorStickers)
                         ax.set_yticklabels([str(tick) for tick in [0, 0.5, 1]])
                     else: 
@@ -603,9 +603,9 @@ class CalibrationWindow(QMainWindow):
                 ax.set_yticks([0, 0.5, 1])  # Ensure y-ticks are visible
 
                 if i == 1:
-                    ax.set_title(f'Synergy Base ({API_Parameters.SynergiesNumber} Synegies)')
+                    ax.set_title(f'Synergy Basis ({API_Parameters.SynergiesNumber} Synergies)')
                     ax.set_xlabel('Muscles')  # X-axis label
-                    ax.set_ylabel('Muscle Activation (%)')  # Y-axis label
+                    ax.set_ylabel('Relative Activation')  # Y-axis label
                     ax.set_xticklabels(API_Parameters.SensorStickers)
                     ax.set_yticklabels([str(tick) for tick in [0, 0.5, 1]])
                 else: 
