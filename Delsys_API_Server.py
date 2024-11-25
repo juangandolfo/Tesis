@@ -61,7 +61,7 @@ def API_Server(AeroInstance,emgPositionVector):
             while True:
                 #print("                                                 API Server live")
                 try:
-                    s.settimeout(5)
+                    s.settimeout(600)
                     DataReceived = conn.recv(1024)
                 except Exception as e:
                     print("API", e)

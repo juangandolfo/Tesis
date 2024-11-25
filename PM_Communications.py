@@ -123,7 +123,7 @@ def Request(request):
 # Function to handle the connection with a client
 def Handle_Client(conn,addr):
     print(f"Connected by {addr}")
-    conn.settimeout(5)
+    conn.settimeout(600)
     
     try:
         while True:
