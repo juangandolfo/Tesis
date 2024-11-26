@@ -80,7 +80,7 @@ def Processing():
     counter = 0
     print("PM: Processing live")
     if PM_Parameters.saveCSV:
-        FileName = 'ExperimentsFiles\Experiments\Experiment-' + PM_Parameters.ExperimentTimestamp + ".csv"
+        FileName = 'ExperimentsFiles\Experiment-' + PM_Parameters.ExperimentTimestamp + "\RawData.csv"
         file = open(FileName, 'w', newline='')
         writer = csv.writer(file)
         writer.writerow([f'Muscle {i+1}' for i in range(PM_Parameters.MusclesNumber)])

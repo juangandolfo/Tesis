@@ -4,6 +4,7 @@ from PySide2.QtCore import *
 from PySide2.QtCore import QObject, Signal
 import json
 import time
+import os
 
 DelsysMode = True
 #csvFile = '202465_213928.csv'              #tiene 2 musculos
@@ -96,6 +97,12 @@ def SaveCalibrationToJson(ChannelsNumber,Thresholds, Peaks, AnglesOutput, Synerg
     f.write(json_array) 
     f.close()
 
-    f = open('ExperimentsFiles\Calibrations\Calibrations-' + ExperimentTimestamp + '.json', 'w')
+    # Generate a new folder path using the timestamp
+    folder_path = 'ExperimentsFiles/Experiment-' + ExperimentTimestamp
+    os.makedirs(folder_path, exist_ok=True)  # Create the folder, no error if it already exists
+
+    # Open the file inside the new folder
+    file_path = os.path.join(folder_path, 'Calibration.json')
+    f = open(file_path, 'w')
     f.write(json_array)
     f.close()
