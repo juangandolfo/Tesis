@@ -28,6 +28,7 @@ class channelObject:
         self.Name = name + "EMG"
         self.SampleRate = 2148
         self.SamplesPerFrame = 1
+        self.Id = name
     
 class SensorsList:
     def __init__(self):

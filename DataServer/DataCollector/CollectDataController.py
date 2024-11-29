@@ -169,6 +169,7 @@ class PlottingManagement():
 
                         idxVal += 1
             print(self.dataStreamIdx)
+            print(params.Channels_ID)
             params.ChannelsNumber = len(self.dataStreamIdx)
             params.SampleRate = max(self.sampleRates, key=lambda x: x[0])[0][0]
             # ---- Create the plotting canvas and begin visualization

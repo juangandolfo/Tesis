@@ -3,7 +3,7 @@ import random
 import json
 import time
 import pickle
-from Aero_Nuevo import *
+from DataServer.Aero_Nuevo import *
 import msgpack as pack
 import numpy as np
 import pymsgbox as msgbox
@@ -77,24 +77,24 @@ def API_Server(AeroInstance, emgPositionVector):
                     
                     serialized_data = pack.packb(response_data,use_bin_type=True) # Serialize the object using msgpack
 
-                    if API_Parameters.TerminateCalibrationFlag:
+                    if params.TerminateCalibrationFlag:
                         serialized_data  += b"TC" # Add a delimiter at the end
-                        API_Parameters.TerminateCalibrationFlag = False
+                        params.TerminateCalibrationFlag = False
 
-                    elif API_Parameters.CalibrationStageInitialized:
-                        API_Parameters.CalibrationStageInitialized = False
+                    elif params.CalibrationStageInitialized:
+                        params.CalibrationStageInitialized = False
 
-                        if API_Parameters.CalibrationStage == 1:
+                        if params.CalibrationStage == 1:
                             serialized_data  += b"CS1" # Add a delimiter at the end
-                        elif API_Parameters.CalibrationStage == 2:
+                        elif params.CalibrationStage == 2:
                             serialized_data  += b"CS2" # Add a delimiter at the end
-                        elif API_Parameters.CalibrationStage == 3:
+                        elif params.CalibrationStage == 3:
                             serialized_data  += b"CS3" # Add a delimiter at the end
-                        elif API_Parameters.CalibrationStage == 4:
+                        elif params.CalibrationStage == 4:
                             serialized_data  += b"CS4" # Add a delimiter at the end
 
-                    elif API_Parameters.CalibrationStageFinished:
-                        API_Parameters.CalibrationStageFinished = False
+                    elif params.CalibrationStageFinished:
+                        params.CalibrationStageFinished = False
                         serialized_data  += b"CSF" # Add a delimiter at the end
                         
                     else:
@@ -106,7 +106,7 @@ def API_Server(AeroInstance, emgPositionVector):
                         print("API sending", e)
 
                 elif data == "GET /SensorsNumber":
-                    serialized_data = pack.packb(API_Parameters.ChannelsNumber, use_bin_type=True)
+                    serialized_data = pack.packb(params.ChannelsNumber, use_bin_type=True)
                     serialized_data  += b'END'
                     try:
                         conn.sendall(serialized_data)
@@ -114,8 +114,8 @@ def API_Server(AeroInstance, emgPositionVector):
                         print(e)
 
                 elif data == "GET /SensorStickers":
-                    API_Parameters.SensorStickers = ['M1', 'M2', 'M3']
-                    serialized_data = pack.packb(API_Parameters.SensorStickers, use_bin_type=True)
+                    params.SensorStickers = ['M1', 'M2', 'M3']
+                    serialized_data = pack.packb(params.SensorStickers, use_bin_type=True)
                     serialized_data  += b'END'
                     try:
                         conn.sendall(serialized_data)
@@ -123,7 +123,7 @@ def API_Server(AeroInstance, emgPositionVector):
                         print(e)
 
                 elif data == "GET /SampleRate":
-                    serialized_data = pack.packb(API_Parameters.SampleRate, use_bin_type=True)
+                    serialized_data = pack.packb(params.SampleRate, use_bin_type=True)
                     serialized_data  += b'END'
                     try:
                         conn.sendall(serialized_data)
@@ -131,9 +131,9 @@ def API_Server(AeroInstance, emgPositionVector):
                         print(e)
 
                 elif data == "GET /Angles":
-                    API_Parameters.AnglesOutputSemaphore.acquire()
-                    serialized_data = pack.packb(API_Parameters.AnglesOutput, use_bin_type=True)
-                    API_Parameters.AnglesOutputSemaphore.release()
+                    params.AnglesOutputSemaphore.acquire()
+                    serialized_data = pack.packb(params.AnglesOutput, use_bin_type=True)
+                    params.AnglesOutputSemaphore.release()
                     serialized_data  += b'END'
                     try:
                         conn.sendall(serialized_data)
@@ -155,11 +155,11 @@ def API_Server(AeroInstance, emgPositionVector):
                         print(e)
                     
                     data = conn.recv(1024)
-                    API_Parameters.Thresholds = np.array(pack.unpackb(data.strip(), raw=False))
-                    msgbox.alert(f"thresholds API: {API_Parameters.Thresholds}")
-                    API_Parameters.PlotThresholds = True
+                    params.Thresholds = np.array(pack.unpackb(data.strip(), raw=False))
+                    msgbox.alert(f"thresholds API: {params.Thresholds}")
+                    params.PlotThresholds = True
                     try:
-                        API_Parameters.PlotCalibrationSignal.signal.emit()
+                        params.PlotCalibrationSignal.signal.emit()
                     except Exception as e:
                         msgbox.alert(f'{data} {e}')
                     serialized_data = pack.packb([1], use_bin_type=True)
@@ -177,10 +177,10 @@ def API_Server(AeroInstance, emgPositionVector):
                         print(e)
                     
                     DataReceived = conn.recv(1024)
-                    API_Parameters.Peaks = np.array(pack.unpackb(DataReceived.strip(),  raw=False))
-                    API_Parameters.PlotPeaks = True
+                    params.Peaks = np.array(pack.unpackb(DataReceived.strip(),  raw=False))
+                    params.PlotPeaks = True
                     try:
-                        API_Parameters.PlotCalibrationSignal.signal.emit()
+                        params.PlotCalibrationSignal.signal.emit()
                     except Exception as e:
                         msgbox.alert(f'{data} {e}')
                     serialized_data = pack.packb([1], use_bin_type=True)
@@ -210,12 +210,12 @@ def API_Server(AeroInstance, emgPositionVector):
                             msgbox.alert(f'{data} {e}')
                             break
                     try:
-                        API_Parameters.SynergiesModels = pack.unpackb(data, max_array_len = len(data), raw=False)
+                        params.SynergiesModels = pack.unpackb(data, max_array_len = len(data), raw=False)
                     except Exception as e:
                         msgbox.alert(f'{data} {e}')
-                    API_Parameters.PlotModels = True
+                    params.PlotModels = True
                     try:
-                        API_Parameters.PlotCalibrationSignal.signal.emit()
+                        params.PlotCalibrationSignal.signal.emit()
                     except Exception as e:
                         msgbox.alert(f'{data} {e}')
                     serialized_data = pack.packb([1], use_bin_type=True)
@@ -226,40 +226,43 @@ def API_Server(AeroInstance, emgPositionVector):
                 
                 elif data == "UPLOAD /Configurations":
                     try:
-                        Thresholds, Peaks, AnglesOutput, SynergyBase = API_Parameters.UploadCalibrationFromJson()
-                        API_Parameters.Thresholds = Thresholds
-                        API_Parameters.Peaks = Peaks
-                        API_Parameters.AnglesOutput = AnglesOutput
-                        API_Parameters.SynergyBase = SynergyBase
-                        API_Parameters.SynergiesNumber = len(AnglesOutput)
+                        Thresholds, Peaks, AnglesOutput, SynergyBase, SensorStickers = params.UploadCalibrationFromJson()
+                        params.Thresholds = Thresholds
+                        params.Peaks = Peaks
+                        params.AnglesOutput = AnglesOutput
+                        params.SynergyBase = SynergyBase
+                        params.SensorStickers = SensorStickers
+                        params.SynergiesNumber = len(AnglesOutput)
                     except Exception as e:
                         msgbox.alert(e)                    
-                        
+                    
                     serialized_data = pack.packb([1], use_bin_type = True)
                     serialized_data  += b'END'
+                    
                     try:
                         conn.sendall(serialized_data)
                     except Exception as e:
-                        msgbox.alert(f'{data} {e}')
-
-                    API_Parameters.PlotUploadedConfig = True
-                    API_Parameters.PlotCalibrationSignal.signal.emit()
-                    API_Parameters.CalibrationStageFinished = True
+                        msgbox.alert(e)
+                    
+                    params.PlotUploadedConfig = True
+                    params.PlotCalibrationSignal.signal.emit()
+                    params.CalibrationStageFinished = True
 
                 elif data == "GET /JsonConfiguration":
-                    dictionary = {"Thresholds": API_Parameters.Thresholds,
-                                  "Peaks": API_Parameters.Peaks,
-                                   "synergy_CursorMap": API_Parameters.AnglesOutput,
-                                   "SynergyBase": API_Parameters.SynergyBase}
+                    dictionary = {"Thresholds": params.Thresholds,
+                                  "Peaks": params.Peaks,
+                                   "synergy_CursorMap": params.AnglesOutput,
+                                   "SynergyBase": params.SynergyBase,
+                                   "SensorStickers": params.SensorStickers}
                     serialized_data = pack.packb(dictionary, use_bin_type = True)  
                     serialized_data  += b'END' 
                     try:
                         conn.sendall(serialized_data)
                     except Exception as e:
-                        msgbox.alert(f'{data} {e}')
+                        msgbox.alert(e)
 
                 elif data == "GET /ExperimentTimestamp":
-                    serialized_data = pack.packb(API_Parameters.ExperimentTimestamp, use_bin_type = True)
+                    serialized_data = pack.packb(params.ExperimentTimestamp, use_bin_type = True)
                     serialized_data  += b'END' 
                     try:
                         conn.sendall(serialized_data)
@@ -267,7 +270,7 @@ def API_Server(AeroInstance, emgPositionVector):
                         msgbox.alert(f'{data} {e}') 
                 
                 elif data == "GET /CalibrationTime":
-                    serialized_data = pack.packb(API_Parameters.TimeCalibStage3, use_bin_type=True)
+                    serialized_data = pack.packb(params.TimeCalibStage3, use_bin_type=True)
                     serialized_data  += b'END'
                     try:
                         conn.sendall(serialized_data)
