@@ -1,0 +1,26 @@
+[
+    {
+        "attemptNumber": 1,
+        "start_Timestamp": "2021-06-01T00:00:00.000Z",
+        "end_Timestamp": "2021-06-01T00:00:10.000Z",
+        "result": "win"
+    },
+    {
+        "attemptNumber": 2,
+        "start_Timestamp": "2021-06-02T00:00:00.000Z",
+        "end_Timestamp": "2021-06-02T00:00:10.000Z",
+        "result": "loss"
+    },
+    {
+        "attemptNumber": 3,
+        "start_Timestamp": "2021-06-03T00:00:00.000Z",
+        "end_Timestamp": "2021-06-03T00:00:10.000Z",
+        "result": "restarted"
+    },
+    {
+        "attemptNumber": 4,
+        "start_Timestamp": "2021-06-04T00:00:00.000Z",
+        "end_Timestamp": "2021-06-04T00:00:10.000Z",
+        "result": "Exited"
+    }
+]

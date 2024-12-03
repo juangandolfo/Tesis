@@ -152,7 +152,32 @@ def Handle_Client(conn,addr):
                     conn.sendall(response_json)
                     #print("PM: Data sent:", response_data)
 
-                elif  data.decode().strip() == "GET /Muscles":
+                elif data.decode().strip() == "POST /startAttempt":
+                    msgbox.alert("Start " + str(time.time()))
+                    serialized_data = pack.packb("Ok")
+                    conn.sendall(serialized_data)
+                
+                elif data.decode().strip() == "POST /win":
+                    msgbox.alert("Win " + str(time.time()))
+                    serialized_data = pack.packb("Ok")
+                    conn.sendall(serialized_data)
+
+                elif data.decode().strip() == "POST /loss":
+                    msgbox.alert("Loss " + str(time.time()))
+                    serialized_data = pack.packb("Ok")
+                    conn.sendall(serialized_data)
+
+                elif data.decode().strip() == "POST /restartAttempt":
+                    msgbox.alert("Restart " + str(time.time()))
+                    serialized_data = pack.packb("Ok")
+                    conn.sendall(serialized_data)
+
+                elif data.decode().strip() == "POST /exit":
+                    msgbox.alert("Exit " + str(time.time()))
+                    serialized_data = pack.packb("Ok")
+                    conn.sendall(serialized_data)
+
+                elif data.decode().strip() == "GET /Muscles":
                     # with synergies_Lock:
                         #print("------------------------------------------------------GET /Muscles")
                         PM_DS.ProcessedDataBuffer_Semaphore.acquire()  # Acquire lock before accessing the stack
@@ -253,10 +278,10 @@ def Handle_Client(conn,addr):
                     pass
                 
             except socket.timeout:
-                print(f"Client {addr} timed out")
+                msgbox.alert(f"Client {addr} timed out")
                 break
             except Exception as e:  
-                print(data)
+                msgbox.alert(f"PM Server {e}")
             
     except (ConnectionResetError, ConnectionAbortedError) as e:
         print(f"Client {addr} connection lost: {e}")
