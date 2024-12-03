@@ -210,6 +210,7 @@ class PlottingManagement():
         except Exception as e:
             msgbox.alert(e)
         
+        
 
     #---------------------------------------------------------------------------------
     #---- Helper Functions

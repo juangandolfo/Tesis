@@ -6,12 +6,12 @@ import json
 import time
 import os
 
-DelsysMode = False
+DelsysMode = True
 #csvFile = '202465_213928.csv'              #tiene 2 musculos
 #csvFile = 'Experiment-20240626-220405.csv' #tiene 3 musculos
 #csvFile = '202468_195248.csv'               #tiene 4 musculos
 # csvFile = 'experimento_prueba.csv'
-csvFile = 'ExperimentsFiles\Experiment-20241129-031450\RawData.csv'
+csvFile = 'ExperimentsFiles\Experiment-20241202-261323\RawData.csv'
 SimulationFrequency = 2148
 
 KeysLen = 0

@@ -6,7 +6,8 @@ from DataServer.UIControls.FrameController import *
 
 def API_Server():
     app = QApplication(sys.argv)
-    controller = FrameController()
+    config_folder = 'ExperimentsFiles'
+    controller = FrameController(config_folder)
     sys.exit(app.exec_())
 
 def PM():

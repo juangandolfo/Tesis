@@ -16,6 +16,9 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 import pymsgbox as msgbox
+import os 
+import json
+
 
 
 class CollectDataWindow(QWidget):
@@ -258,7 +261,148 @@ class CollectDataWindow(QWidget):
     def start_visualization(self):
         self.CallbackConnector.StartVisualization_Callback()
 
+class SimulationWindow(QWidget):
+    def __init__(self, controller, config_folder):
+        QWidget.__init__(self)
+        self.config_folder = config_folder
+        self.controller = controller
+        self.config_file = "Calibration.json"
+        self.events_file = "Events.json"
+        #self.resize(800, 400)
+        
+        # Create button panel and get the layout
+        self.buttonPanel = self.ButtonPanel()
+        layout = QHBoxLayout()
+        self.setStyleSheet("background-color:#DDDDDD;")
+        layout.addWidget(self.buttonPanel)
+        self.setLayout(layout)
+        self.setWindowTitle("Simulation GUI")
+        
+        # Populate the config dropdown with experiment folders
+        self.populate_config_dropdown()  
 
+        # Connect the controller to the GUI
+        self.CallbackConnector = PlottingManagement()
+    
+    # GUI Components
+    def ButtonPanel(self):
+        buttonPanel = QWidget()
+        buttonLayout = QVBoxLayout()
+
+        # Configuration File Dropdown (Only Experiment Folder Selection)
+        self.config_label = QLabel("Select the experiment folder", self)
+        self.config_label.setFixedSize(300, 50)
+        self.config_label.setAlignment(Qt.AlignCenter)
+        self.config_label.setStyleSheet("color:#000066;")
+        buttonLayout.addWidget(self.config_label)
+
+        self.config_dropdown = QComboBox(self)
+        self.config_dropdown.setToolTip("Select an experiment folder")
+        self.config_dropdown.setStyleSheet("QComboBox {color: #000066; background: #848482;}")
+        self.config_dropdown.currentIndexChanged.connect(self.config_file_selected)
+        buttonLayout.addWidget(self.config_dropdown)
+
+        # Connect Button
+        self.connect_button = QPushButton('Read Experiment Files', self)
+        self.connect_button.setFixedSize(300, 50)
+        self.connect_button.setToolTip('Read Experiment FIles')
+        self.connect_button.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
+        self.connect_button.clicked.connect(self.upload_experiment)
+        self.connect_button.setStyleSheet('QPushButton {color: #000066;}')
+        buttonLayout.addWidget(self.connect_button)
+
+        # Home Button
+        button = QPushButton('Home', self)
+        button.setFixedSize(300, 50)
+        button.setToolTip('Return to Start Menu')
+        button.clicked.connect(self.home_callback)
+        button.setStyleSheet('QPushButton {color: #000066;}')
+        buttonLayout.addWidget(button)
+
+        buttonPanel.setLayout(buttonLayout)
+
+        # Return the panel with layout
+        return buttonPanel
+
+    def upload_experiment(self):
+        #self.CallbackConnector.Upload_Experiment()
+        #self.connect_button.setEnabled(False)
+        
+        # Get the selected experiment folder from the dropdown
+        selected_folder = self.config_dropdown.currentText()
+        selected_folder_path = os.path.join(self.config_folder, selected_folder)
+
+        # Check if the specified .json configuration file exists in the selected folder
+        config_file_path = os.path.join(selected_folder_path, self.config_file)
+        if not os.path.exists(config_file_path):
+            print(f"No file named {self.config_file} found in {selected_folder_path}")
+            return
+        # Read the .json file
+        with open(config_file_path, 'r') as json_file:
+            json_data = json.load(json_file)
+
+        # Extract the data from the JSON into variables
+        angles = json_data['Angles']
+        muscles_number = json_data['MusclesNumber']
+        peaks = json_data['Peaks']
+        sensor_stickers = json_data['SensorStickers']
+        synergy_base = json_data['SynergyBase']
+        thresholds = json_data['Thresholds']
+        
+        print("Angles:", angles)
+        print("MusclesNumber:", muscles_number)
+        print("Peaks:", peaks)
+        print("SensorStickers:", sensor_stickers)
+        print("SynergyBase:", synergy_base)
+        print("Thresholds:", thresholds)
+
+        '''# Check if the specified .json file exists in the selected folder
+        events_file_path = os.path.join(selected_folder_path, self.events_file)
+        if not os.path.exists(events_file_path):
+            print(f"No file named {self.events_file} found in {selected_folder_path}")
+            return
+        # Read the .json file
+        with open(events_file_path, 'r') as json_file:
+            json_data = json.load(json_file)
+        
+        # Extract the data from the JSON into variables
+        angles = json_data['Angles']''' # Implementation for the events file
+
+        #self.show_json_data(json_data)
+        # Disable the connect button after loading
+        self.connect_button.setEnabled(False)
+
+       
+    def home_callback(self):
+        self.controller.showStartMenu()
+
+    def config_file_selected(self, index):
+        """Callback function triggered when a folder is selected."""
+        if index >= 0:  # Ensure a valid selection
+            selected_folder = self.config_dropdown.itemText(index)
+            selected_path = os.path.join(self.config_folder, selected_folder)
+            print(f"Selected Experiment Folder: {selected_path}")
+            # Perform actions with the selected folder
+
+    def populate_config_dropdown(self):
+        """Populates the dropdown with experiment folders."""
+        if not os.path.exists(self.config_folder):
+            print(f"Error: Config folder '{self.config_folder}' does not exist.")
+            return
+
+        # List subfolders (experiment folders)
+        experiment_folders = [f for f in os.listdir(self.config_folder) if os.path.isdir(os.path.join(self.config_folder, f))]
+        
+        if not experiment_folders:
+            print("No experiment folders found.")
+            return
+        
+        # Add experiment folders to the dropdown
+        self.config_dropdown.clear()  # Clear previous items
+        self.config_dropdown.addItems(experiment_folders)
+
+
+    
 class CountdownWidget(QWidget):
 
     timeout_signal = Signal()
