@@ -54,13 +54,13 @@ class CollectDataWindow(QWidget):
         buttonLayout.addWidget(self.pipelinestatelabel)
 
         #---- Connect Button
-        self.connect_button = QPushButton('Connect', self)
-        self.connect_button.setToolTip('Connect Base')
-        self.connect_button.setSizePolicy(QSizePolicy.Preferred,QSizePolicy.Expanding)
-        self.connect_button.objectName = 'Connect'
-        self.connect_button.clicked.connect(self.connect_callback)
-        self.connect_button.setStyleSheet('QPushButton {color: #000066;}')
-        buttonLayout.addWidget(self.connect_button)
+        self.read_button = QPushButton('Connect', self)
+        self.read_button.setToolTip('Connect Base')
+        self.read_button.setSizePolicy(QSizePolicy.Preferred,QSizePolicy.Expanding)
+        self.read_button.objectName = 'Connect'
+        self.read_button.clicked.connect(self.connect_callback)
+        self.read_button.setStyleSheet('QPushButton {color: #000066;}')
+        buttonLayout.addWidget(self.read_button)
 
         findSensor_layout = QHBoxLayout()
         
@@ -192,7 +192,7 @@ class CollectDataWindow(QWidget):
 
     def connect_callback(self):
         self.CallbackConnector.Connect_Callback()
-        self.connect_button.setEnabled(False)
+        self.read_button.setEnabled(False)
 
         self.pair_button.setEnabled(True)
         self.scan_button.setEnabled(True)
@@ -302,14 +302,29 @@ class SimulationWindow(QWidget):
         self.config_dropdown.currentIndexChanged.connect(self.config_file_selected)
         buttonLayout.addWidget(self.config_dropdown)
 
+        # Placeholder dropdown for attempts (hidden initially)
+        self.attempts_label = QLabel("Select an attempt", self)
+        self.attempts_label.setFixedSize(300, 50)
+        self.attempts_label.setAlignment(Qt.AlignCenter)
+        self.attempts_label.setStyleSheet("color:#000066;")
+        self.attempts_label.hide()  # Initially hidden
+        buttonLayout.addWidget(self.attempts_label)
+
+        self.attempts_dropdown = QComboBox(self)
+        self.attempts_dropdown.setToolTip("Select an attempt")
+        self.attempts_dropdown.setStyleSheet("QComboBox {color: #000066; background: #848482;}")
+        self.attempts_dropdown.currentIndexChanged.connect(self.attempt_selected)
+        self.attempts_dropdown.hide()  # Initially hidden
+        buttonLayout.addWidget(self.attempts_dropdown)
+
         # Connect Button
-        self.connect_button = QPushButton('Read Experiment Files', self)
-        self.connect_button.setFixedSize(300, 50)
-        self.connect_button.setToolTip('Read Experiment FIles')
-        self.connect_button.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
-        self.connect_button.clicked.connect(self.upload_experiment)
-        self.connect_button.setStyleSheet('QPushButton {color: #000066;}')
-        buttonLayout.addWidget(self.connect_button)
+        self.read_button = QPushButton('Read Experiment Files', self)
+        self.read_button.setFixedSize(300, 50)
+        self.read_button.setToolTip('Read Experiment FIles')
+        self.read_button.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
+        self.read_button.clicked.connect(self.upload_experiment)
+        self.read_button.setStyleSheet('QPushButton {color: #000066;}')
+        buttonLayout.addWidget(self.read_button)
 
         # Home Button
         button = QPushButton('Home', self)
@@ -325,9 +340,6 @@ class SimulationWindow(QWidget):
         return buttonPanel
 
     def upload_experiment(self):
-        #self.CallbackConnector.Upload_Experiment()
-        #self.connect_button.setEnabled(False)
-        
         # Get the selected experiment folder from the dropdown
         selected_folder = self.config_dropdown.currentText()
         selected_folder_path = os.path.join(self.config_folder, selected_folder)
@@ -356,7 +368,7 @@ class SimulationWindow(QWidget):
         print("SynergyBase:", synergy_base)
         print("Thresholds:", thresholds)
 
-        '''# Check if the specified .json file exists in the selected folder
+        # Check if the specified .json file exists in the selected folder
         events_file_path = os.path.join(selected_folder_path, self.events_file)
         if not os.path.exists(events_file_path):
             print(f"No file named {self.events_file} found in {selected_folder_path}")
@@ -365,13 +377,36 @@ class SimulationWindow(QWidget):
         with open(events_file_path, 'r') as json_file:
             json_data = json.load(json_file)
         
+        # Create a list to store all attempts
+        attempts_data = []
+
         # Extract the data from the JSON into variables
-        angles = json_data['Angles']''' # Implementation for the events file
+        for attempt in json_data:  # Use `json_data`, not `json_file`
+            attempt_info = {
+                "attemptNumber": attempt["attemptNumber"],
+                "start_Timestamp": attempt["start_Timestamp"],
+                "end_Timestamp": attempt["end_Timestamp"],
+                "result": attempt["result"],
+            }
+            attempts_data.append(attempt_info)  # Append each attempt to the list
 
+        # Print or process all attempts
+        for attempt_info in attempts_data:
+            print(f"Attempt {attempt_info['attemptNumber']}:")
+            print(f"  Start: {attempt_info['start_Timestamp']}")
+            print(f"  End: {attempt_info['end_Timestamp']}")
+            print(f"  Result: {attempt_info['result']}")
+
+        # Populate the dropdown with attempts
+        self.attempts_dropdown.clear()  # Clear any existing items
+        for attempt in json_data:
+            self.attempts_dropdown.addItem(f"Attempt {attempt['attemptNumber']}", attempt)
+
+        # Show the dropdown and label
+        self.attempts_label.show()
+        self.attempts_dropdown.show()
         #self.show_json_data(json_data)
-        # Disable the connect button after loading
-        self.connect_button.setEnabled(False)
-
+       
        
     def home_callback(self):
         self.controller.showStartMenu()
@@ -400,6 +435,13 @@ class SimulationWindow(QWidget):
         # Add experiment folders to the dropdown
         self.config_dropdown.clear()  # Clear previous items
         self.config_dropdown.addItems(experiment_folders)
+    
+    def attempt_selected(self, index):
+        """Handle the selection of an attempt."""
+        if index >= 0:
+            selected_attempt = self.attempts_dropdown.itemData(index)
+            print(f"Selected Attempt: {selected_attempt}")
+            # Process the selected attempt as needed
 
 
     
