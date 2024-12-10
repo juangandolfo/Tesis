@@ -263,35 +263,41 @@ class CollectDataWindow(QWidget):
 
 class SimulationWindow(QWidget):
     def __init__(self, controller, config_folder):
-        QWidget.__init__(self)
+        super(SimulationWindow, self).__init__()  # Properly call the base class initializer
         self.config_folder = config_folder
         self.controller = controller
         self.config_file = "Calibration.json"
         self.events_file = "Events.json"
-        #self.resize(800, 400)
-        
-        # Create button panel and get the layout
-        self.buttonPanel = self.ButtonPanel()
-        layout = QHBoxLayout()
+        self.colors = ['Red', 'Blue', 'Yellow', 'Green', 'Orange', 'Purple', 'Grey', 'Brown']
+
+        # Create the main layout
+        main_layout = QHBoxLayout()
         self.setStyleSheet("background-color:#DDDDDD;")
-        layout.addWidget(self.buttonPanel)
-        self.setLayout(layout)
+
+        # Add button panel
+        self.buttonPanel = self.ButtonPanel()
+        main_layout.addWidget(self.buttonPanel)
+
+        # Add plotting area
+        self.plotting_area = self.create_plotting_area()
+        main_layout.addWidget(self.plotting_area)
+
+        self.setLayout(main_layout)
         self.setWindowTitle("Simulation GUI")
-        
+
         # Populate the config dropdown with experiment folders
-        self.populate_config_dropdown()  
+        self.populate_config_dropdown()
 
         # Connect the controller to the GUI
-        self.CallbackConnector = PlottingManagement()
-    
-    # GUI Components
+        self.CallbackConnector = None  # Replace with your actual connector if needed
+
     def ButtonPanel(self):
         buttonPanel = QWidget()
         buttonLayout = QVBoxLayout()
 
         # Configuration File Dropdown (Only Experiment Folder Selection)
-        self.config_label = QLabel("Select the experiment folder", self)
-        self.config_label.setFixedSize(300, 50)
+        self.config_label = QLabel("Select the experiment folder:", self)
+        self.config_label.setFixedSize(200, 50)
         self.config_label.setAlignment(Qt.AlignCenter)
         self.config_label.setStyleSheet("color:#000066;")
         buttonLayout.addWidget(self.config_label)
@@ -303,8 +309,8 @@ class SimulationWindow(QWidget):
         buttonLayout.addWidget(self.config_dropdown)
 
         # Placeholder dropdown for attempts (hidden initially)
-        self.attempts_label = QLabel("Select an attempt", self)
-        self.attempts_label.setFixedSize(300, 50)
+        self.attempts_label = QLabel("Select an attempt:", self)
+        self.attempts_label.setFixedSize(200, 50)
         self.attempts_label.setAlignment(Qt.AlignCenter)
         self.attempts_label.setStyleSheet("color:#000066;")
         self.attempts_label.hide()  # Initially hidden
@@ -317,27 +323,42 @@ class SimulationWindow(QWidget):
         self.attempts_dropdown.hide()  # Initially hidden
         buttonLayout.addWidget(self.attempts_dropdown)
 
+        self.attempt_info_label = QLabel("Attempt details")
+        self.attempt_info_label.hide()
+        buttonLayout.addWidget(self.attempt_info_label)
+
         # Connect Button
         self.read_button = QPushButton('Read Experiment Files', self)
-        self.read_button.setFixedSize(300, 50)
-        self.read_button.setToolTip('Read Experiment FIles')
-        self.read_button.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
+        self.read_button.setFixedSize(200, 50)
+        self.read_button.setToolTip('Read Experiment Files')
         self.read_button.clicked.connect(self.upload_experiment)
         self.read_button.setStyleSheet('QPushButton {color: #000066;}')
         buttonLayout.addWidget(self.read_button)
 
         # Home Button
-        button = QPushButton('Home', self)
-        button.setFixedSize(300, 50)
-        button.setToolTip('Return to Start Menu')
-        button.clicked.connect(self.home_callback)
-        button.setStyleSheet('QPushButton {color: #000066;}')
-        buttonLayout.addWidget(button)
+        home_button = QPushButton('Home', self)
+        home_button.setFixedSize(200, 50)
+        home_button.setToolTip('Return to Start Menu')
+        home_button.clicked.connect(self.home_callback)
+        home_button.setStyleSheet('QPushButton {color: #000066;}')
+        buttonLayout.addWidget(home_button)
 
         buttonPanel.setLayout(buttonLayout)
-
-        # Return the panel with layout
         return buttonPanel
+
+    def create_plotting_area(self):
+        """Create a plotting area using Matplotlib."""
+        plot_widget = QWidget()
+        layout = QVBoxLayout()
+
+        # Create a Matplotlib figure
+        self.figure = Figure()
+        self.canvas = FigureCanvas(self.figure)
+
+        layout.addWidget(self.canvas)
+        plot_widget.setLayout(layout)
+        plot_widget.setFixedSize(1000, 800)
+        return plot_widget
 
     def upload_experiment(self):
         # Get the selected experiment folder from the dropdown
@@ -354,19 +375,19 @@ class SimulationWindow(QWidget):
             json_data = json.load(json_file)
 
         # Extract the data from the JSON into variables
-        angles = json_data['Angles']
-        muscles_number = json_data['MusclesNumber']
-        peaks = json_data['Peaks']
-        sensor_stickers = json_data['SensorStickers']
-        synergy_base = json_data['SynergyBase']
-        thresholds = json_data['Thresholds']
+        self.angles = json_data['Angles']
+        self.muscles_number = json_data['MusclesNumber']
+        self.peaks = json_data['Peaks']
+        self.sensor_stickers = json_data['SensorStickers']
+        self.synergy_base = json_data['SynergyBase']
+        self.thresholds = json_data['Thresholds']
         
-        print("Angles:", angles)
-        print("MusclesNumber:", muscles_number)
-        print("Peaks:", peaks)
-        print("SensorStickers:", sensor_stickers)
-        print("SynergyBase:", synergy_base)
-        print("Thresholds:", thresholds)
+        # print("Angles:", self.angles)
+        # print("MusclesNumber:", self.muscles_number)
+        # print("Peaks:", self.peaks)
+        # print("SensorStickers:", self.sensor_stickers)
+        # print("SynergyBase:", self.synergy_base)
+        # print("Thresholds:", self.thresholds)
 
         # Check if the specified .json file exists in the selected folder
         events_file_path = os.path.join(selected_folder_path, self.events_file)
@@ -377,25 +398,25 @@ class SimulationWindow(QWidget):
         with open(events_file_path, 'r') as json_file:
             json_data = json.load(json_file)
         
-        # Create a list to store all attempts
-        attempts_data = []
+        # # Create a list to store all attempts
+        # self.attempts_data = []
 
-        # Extract the data from the JSON into variables
-        for attempt in json_data:  # Use `json_data`, not `json_file`
-            attempt_info = {
-                "attemptNumber": attempt["attemptNumber"],
-                "start_Timestamp": attempt["start_Timestamp"],
-                "end_Timestamp": attempt["end_Timestamp"],
-                "result": attempt["result"],
-            }
-            attempts_data.append(attempt_info)  # Append each attempt to the list
+        # # Extract the data from the JSON into variables
+        # for attempt in json_data:  # Use json_data, not json_file
+        #     attempt_info = {
+        #         "attemptNumber": attempt["attemptNumber"],
+        #         "start_Timestamp": attempt["start_Timestamp"],
+        #         "end_Timestamp": attempt["end_Timestamp"],
+        #         "result": attempt["result"],
+        #     }
+        #     self.attempts_data.append(attempt_info)  # Append each attempt to the list
 
         # Print or process all attempts
-        for attempt_info in attempts_data:
-            print(f"Attempt {attempt_info['attemptNumber']}:")
-            print(f"  Start: {attempt_info['start_Timestamp']}")
-            print(f"  End: {attempt_info['end_Timestamp']}")
-            print(f"  Result: {attempt_info['result']}")
+        # for attempt_info in attempts_data:
+        #     print(f"Attempt {attempt_info['attemptNumber']}:")
+        #     print(f"  Start: {attempt_info['start_Timestamp']}")
+        #     print(f"  End: {attempt_info['end_Timestamp']}")
+        #     print(f"  Result: {attempt_info['result']}")
 
         # Populate the dropdown with attempts
         self.attempts_dropdown.clear()  # Clear any existing items
@@ -405,9 +426,46 @@ class SimulationWindow(QWidget):
         # Show the dropdown and label
         self.attempts_label.show()
         self.attempts_dropdown.show()
-        #self.show_json_data(json_data)
-       
-       
+        
+        # Logic to handle experiment file upload and data processing
+        self.plot_data()
+
+    def plot_data(self):
+        self.figure.clear()
+        self.synergiesNumber = np.array(self.synergy_base).shape[0]
+        gs = self.figure.add_gridspec(self.synergiesNumber, 2)  
+        
+        # Plot Synergy Base ----------------------------------------------
+        for i in range (1, self.synergiesNumber+1):
+            ax = self.figure.add_subplot(gs[i-1, 0])
+            ax.bar(range(np.asarray(self.synergy_base).shape[1]), self.synergy_base[i-1], color=self.colors[i-1], alpha=0.6)
+            ax.set_ylim(0, 1)  # Set y-axis limits to be between 0 and 0.5
+            ax.set_xlim(-0.5, self.muscles_number-0.5) 
+            ax.set_xticks(range(self.muscles_number))  # Ensure all ticks are visible
+            ax.set_yticks([0, 0.5, 1])  # Ensure y-ticks are visible
+
+            if i == 1:
+                ax.set_title(f'Synergy Basis ({self.synergiesNumber} Synergies)')
+                ax.set_xlabel('Muscles')  # X-axis label
+                ax.set_ylabel('Relative Activation')  # Y-axis label
+                ax.set_xticklabels(self.sensor_stickers)
+                ax.set_yticklabels([str(tick) for tick in [0, 0.5, 1]])
+            else: 
+                ax.set_xticklabels([''] * self.muscles_number)  # Remove x-axis tick labels but keep the ticks
+                ax.set_yticklabels([''] * 3)  # Remove y-axis tick labels but keep the ticks
+            
+        # Plot Projection Angles ----------------------------------------------
+        ax = self.figure.add_subplot(gs[:, 1], polar=True)
+        ax.set_title("Projection Angles")
+        for i in range(len(self.angles)):
+            theta = np.radians(int(self.angles[i]))  # Convert to radians
+            ax.plot([0, theta], [0, 1], marker='o', color=self.colors[i])  # Plot the vector
+        
+        # Adjust the layout to expand subplots
+        self.figure.tight_layout()
+        self.figure.subplots_adjust(hspace=0.8, wspace=0.6)  # Adjust the spacing if needed
+        self.canvas.draw()
+
     def home_callback(self):
         self.controller.showStartMenu()
 
@@ -417,7 +475,6 @@ class SimulationWindow(QWidget):
             selected_folder = self.config_dropdown.itemText(index)
             selected_path = os.path.join(self.config_folder, selected_folder)
             print(f"Selected Experiment Folder: {selected_path}")
-            # Perform actions with the selected folder
 
     def populate_config_dropdown(self):
         """Populates the dropdown with experiment folders."""
@@ -427,22 +484,28 @@ class SimulationWindow(QWidget):
 
         # List subfolders (experiment folders)
         experiment_folders = [f for f in os.listdir(self.config_folder) if os.path.isdir(os.path.join(self.config_folder, f))]
-        
+
         if not experiment_folders:
             print("No experiment folders found.")
             return
-        
+
         # Add experiment folders to the dropdown
         self.config_dropdown.clear()  # Clear previous items
         self.config_dropdown.addItems(experiment_folders)
-    
+
     def attempt_selected(self, index):
-        """Handle the selection of an attempt."""
+        self.attempt_info_label.show()
         if index >= 0:
             selected_attempt = self.attempts_dropdown.itemData(index)
-            print(f"Selected Attempt: {selected_attempt}")
-            # Process the selected attempt as needed
+            
+            # This is an example of the data you can display (replace it with actual data from the attempt)
+            attempt_data = f"Attempt {index+1} details:\n"
+            attempt_data += f"Start: {selected_attempt['start_Timestamp']}\n"
+            attempt_data += f"End: {selected_attempt['end_Timestamp']}\n"
+            attempt_data += f"Result: {selected_attempt['result']}"
 
+            # Update the label to show the corresponding data for the selected attempt
+            self.attempt_info_label.setText(attempt_data)
 
     
 class CountdownWidget(QWidget):
