@@ -58,6 +58,7 @@ TimeCalibStage3 = 10
 
 
 ExperimentTimestamp = ''
+sampleCounter = 0
 
 #LPF
 LPF_cutoff = 40

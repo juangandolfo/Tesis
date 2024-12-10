@@ -106,7 +106,8 @@ def Processing():
             if PM_Parameters.saveCSV:
                 writer.writerow(RawData)
                 file.flush()
-
+            
+            PM_Parameters.sampleCounter = PM_Parameters.sampleCounter + 1 
             RectifiedData = DataProcessing.Rectify(RawData)
             NormalizedData = DataProcessing.Normalize(RectifiedData, PM_Parameters.PeakActivation, PM_Parameters.MusclesNumber, PM_Parameters.Threshold)
             ProcessedData = DataProcessing.LowPassFilter(NormalizedData)

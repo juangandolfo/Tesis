@@ -6,7 +6,7 @@ import pygame
 import random
 from multiprocessing import Process
 import msgpack as pack
-#from tkinter import messagebox
+import csv
 import pymsgbox as messagebox
 from pygame.locals import (K_UP,
                            K_DOWN,
@@ -242,22 +242,25 @@ def restartAttempt():
 
 # ----------------------------------------------------------------------------------------------------------
 def HandleEvents():
-    global running
+    global running, started
     for event in pygame.event.get():
         if event.type == QUIT:
             running = False
-        elif event.type == KEYDOWN:
+        elif event.type == pygame.KEYUP:
             if event.key == K_ESCAPE:
                 messagebox.alert(text='Exit', title='Exit', button='OK')
                 Post_Exit()
                 running = False
 
-            if event.key == K_SPACE:
-                messagebox.alert(text='Restart', title='Restarting attempt', button='OK')
-                Post_Restart()
-                getSpeedFromEMG()
-                restartAttempt()
-                Post_start()               
+            if event.key == K_RETURN:
+                if started:
+                    Post_Restart()
+                    restartAttempt()
+                    started = False
+                else:
+                    Post_start()
+                    getSpeedFromEMG()
+                    started = True
 
 # ----------------------------------------------------------------------------------------------------------
 def CheckCollideObjective():
@@ -266,11 +269,12 @@ def CheckCollideObjective():
 
 # ----------------------------------------------------------------------------------------------------------
 def HandleCollideObjective():
-    global SCREEN_HEIGHT, SCREEN_WIDTH
+    global started
     Post_Win()
     returnToCenter()
     KillEnemies()
     GenerateEnemies()
+    started = False
         
 # ----------------------------------------------------------------------------------------------------------
 def CheckCollideEnemy():
@@ -279,34 +283,45 @@ def CheckCollideEnemy():
 
 # ----------------------------------------------------------------------------------------------------------
 def HandleCollideEnemy():
+    global started 
     Post_Loss()
     returnToCenter()
+    started = False   
 
- 
 # MAIN LOOP ------------------------------------------------------------------------------------------------
 #-----------------------------------------------------------------------------------------------------------
 def Cursor():
     # set up the display and communication
     global SCREEN_HEIGHT, SCREEN_WIDTH
-    global player, enemies, objectives, all_sprites,running
+    global player, enemies, objectives, all_sprites,running, started
     
     Connect() 
     pygame.init()
     pygame.key.set_repeat(50,0)
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    font = pygame.font.Font(None, 36)
+    text = font.render("Press Space to start Enter to restart, Esc to exit", True, (255, 255, 255))
     
     GenerateEnemies()
     getSpeedFromEMG()
     
-    Post_start()
     running = True
+    started = False
     while running:
         # Main loop
         HandleEvents()
         
         screen.fill((0, 0, 0))        
         speed=getSpeedFromEMG()
-        player.update(speed)
+        if started:
+            # erase the message to start the game
+            text = font.render("", True, (255, 255, 255))
+            player.update(speed)
+        else:
+            #add a message to the screen that displays the user to press space to start
+            text = font.render("Press Space to start Enter to restart, Esc to exit", True, (255, 255, 255))
+            screen.blit(text, (250, 350))
+
         screen.blit(player.surf, player.rect)
         
         for entity in all_sprites:

@@ -8,9 +8,9 @@ import numpy as np
 from threading import Thread
 import General.LocalCircularBufferVector as Buffer
 import pymsgbox as msgbox
-from io import BytesIO
 import threading
-import pandas as pd
+import os
+
 
 synergies_Lock = threading.Lock()
 
@@ -18,12 +18,55 @@ HOST = "127.0.0.1"  # Standard adress (localhost)
 PORT_Client = 6001  # Port to get data from the File API Server
 PORT_Server = 6002 # The port used by the PM Server
 
-# Create a socket for the client
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-# Create a socket for the server
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-# Link the socket to the IP and PORT selected:
-#server_socket.bind((HOST, PORT_Server))
+
+class Attempt():
+    def __init__(self):
+        self.Id = 0
+        self.Start = params.sampleCounter
+        self.Stop = params.sampleCounter
+        self.Result = ""
+        self.File = "ExperimentsFiles/Experiment-" + params.ExperimentTimestamp + "/Events.json" 
+        self.initializeExperimentFile()
+
+    def convertToJson(self):
+        attemptDictionary = {
+            "Id": self.Id,
+            "Start": self.Start,
+            "Stop": self.Stop,
+            "Result": self.Result,
+        }
+        return attemptDictionary
+    
+    def initializeExperimentFile(self):
+        filename = self.File
+        # Check if file exists to avoid overwriting
+        if not os.path.exists(filename):
+            experiment_data = []
+            with open(filename, 'w') as file:
+                json.dump(experiment_data, file, indent=4)
+    
+    def saveAttempt(self):
+        # Check if file exists to avoid overwriting
+        with open(self.File) as file:
+            data = json.load(file)
+            data.append(self.convertToJson())
+            with open(self.File, 'w') as file:
+                json.dump(data, file, indent=4) 
+        self.incrementId() 
+
+    def setStart(self):
+        self.Start = params.sampleCounter 
+
+    def setStop(self):
+        self.Stop = params.sampleCounter
+
+    def setResult(self, result):
+        self.Result = result    
+    
+    def incrementId(self):
+        self.Id += 1
 
 
 # Auxiliar functions -------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -124,7 +167,7 @@ def Request(request):
 def Handle_Client(conn,addr):
     print(f"Connected by {addr}")
     conn.settimeout(600)
-    
+    attempt = Attempt()
     try:
         while True:
             time.sleep(0.025)
@@ -142,7 +185,7 @@ def Handle_Client(conn,addr):
                     response_data = np.trunc(PM_DS.PM_DataStruct.positionOutput)
                     PM_DS.PM_DataStruct.positionOutput = PM_DS.PM_DataStruct.positionOutput - response_data
                     PM_DS.PositionOutput_Semaphore.release()
-
+                    
                     if response_data == []:
                         response_data = [0,0]
 
@@ -153,27 +196,35 @@ def Handle_Client(conn,addr):
                     #print("PM: Data sent:", response_data)
 
                 elif data.decode().strip() == "POST /startAttempt":
-                    msgbox.alert("Start " + str(time.time()))
+                    attempt.setStart()
                     serialized_data = pack.packb("Ok")
                     conn.sendall(serialized_data)
                 
                 elif data.decode().strip() == "POST /win":
-                    msgbox.alert("Win " + str(time.time()))
+                    attempt.setStop()
+                    attempt.setResult("Win")
+                    attempt.saveAttempt()
                     serialized_data = pack.packb("Ok")
                     conn.sendall(serialized_data)
 
                 elif data.decode().strip() == "POST /loss":
-                    msgbox.alert("Loss " + str(time.time()))
+                    attempt.setStop()
+                    attempt.setResult("Loss")
+                    attempt.saveAttempt()   
                     serialized_data = pack.packb("Ok")
                     conn.sendall(serialized_data)
 
                 elif data.decode().strip() == "POST /restartAttempt":
-                    msgbox.alert("Restart " + str(time.time()))
+                    attempt.setStop()
+                    attempt.setResult("Restarted")
+                    attempt.saveAttempt()
                     serialized_data = pack.packb("Ok")
                     conn.sendall(serialized_data)
 
                 elif data.decode().strip() == "POST /exit":
-                    msgbox.alert("Exit " + str(time.time()))
+                    attempt.setStop()
+                    attempt.setResult("Exit")
+                    attempt.saveAttempt()
                     serialized_data = pack.packb("Ok")
                     conn.sendall(serialized_data)
 
