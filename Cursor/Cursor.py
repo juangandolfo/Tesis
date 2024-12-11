@@ -6,7 +6,7 @@ import pygame
 import random
 from multiprocessing import Process
 import msgpack as pack
-#from tkinter import messagebox
+import csv
 import pymsgbox as messagebox
 from pygame.locals import (K_UP,
                            K_DOWN,
@@ -14,6 +14,9 @@ from pygame.locals import (K_UP,
                            K_RIGHT,
                            K_ESCAPE,
                            KEYDOWN,
+                           K_KP_ENTER,
+                           K_SPACE,
+                           K_RETURN,
                            QUIT
                            )
 
@@ -51,11 +54,10 @@ def Connect():
         except Exception as e:
             #print(e)
             pass
-    
+
 #-----------------------------------------------------------------------------------------------------------
-def Get_data():
+def Send_data(request):
     # Function to send the request and receive data from MP
-    request = "GET /data1"
     client_socket.settimeout(3)
     try:
         client_socket.sendall(request.encode())
@@ -68,6 +70,54 @@ def Get_data():
             print(e)
     except (socket.timeout, socket.error) as e:
         print(f"Communication error: {e}")
+    return response_data
+
+#-----------------------------------------------------------------------------------------------------------
+def Get_data():
+    # Function to send the request and receive data from MP
+    request = "GET /data1"
+    response_data = Send_data(request)
+    return response_data
+
+#-----------------------------------------------------------------------------------------------------------
+def Post_start():
+    # Function to send the request and receive data from MP
+    request = "POST /startAttempt"
+    try:
+        response_data = Send_data(request)
+        if response_data == "Ok":
+            return 
+        else:
+            messagebox.alert(text='Error in starting the attempt', title='Error', button='OK')
+    except Exception as e:
+        messagebox.alert(text='Error in starting the attempt sending', title='Error', button='OK')
+
+#-----------------------------------------------------------------------------------------------------------
+def Post_Win():
+    # Function to send the request and receive data from MP
+    request = "POST /win"
+    response_data = Send_data(request)
+    return response_data
+
+#-----------------------------------------------------------------------------------------------------------
+def Post_Loss():
+    # Function to send the request and receive data from MP
+    request = "POST /loss"
+    response_data = Send_data(request)
+    return response_data
+
+#-----------------------------------------------------------------------------------------------------------
+def Post_Restart():
+    # Function to send the request and receive data from MP
+    request = "POST /restartAttempt"
+    response_data = Send_data(request)
+    return response_data
+
+#-----------------------------------------------------------------------------------------------------------
+def Post_Exit():
+    # Function to send the request and receive data from MP
+    request = "POST /exit"
+    response_data = Send_data(request)
     return response_data
 
 # CLASSES --------------------------------------------------------------------------------------------------
@@ -146,6 +196,17 @@ def GenerateEnemies():
             all_sprites.add(new_enemy)
 
 # ----------------------------------------------------------------------------------------------------------
+def KillEnemies():
+    for objective in objectives:
+        objective.kill()
+    enemies.empty()
+
+# ----------------------------------------------------------------------------------------------------------
+def returnToCenter():
+    global player
+    player.update((SCREEN_WIDTH/2-player.rect.center[0],-SCREEN_HEIGHT/2+player.rect.center[1]))
+
+# ----------------------------------------------------------------------------------------------------------
 def getSpeedFromKeyboard(pressed_keys):
     # This function returns the speed of the cursor based on the keys pressed
     if pressed_keys[K_UP]:
@@ -170,53 +231,104 @@ def getSpeedFromEMG():
         print(e)
     return speed
 
+# ----------------------------------------------------------------------------------------------------------
+def restartAttempt():
+    global SCREEN_HEIGHT, SCREEN_WIDTH
+    global player, enemies, objectives, all_sprites
+    
+    returnToCenter()
+    KillEnemies()
+    GenerateEnemies()
+
+# ----------------------------------------------------------------------------------------------------------
+def HandleEvents():
+    global running, started
+    for event in pygame.event.get():
+        if event.type == QUIT:
+            running = False
+        elif event.type == pygame.KEYUP:
+            if event.key == K_ESCAPE:
+                messagebox.alert(text='Exit', title='Exit', button='OK')
+                Post_Exit()
+                running = False
+
+            if event.key == K_RETURN:
+                if started:
+                    Post_Restart()
+                    restartAttempt()
+                    started = False
+                else:
+                    Post_start()
+                    getSpeedFromEMG()
+                    started = True
+
+# ----------------------------------------------------------------------------------------------------------
+def CheckCollideObjective():
+    if pygame.sprite.spritecollideany(player, objectives):
+        HandleCollideObjective()
+
+# ----------------------------------------------------------------------------------------------------------
+def HandleCollideObjective():
+    global started
+    Post_Win()
+    returnToCenter()
+    KillEnemies()
+    GenerateEnemies()
+    started = False
+        
+# ----------------------------------------------------------------------------------------------------------
+def CheckCollideEnemy():
+    if pygame.sprite.spritecollideany(player, enemies):
+        HandleCollideEnemy()
+
+# ----------------------------------------------------------------------------------------------------------
+def HandleCollideEnemy():
+    global started 
+    Post_Loss()
+    returnToCenter()
+    started = False   
+
 # MAIN LOOP ------------------------------------------------------------------------------------------------
 #-----------------------------------------------------------------------------------------------------------
 def Cursor():
     # set up the display and communication
     global SCREEN_HEIGHT, SCREEN_WIDTH
-    global player, enemies, objectives, all_sprites
+    global player, enemies, objectives, all_sprites,running, started
     
     Connect() 
     pygame.init()
     pygame.key.set_repeat(50,0)
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    font = pygame.font.Font(None, 36)
+    text = font.render("Press Space to start Enter to restart, Esc to exit", True, (255, 255, 255))
     
     GenerateEnemies()
     getSpeedFromEMG()
     
     running = True
+    started = False
     while running:
         # Main loop
-        for event in pygame.event.get():
-            if event.type == QUIT:
-                running = False
-            elif event.type == KEYDOWN:
-                if event.key == K_ESCAPE:
-                    running = False 
-
+        HandleEvents()
+        
         screen.fill((0, 0, 0))        
-
         speed=getSpeedFromEMG()
-        player.update(speed)
+        if started:
+            # erase the message to start the game
+            text = font.render("", True, (255, 255, 255))
+            player.update(speed)
+        else:
+            #add a message to the screen that displays the user to press space to start
+            text = font.render("Press Space to start Enter to restart, Esc to exit", True, (255, 255, 255))
+            screen.blit(text, (250, 350))
+
         screen.blit(player.surf, player.rect)
         
         for entity in all_sprites:
             screen.blit(entity.surf, entity.rect)
 
-        if pygame.sprite.spritecollideany(player, objectives):
-            #messagebox.showinfo('Y el TITULO?!?!','YA ANDA! (ponenos S plz)') #este es con TKinter
-            #messagebox.alert(text='Ganaste', title='Y el TITULO?!?!', button='OK') #este es con pymsgbox
-            print('ganaste')
-            player.update((SCREEN_WIDTH/2-player.rect.center[1],SCREEN_HEIGHT/2-player.rect.center[0]))
-            for objective in objectives:
-                objective.kill()
-            enemies.empty()
-            GenerateEnemies()
-
-        if pygame.sprite.spritecollideany(player, enemies):
-            print('perdiste')
-            player.update((SCREEN_WIDTH/2-player.rect.center[0],SCREEN_HEIGHT/2-player.rect.center[1]))
+        CheckCollideObjective()
+        CheckCollideEnemy()
 
         pygame.display.flip()
         
