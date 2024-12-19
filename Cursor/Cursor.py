@@ -8,32 +8,40 @@ from multiprocessing import Process
 import msgpack as pack
 import csv
 import pymsgbox as messagebox
-from pygame.locals import (K_UP,
-                           K_DOWN,
-                           K_LEFT,
-                           K_RIGHT,
-                           K_ESCAPE,
-                           KEYDOWN,
-                           K_KP_ENTER,
-                           K_SPACE,
-                           K_RETURN,
-                           QUIT
-                           )
+from pygame.locals import   (K_UP,
+                            K_DOWN,
+                            K_LEFT,
+                            K_RIGHT,
+                            K_ESCAPE,
+                            KEYDOWN,
+                            K_KP_ENTER,
+                            K_SPACE,
+                            K_RETURN,
+                            K_1,
+                            K_2,
+                            K_3,
+                            K_4,
+                            K_5,
+                            K_6,
+                            K_7,
+                            K_8,
+                            QUIT
+                            )
 
-# PARAMETERS -----------------------------------------------------------------------------------------------
+### PARAMETERS ---------------------------------------------------------------------------------------------
 #-----------------------------------------------------------------------------------------------------------
 frequency = 120
 SCREEN_WIDTH = 700
 SCREEN_HEIGHT = 700
 
-position=[(180,180),
-        (100,SCREEN_HEIGHT/2),
-        (180,SCREEN_HEIGHT-180),
-        (SCREEN_WIDTH/2,100),
-        (SCREEN_WIDTH-180,180),
-        (SCREEN_WIDTH/2,SCREEN_HEIGHT-100),
-        (SCREEN_WIDTH-100,SCREEN_HEIGHT/2),
-        (SCREEN_WIDTH-180,SCREEN_HEIGHT-180),
+position=[(SCREEN_WIDTH/2,100),                 #norte
+        (SCREEN_WIDTH-180,180),                 #noroeste
+        (SCREEN_WIDTH-100,SCREEN_HEIGHT/2),     #este
+        (SCREEN_WIDTH-180,SCREEN_HEIGHT-180),   #sureste
+        (SCREEN_WIDTH/2,SCREEN_HEIGHT-100),     #sur
+        (180,SCREEN_HEIGHT-180),                #suroeste
+        (100,SCREEN_HEIGHT/2),                  #oeste
+        (180,180),                              #noreste
         ]
 
 HOST = "127.0.0.1"  # The server's hostname or IP address
@@ -120,7 +128,7 @@ def Post_Exit():
     response_data = Send_data(request)
     return response_data
 
-# CLASSES --------------------------------------------------------------------------------------------------
+### CLASSES ------------------------------------------------------------------------------------------------
 #-----------------------------------------------------------------------------------------------------------
 class Player(pygame.sprite.Sprite):
     global SCREEN_WIDTH, SCREEN_HEIGHT
@@ -166,7 +174,7 @@ class Enemy(pygame.sprite.Sprite):
     def moveEnemy(self,position):
         self.rect = self.surf.get_rect(center=position)
 
-# INSTANCES ------------------------------------------------------------------------------------------------
+### INSTANCES ----------------------------------------------------------------------------------------------
 #-----------------------------------------------------------------------------------------------------------
 player = Player()
 enemies = pygame.sprite.Group()
@@ -174,14 +182,21 @@ objectives = pygame.sprite.Group()
 all_sprites = pygame.sprite.Group()
 all_sprites.add(player)
 
-# FUNCTIONS ------------------------------------------------------------------------------------------------
-#-----------------------------------------------------------------------------------------------------------
-def GenerateEnemies():
-    global position, enemies, objectives, all_sprites
 
-    objectiveEnemy=random.randint(0,7)
+### FUNCTIONS ----------------------------------------------------------------------------------------------
+#-----------------------------------------------------------------------------------------------------------
+def GenerateRandomEnemies():
+    global position, enemies, objectives, all_sprites
+    objectiveEnemy=random.randint(1,8)
+    GenerateEnemies(objectiveEnemy)
+
+# ----------------------------------------------------------------------------------------------------------
+def GenerateEnemies(objective):
+    global position,enemies, objectives, all_sprites
+    KillEnemies()
+    objective = objective - 1
     for i in range(8):
-        if i == objectiveEnemy:
+        if i == objective:
             objective= Enemy()
             objective.name='objective'
             objective.surf.fill((0,255,0))
@@ -205,6 +220,15 @@ def KillEnemies():
 def returnToCenter():
     global player
     player.update((SCREEN_WIDTH/2-player.rect.center[0],-SCREEN_HEIGHT/2+player.rect.center[1]))
+
+# ----------------------------------------------------------------------------------------------------------
+def restartAttempt():
+    global SCREEN_HEIGHT, SCREEN_WIDTH
+    global player, enemies, objectives, all_sprites
+    
+    returnToCenter()
+    KillEnemies()
+    GenerateRandomEnemies()
 
 # ----------------------------------------------------------------------------------------------------------
 def getSpeedFromKeyboard(pressed_keys):
@@ -232,14 +256,72 @@ def getSpeedFromEMG():
     return speed
 
 # ----------------------------------------------------------------------------------------------------------
-def restartAttempt():
-    global SCREEN_HEIGHT, SCREEN_WIDTH
-    global player, enemies, objectives, all_sprites
+def addText():
+    global text1, text2,screen
+    text1 = font.render("Press Enter to start or restart", True, (255, 255, 255))
+    text2 = font.render("Press Esc to exit", True, (255, 255, 255))
+    screen.blit(text1, (250, 380))
+    screen.blit(text2, (250, 400))
     
-    returnToCenter()
-    KillEnemies()
-    GenerateEnemies()
+# ----------------------------------------------------------------------------------------------------------
+def EraseText():
+    global text1, text2
+    text1 = font.render("", True, (255, 255, 255))
+    text2 = font.render("", True, (255, 255, 255))
 
+### CALLBACKS ----------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------
+def K_Return_Callback():
+    global started
+    if started:
+        Post_Restart()
+        restartAttempt()
+        started = False
+    else:
+        Post_start()
+        getSpeedFromEMG()
+        started = True
+
+# ----------------------------------------------------------------------------------------------------------
+def K_Escape_Callback():
+    global running
+    #messagebox.alert(text='Exit', title='Exit', button='OK')
+    Post_Exit()
+    running = False
+
+# ----------------------------------------------------------------------------------------------------------
+def k_1_Callback():
+    GenerateEnemies(1)
+
+# ----------------------------------------------------------------------------------------------------------
+def k_2_Callback():
+    GenerateEnemies(2)
+
+# ----------------------------------------------------------------------------------------------------------
+def k_3_Callback():
+    GenerateEnemies(3)
+
+# ----------------------------------------------------------------------------------------------------------
+def k_4_Callback():
+    GenerateEnemies(4)
+
+# ----------------------------------------------------------------------------------------------------------
+def k_5_Callback():
+    GenerateEnemies(5)
+
+# ----------------------------------------------------------------------------------------------------------
+def k_6_Callback():
+    GenerateEnemies(6)
+
+# ----------------------------------------------------------------------------------------------------------
+def k_7_Callback():
+    GenerateEnemies(7)
+
+# ----------------------------------------------------------------------------------------------------------
+def k_8_Callback():
+    GenerateEnemies(8)
+
+### EVENTS -------------------------------------------------------------------------------------------------
 # ----------------------------------------------------------------------------------------------------------
 def HandleEvents():
     global running, started
@@ -248,19 +330,26 @@ def HandleEvents():
             running = False
         elif event.type == pygame.KEYUP:
             if event.key == K_ESCAPE:
-                messagebox.alert(text='Exit', title='Exit', button='OK')
-                Post_Exit()
-                running = False
-
+                K_Escape_Callback()
             if event.key == K_RETURN:
-                if started:
-                    Post_Restart()
-                    restartAttempt()
-                    started = False
-                else:
-                    Post_start()
-                    getSpeedFromEMG()
-                    started = True
+                K_Return_Callback()
+            if not started:
+                if event.key == K_1:
+                    k_1_Callback()
+                if event.key == K_2:
+                    k_2_Callback()
+                if event.key == K_3:
+                    k_3_Callback()
+                if event.key == K_4:
+                    k_4_Callback()
+                if event.key == K_5:
+                    k_5_Callback()
+                if event.key == K_6:
+                    k_6_Callback()
+                if event.key == K_7:
+                    k_7_Callback()
+                if event.key == K_8:
+                    k_8_Callback()
 
 # ----------------------------------------------------------------------------------------------------------
 def CheckCollideObjective():
@@ -273,7 +362,7 @@ def HandleCollideObjective():
     Post_Win()
     returnToCenter()
     KillEnemies()
-    GenerateEnemies()
+    GenerateRandomEnemies()
     started = False
         
 # ----------------------------------------------------------------------------------------------------------
@@ -288,22 +377,21 @@ def HandleCollideEnemy():
     returnToCenter()
     started = False   
 
-# MAIN LOOP ------------------------------------------------------------------------------------------------
+### MAIN LOOP ----------------------------------------------------------------------------------------------
 #-----------------------------------------------------------------------------------------------------------
 def Cursor():
     # set up the display and communication
     global SCREEN_HEIGHT, SCREEN_WIDTH
-    global player, enemies, objectives, all_sprites,running, started
+    global player, enemies, objectives, all_sprites,running, font, started, screen, text1, text2
     
     Connect() 
     pygame.init()
     pygame.key.set_repeat(50,0)
+
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     font = pygame.font.Font(None, 36)
-    text = font.render("Press Space to start Enter to restart, Esc to exit", True, (255, 255, 255))
     
-    GenerateEnemies()
-    getSpeedFromEMG()
+    GenerateRandomEnemies()
     
     running = True
     started = False
@@ -314,13 +402,10 @@ def Cursor():
         screen.fill((0, 0, 0))        
         speed=getSpeedFromEMG()
         if started:
-            # erase the message to start the game
-            text = font.render("", True, (255, 255, 255))
+            EraseText()
             player.update(speed)
         else:
-            #add a message to the screen that displays the user to press space to start
-            text = font.render("Press Space to start Enter to restart, Esc to exit", True, (255, 255, 255))
-            screen.blit(text, (250, 350))
+            addText()
 
         screen.blit(player.surf, player.rect)
         
