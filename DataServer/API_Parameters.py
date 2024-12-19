@@ -6,12 +6,13 @@ import json
 import time
 import os
 
-DelsysMode = True
+DelsysMode = False
 #csvFile = '202465_213928.csv'              #tiene 2 musculos
 #csvFile = 'Experiment-20240626-220405.csv' #tiene 3 musculos
 #csvFile = '202468_195248.csv'               #tiene 4 musculos
 # csvFile = 'experimento_prueba.csv'
-csvFile = 'ExperimentsFiles\Experiment-20241202-261323\RawData.csv'
+#csvFile = 'ExperimentsFiles\Experiment-20241202-261323\RawData.csv'
+csvFile = ''
 SimulationFrequency = 2148
 
 KeysLen = 0
@@ -24,6 +25,7 @@ TerminateCalibrationFlag = False
 CalibrationStageInitialized = False
 CalibrationStageFinished = False
 CalibrationStage = 0
+SimulationCalibration = False
 
 AnglesReady = 0
 AnglesOutput = []

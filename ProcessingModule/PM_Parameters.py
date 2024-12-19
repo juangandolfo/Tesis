@@ -6,7 +6,7 @@ import pymsgbox as msgbox
 
 ModoDelsys = True # True if we use the Delsys API Server, False if we use the API Server from the PM.
 SubSamplingRate = 100
-saveCSV = True
+saveCSV = False
 
 Initialized = False
 
@@ -45,6 +45,7 @@ PlotSynergiesDetected = False
 DetectingSynergies = False
 UploadFromJson = False
 JsonReceived = False
+UploadSimulationConfig = False
 PeakActivation = []
 Threshold = []
 

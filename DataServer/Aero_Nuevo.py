@@ -6,8 +6,8 @@ from threading import Thread, Semaphore
 import DataServer.API_Parameters as params
 import pymsgbox as msgbox
 frequency = params.SimulationFrequency  # Sample rate
-#csv_file = 'Infinito.csv'  # CSV file
-csv_file = params.csvFile #'Data_Source.csv'
+#params.csvFile = 'Infinito.csv'  # CSV file
+#params.csvFile = params.csvFile #'Data_Source.csv'
 
 # Initialize global stack
 stack = deque(maxlen = 1000)
@@ -33,7 +33,7 @@ class channelObject:
 class SensorsList:
     def __init__(self):
         self.SensorsList = []
-        with open(csv_file, 'r') as file:
+        with open(params.csvFile, 'r') as file:
             csv_reader = csv.reader(file, delimiter=',')
             row = next(csv_reader)
             for channel in row:
@@ -56,7 +56,7 @@ class AeroPyNuevo:
     
     def StartStreaming(self):
         # Open CSV file
-        with open(csv_file, 'r') as file:
+        with open(params.csvFile, 'r') as file:
             csv_reader = csv.reader(file, delimiter=',')
             # Skip the headers row
             next(csv_reader)

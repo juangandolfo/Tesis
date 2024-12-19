@@ -268,6 +268,7 @@ class SimulationWindow(QWidget):
         self.controller = controller
         self.config_file = "Calibration.json"
         self.events_file = "Events.json"
+        self.raw_data_file = "RawData.csv"
         self.colors = ['Red', 'Blue', 'Yellow', 'Green', 'Orange', 'Purple', 'Grey', 'Brown']
 
         # Create the main layout
@@ -289,7 +290,7 @@ class SimulationWindow(QWidget):
         self.populate_config_dropdown()
 
         # Connect the controller to the GUI
-        self.CallbackConnector = None  # Replace with your actual connector if needed
+        self.CallbackConnector = PlottingManagement()  # Replace with your actual connector if needed
 
     def ButtonPanel(self):
         buttonPanel = QWidget()
@@ -335,6 +336,22 @@ class SimulationWindow(QWidget):
         self.read_button.setStyleSheet('QPushButton {color: #000066;}')
         buttonLayout.addWidget(self.read_button)
 
+       # Start Simulation Button
+        start_simulation_button = QPushButton('Start Simulation', self)
+        start_simulation_button.setFixedSize(200, 50)
+        start_simulation_button.setToolTip('Start Simulation')
+        start_simulation_button.clicked.connect(self.start_simulation_callback)
+        start_simulation_button.setStyleSheet('QPushButton {color: #000066;}')
+        buttonLayout.addWidget(start_simulation_button)
+
+        # Start Simulation Cursor
+        start_cursor_simulation = QPushButton('Start Cursor', self)
+        start_cursor_simulation.setFixedSize(200, 50)
+        start_cursor_simulation.setToolTip('Start Cursor')
+        start_cursor_simulation.clicked.connect(self.start_cursor_simulation)
+        start_cursor_simulation.setStyleSheet('QPushButton {color: #000066;}')
+        buttonLayout.addWidget(start_cursor_simulation)
+
         # Home Button
         home_button = QPushButton('Home', self)
         home_button.setFixedSize(200, 50)
@@ -363,12 +380,12 @@ class SimulationWindow(QWidget):
     def upload_experiment(self):
         # Get the selected experiment folder from the dropdown
         selected_folder = self.config_dropdown.currentText()
-        selected_folder_path = os.path.join(self.config_folder, selected_folder)
+        self.selected_folder_path = os.path.join(self.config_folder, selected_folder)
 
         # Check if the specified .json configuration file exists in the selected folder
-        config_file_path = os.path.join(selected_folder_path, self.config_file)
+        config_file_path = os.path.join(self.selected_folder_path, self.config_file)
         if not os.path.exists(config_file_path):
-            print(f"No file named {self.config_file} found in {selected_folder_path}")
+            print(f"No file named {self.config_file} found in {self.selected_folder_path}")
             return
         # Read the .json file
         with open(config_file_path, 'r') as json_file:
@@ -390,9 +407,9 @@ class SimulationWindow(QWidget):
         # print("Thresholds:", self.thresholds)
 
         # Check if the specified .json file exists in the selected folder
-        events_file_path = os.path.join(selected_folder_path, self.events_file)
+        events_file_path = os.path.join(self.selected_folder_path, self.events_file)
         if not os.path.exists(events_file_path):
-            print(f"No file named {self.events_file} found in {selected_folder_path}")
+            print(f"No file named {self.events_file} found in {self.selected_folder_path}")
             return
         # Read the .json file
         with open(events_file_path, 'r') as json_file:
@@ -421,7 +438,7 @@ class SimulationWindow(QWidget):
         # Populate the dropdown with attempts
         self.attempts_dropdown.clear()  # Clear any existing items
         for attempt in json_data:
-            self.attempts_dropdown.addItem(f"Attempt {attempt['attemptNumber']}", attempt)
+            self.attempts_dropdown.addItem(f"Attempt {attempt['Id']}", attempt)
 
         # Show the dropdown and label
         self.attempts_label.show()
@@ -469,6 +486,32 @@ class SimulationWindow(QWidget):
     def home_callback(self):
         self.controller.showStartMenu()
 
+    def start_simulation_callback(self):
+        params.csvFile = os.path.join(self.selected_folder_path, self.raw_data_file)
+
+        self.CallbackConnector.Connect_Callback()
+        time.sleep(0.1)
+        self.CallbackConnector.Scan_Callback()
+        time.sleep(0.1)
+        self.CallbackConnector.setSampleMode_hardcoded()
+        time.sleep(0.1)
+        self.CallbackConnector.StartCalibration_Callback()
+        
+        #UploadCalibration 
+        params.Thresholds = self.thresholds
+        params.Peaks = self.peaks
+        params.AnglesOutput = self.angles
+        params.SynergyBase = self.synergy_base
+        params.SensorStickers = self.sensor_stickers
+        params.SynergiesNumber = len(self.angles)
+        params.SimulationCalibration = True
+        time.sleep(1)
+        self.CallbackConnector.StartCursor_Callback()
+        
+    
+    def start_cursor_simulation(self):
+        self.CallbackConnector.StartCursor_Callback()
+
     def config_file_selected(self, index):
         """Callback function triggered when a folder is selected."""
         if index >= 0:  # Ensure a valid selection
@@ -500,9 +543,9 @@ class SimulationWindow(QWidget):
             
             # This is an example of the data you can display (replace it with actual data from the attempt)
             attempt_data = f"Attempt {index+1} details:\n"
-            attempt_data += f"Start: {selected_attempt['start_Timestamp']}\n"
-            attempt_data += f"End: {selected_attempt['end_Timestamp']}\n"
-            attempt_data += f"Result: {selected_attempt['result']}"
+            attempt_data += f"Start: {selected_attempt['Start']}\n"
+            attempt_data += f"End: {selected_attempt['Stop']}\n"
+            attempt_data += f"Result: {selected_attempt['Result']}"
 
             # Update the label to show the corresponding data for the selected attempt
             self.attempt_info_label.setText(attempt_data)

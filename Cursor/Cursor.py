@@ -58,7 +58,7 @@ def Connect():
 #-----------------------------------------------------------------------------------------------------------
 def Send_data(request):
     # Function to send the request and receive data from MP
-    client_socket.settimeout(3)
+    client_socket.settimeout(100)
     try:
         client_socket.sendall(request.encode())
         try:
@@ -227,6 +227,7 @@ def getSpeedFromEMG():
     speed = [0,0]
     try:
         speed = Get_data()
+        print(f"--------------------------------------------{speed}")
     except Exception as e:
         print(e)
     return speed

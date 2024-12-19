@@ -78,6 +78,7 @@ class PlottingManagement():
         #else:
         API_server_thread=Thread(target=API_Server.API_Server, args=(TrigBase,self.dataStreamIdx), daemon=True)
         API_server_thread.start()
+        
 
 
 
@@ -90,6 +91,7 @@ class PlottingManagement():
     def Connect_Callback(self):
         """Callback to connect to the base"""
         TrigBase.ValidateBase(key, license)
+        
 
     def Pair_Callback(self):
         """Callback to tell the base to enter pair mode for new sensors"""
@@ -129,6 +131,7 @@ class PlottingManagement():
         return self.nameList
 
     def StartCalibration_Callback(self):
+        
         """Callback to start the data stream from Sensors"""
         self.pauseFlag = False
         if TrigBase.GetPipelineState() == 'Connected':

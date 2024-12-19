@@ -137,6 +137,11 @@ def Request(request):
                 chunk = chunk[:-3]
                 data += chunk
                 break
+            elif b"CS5" in chunk:
+                params.CalibrationStage = 5
+                chunk = chunk[:-3]
+                data += chunk
+                break
             elif b"CSF" in chunk:
                 params.CalibrationStage = 0
                 chunk = chunk[:-3]
@@ -190,12 +195,13 @@ def Handle_Client(conn,addr):
                         response_data = [0,0]
 
                     response_data = np.asarray(response_data).tolist()
-                    #print(response_data)
+                    print(f"---------------------------------------------------------------------{response_data}")
                     response_json = pack.packb(response_data, use_bin_type=True)  # Convert the dictionary to JSON and enconde into bytes
                     conn.sendall(response_json)
                     #print("PM: Data sent:", response_data)
 
                 elif data.decode().strip() == "POST /startAttempt":
+                    msgbox.alert("Attempt started")
                     attempt.setStart()
                     serialized_data = pack.packb("Ok")
                     conn.sendall(serialized_data)
@@ -477,6 +483,25 @@ def Processing_Module_Client():
                             params.synergy_CursorMap = angles
                             params.synergiesNumber = len(angles)
                             params.JsonReceived = True
+                    
+                    elif params.UploadSimulationConfig == True:
+                        params.UploadSimulationConfig = False
+                        try: 
+                            configurationDictionary = Request("GET /JsonConfiguration")
+                        except Exception as e:
+                            msgbox.alert(f'PMC: Simulation Configuration {e}')
+                        params.Threshold = np.asarray(configurationDictionary['Thresholds'])
+                        params.PeakActivation = np.asarray(configurationDictionary['Peaks'])
+                        params.SynergyBase = np.asarray(configurationDictionary['SynergyBase'])
+                        params.SensorStickers = configurationDictionary['SensorStickers']
+                        synergy_CursorMap = np.asarray(configurationDictionary['synergy_CursorMap'])
+                        angles = []
+                        for element in synergy_CursorMap:
+                            angles.append(int(element))
+                        params.synergy_CursorMap = angles
+                        params.synergiesNumber = len(angles)
+                        params.SynergyBaseInverse = np.linalg.pinv(params.SynergyBase)
+                        params.TerminateCalibration = True
                     
                     elif params.PingRequested == True:
                         try: 

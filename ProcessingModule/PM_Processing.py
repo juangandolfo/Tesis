@@ -278,6 +278,13 @@ def CalibrationProcessing():
                         msgbox.alert(e)
                     break
 
+        elif PM_Parameters.CalibrationStage == 5:
+            print("stage5")
+            PM_Parameters.UploadSimulationConfig = True
+            PM_Parameters.CalibrationStage = 0            
+
+            
+
     print("PM: Calibration terminated")
     PM_Processing.start()
     

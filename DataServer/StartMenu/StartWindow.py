@@ -2,6 +2,7 @@ import sys
 from PySide2.QtCore import *
 from PySide2.QtGui import *
 from PySide2.QtWidgets import *
+from DataServer import API_Parameters as params
 
 class StartWindow(QWidget):
     def __init__(self,controller):
@@ -46,10 +47,12 @@ class StartWindow(QWidget):
     def Collect_Data_Callback(self):
         """Shows the Data Collector GUI window"""
         self.controller.showCollectData()
+        params.DelsysMode = True
 
     def Simulation_Callback(self):
         """Shows the Simulation GUI window"""
         self.controller.showSimulation()
+        params.DelsysMode = False
 
 
 if __name__ == '__main__':
