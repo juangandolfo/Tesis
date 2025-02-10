@@ -6,7 +6,7 @@ import pymsgbox as msgbox
 
 ModoDelsys = True # True if we use the Delsys API Server, False if we use the API Server from the PM.
 SubSamplingRate = 100
-saveCSV = False
+saveCSV = True
 
 Initialized = False
 
@@ -55,7 +55,7 @@ PingTimeFromDataServer = 0.0
 
 TerminateCalibration = False
 CalibrationStage = 0
-TimeCalibStage3 = 10
+TimeCalibStage3 = 30
 
 
 ExperimentTimestamp = ''

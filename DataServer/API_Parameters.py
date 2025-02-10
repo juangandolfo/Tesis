@@ -6,7 +6,7 @@ import json
 import time
 import os
 
-DelsysMode = False
+DelsysMode = True
 #csvFile = '202465_213928.csv'              #tiene 2 musculos
 #csvFile = 'Experiment-20240626-220405.csv' #tiene 3 musculos
 #csvFile = '202468_195248.csv'               #tiene 4 musculos
@@ -45,8 +45,8 @@ PlotUploadedConfig = False
 
 
 TimeCalibStage1 = 5
-TimeCalibStage2 = 7
-TimeCalibStage3 = 10
+TimeCalibStage2 = 15
+TimeCalibStage3 = 30
 
 remaining_time = 5
 

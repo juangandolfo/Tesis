@@ -201,7 +201,7 @@ def Handle_Client(conn,addr):
                     #print("PM: Data sent:", response_data)
 
                 elif data.decode().strip() == "POST /startAttempt":
-                    msgbox.alert("Attempt started")
+                    #msgbox.alert("Attempt started")
                     attempt.setStart()
                     serialized_data = pack.packb("Ok")
                     conn.sendall(serialized_data)
