@@ -27,7 +27,10 @@ class Attempt():
         self.Start = params.sampleCounter
         self.Stop = params.sampleCounter
         self.Result = ""
-        self.File = "ExperimentsFiles/Experiment-" + params.ExperimentTimestamp + "/Events.json" 
+        if params.DelsysMode:
+            self.File = "ExperimentsFiles/Experiment-" + params.ExperimentTimestamp + "/Events.json" 
+        else:
+            self.File = "SimulationFiles/Simulation-" + params.ExperimentTimestamp + "/Events.json"
         self.initializeExperimentFile()
 
     def convertToJson(self):
@@ -40,12 +43,16 @@ class Attempt():
         return attemptDictionary
     
     def initializeExperimentFile(self):
-        filename = self.File
-        # Check if file exists to avoid overwriting
-        if not os.path.exists(filename):
-            experiment_data = []
-            with open(filename, 'w') as file:
-                json.dump(experiment_data, file, indent=4)
+        try:
+            filename = self.File
+            # Check if file exists to avoid overwriting
+            if not os.path.exists(filename):
+                experiment_data = []
+                with open(filename, 'w') as file:
+                    json.dump(experiment_data, file, indent=4)
+        except Exception as e:
+            msgbox.alert(e)
+
     
     def saveAttempt(self):
         # Check if file exists to avoid overwriting
@@ -188,6 +195,7 @@ def Handle_Client(conn,addr):
                 if  data.decode().strip() == "GET /data1":
                     PM_DS.PositionOutput_Semaphore.acquire()
                     response_data = np.trunc(PM_DS.PM_DataStruct.positionOutput)
+                    #print(f"---------------------------------------------------------------------{response_data}")
                     PM_DS.PM_DataStruct.positionOutput = PM_DS.PM_DataStruct.positionOutput - response_data
                     PM_DS.PositionOutput_Semaphore.release()
                     
@@ -195,12 +203,15 @@ def Handle_Client(conn,addr):
                         response_data = [0,0]
 
                     response_data = np.asarray(response_data).tolist()
-                    print(f"---------------------------------------------------------------------{response_data}")
+                    #print(f"---------------------------------------------------------------------{response_data}")
                     response_json = pack.packb(response_data, use_bin_type=True)  # Convert the dictionary to JSON and enconde into bytes
                     conn.sendall(response_json)
                     #print("PM: Data sent:", response_data)
 
                 elif data.decode().strip() == "POST /startAttempt":
+                    if not params.DelsysMode:
+                        params.StartSimulation = True
+
                     #msgbox.alert("Attempt started")
                     attempt.setStart()
                     serialized_data = pack.packb("Ok")
@@ -370,6 +381,7 @@ def Processing_Module_Client():
         params.sampleRate = Request("GET /SampleRate")
         params.Subsampling_NumberOfSamples = params.sampleRate/params.SubSamplingRate
         params.ExperimentTimestamp = Request("GET /ExperimentTimestamp")
+        params.DelsysMode = Request("GET /DelsysMode")
         try:
             params.Initialize()
         except Exception as e:
@@ -503,6 +515,14 @@ def Processing_Module_Client():
                         params.SynergyBaseInverse = np.linalg.pinv(params.SynergyBase)
                         params.TerminateCalibration = True
                     
+                    elif params.StartSimulation == True:
+                        try: 
+                            response = Request("START /Simulation")
+                        except Exception as e:
+                            msgbox.alert(f'PMC: Ping {e}')
+                        if response[0] == 1:
+                            params.StartSimulation = False
+
                     elif params.PingRequested == True:
                         try: 
                             response = Request("GET /Ping")

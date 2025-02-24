@@ -6,7 +6,8 @@ import json
 import time
 import os
 
-DelsysMode = True
+DelsysMode = False
+StreamingLive = False
 #csvFile = '202465_213928.csv'              #tiene 2 musculos
 #csvFile = 'Experiment-20240626-220405.csv' #tiene 3 musculos
 #csvFile = '202468_195248.csv'               #tiene 4 musculos
@@ -14,6 +15,10 @@ DelsysMode = True
 #csvFile = 'ExperimentsFiles\Experiment-20241202-261323\RawData.csv'
 csvFile = ''
 SimulationFrequency = 2148
+
+selected_attempt_id = 0
+attempts_dict = {}
+selected_experiment_id = ''
 
 KeysLen = 0
 ChannelsNumber = 0
@@ -51,6 +56,7 @@ TimeCalibStage3 = 30
 remaining_time = 5
 
 ExperimentTimestamp = ''
+ExperimentTimestamp_created = False
 
 class PlotSignal(QObject):
     signal = Signal()  # Define the signal attribute
@@ -68,6 +74,7 @@ def CreateExperimentName():
     t = time.gmtime()
     UTF = -3
     ExperimentTimestamp = str(t.tm_year) + TwoDigitString(t.tm_mon) + TwoDigitString(t.tm_mday) + "-" + TwoDigitString(t.tm_hour - UTF) + TwoDigitString(t.tm_min) + TwoDigitString(t.tm_sec)
+    ExperimentTimestamp_created = True
     
 def UploadCalibrationFromJson():
     # Load the configuration from a JSON file
@@ -101,6 +108,34 @@ def SaveCalibrationToJson(ChannelsNumber,Thresholds, Peaks, AnglesOutput, Synerg
 
     # Generate a new folder path using the timestamp
     folder_path = 'ExperimentsFiles/Experiment-' + ExperimentTimestamp
+    os.makedirs(folder_path, exist_ok=True)  # Create the folder, no error if it already exists
+
+    # Open the file inside the new folder
+    file_path = os.path.join(folder_path, 'Calibration.json')
+    f = open(file_path, 'w')
+    f.write(json_array)
+    f.close()
+
+def SaveCalibrationToJson_simulation(ChannelsNumber,Thresholds, Peaks, AnglesOutput, SynergyBase, SensorStickers):
+    
+    global ExperimentTimestamp
+    data = {
+            'MusclesNumber': ChannelsNumber,
+            'Thresholds': np.asarray(Thresholds).tolist(),
+            'Peaks': np.asarray(Peaks).tolist() ,
+            'Angles': np.asarray(AnglesOutput).tolist(),
+            'SynergyBase': np.asarray(SynergyBase).tolist(),
+            'SensorStickers': SensorStickers
+            }
+    json_array = json.dumps(data, sort_keys=True, indent=4)
+    f = open('Configuration.json', 'w')
+    f.write(json_array) 
+    f.close()
+
+    # Generate a new folder path using the timestamp
+    import pymsgbox as box
+    
+    folder_path = 'SimulationFiles/Simulation-' + ExperimentTimestamp
     os.makedirs(folder_path, exist_ok=True)  # Create the folder, no error if it already exists
 
     # Open the file inside the new folder

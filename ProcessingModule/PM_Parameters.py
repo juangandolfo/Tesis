@@ -4,7 +4,8 @@ import numpy as np
 from scipy.signal import butter
 import pymsgbox as msgbox
 
-ModoDelsys = True # True if we use the Delsys API Server, False if we use the API Server from the PM.
+DelsysMode = True # True if we use the Delsys API Server, False if we use the API Server from the PM.
+StartSimulation = False
 SubSamplingRate = 100
 saveCSV = True
 

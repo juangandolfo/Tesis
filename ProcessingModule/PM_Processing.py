@@ -30,7 +30,8 @@ class DataProcessing:
             if data[i] > peaks[i]:
                 peaks[i] = data[i]'''
             data[i] = max(0, data[i] - threshold[i])
-        return data/(peaks-threshold)
+        normalized_data = data/(peaks-threshold)
+        return normalized_data      
 
     def DummyLowPassFilter(self, data, LastOutput):
         return np.array(LastOutput)*self.LastOutputWeight + np.array(data)*(1-self.LastOutputWeight)
@@ -79,7 +80,7 @@ def Processing():
     
     counter = 0
     print("PM: Processing live")
-    if PM_Parameters.saveCSV:
+    if PM_Parameters.saveCSV and PM_Parameters.DelsysMode:
         FileName = 'ExperimentsFiles\Experiment-' + PM_Parameters.ExperimentTimestamp + "\RawData.csv"
         file = open(FileName, 'w', newline='')
         writer = csv.writer(file)
@@ -103,7 +104,7 @@ def Processing():
 
         if RawData != []:
             
-            if PM_Parameters.saveCSV:
+            if PM_Parameters.saveCSV and PM_Parameters.DelsysMode:
                 writer.writerow(RawData)
                 file.flush()
             

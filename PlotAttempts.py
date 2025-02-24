@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy.signal
 
+AttemptResults = []
+
 def read_calibration_file(experiment_path):
     config_file_path = os.path.join(experiment_path, 'Calibration.json')
     with open(config_file_path, 'r') as file:
@@ -16,6 +18,7 @@ def read_calibration_file(experiment_path):
     return Threshold, PeakActivation, SynergyBase, MusclesNumber
     
 def plot_attempt(data, experiment_file, timestamps, target_muscle,atttempt_id):
+    global AttemptResults
     start_index, end_index = timestamps
     target_data = []
     non_target_data = []
@@ -23,13 +26,35 @@ def plot_attempt(data, experiment_file, timestamps, target_muscle,atttempt_id):
     for row in data[start_index:end_index + 1]:
         target_data.append(float(row[target_muscle]))  # Convert to float
         non_target_data.append(sum(float(row[i]) for i in range(len(row)) if i != target_muscle))
+    mean_target = np.mean(target_data)
+    mean_non_target = np.mean(non_target_data)
     # Plot
     plt.figure(figsize=(8, 6))
-    plt.scatter(non_target_data, target_data, color='b', alpha=0.7)
+    plt.scatter(non_target_data, target_data, color='b', alpha=0.05)
+    plt.xlim(-0.3, 5)
+    plt.ylim(-0.3, 3)
     plt.xlabel("Sum of Non-Target Muscle Data")
     plt.ylabel("Target Muscle Data")
     plt.title(f"Attempt : {atttempt_id}")
     plt.grid(True)
+    plt.scatter(mean_non_target, mean_target, color='r', marker='x', s=100)
+    
+    # Filter data points where either axis value is greater than 0.3
+    filtered_non_target_data = [x for i, x in enumerate(non_target_data) if x > 0.3 or target_data[i] > 0.3]
+    # filtered_non_target_data = [x for x in non_target_data if x > 0.3]
+    filtered_target_data = [y for i, y in enumerate(target_data) if non_target_data[i] > 0.3 or y > 0.3]
+    mean_filtered_non_target = np.mean(filtered_non_target_data)
+    mean_filtered_target = np.mean(filtered_target_data)
+    if filtered_non_target_data and filtered_target_data:
+        plt.scatter(mean_filtered_non_target, mean_filtered_target, color='y', marker='o', s=100)
+
+    AttemptResults.append([
+        atttempt_id, 
+        mean_target/mean_non_target,
+        np.median(mean_filtered_target/mean_filtered_non_target),
+        timestamps[1]-timestamps[0]
+        ])
+
     output_path = os.path.join(os.path.join(experiment_file), f"Attempt_{atttempt_id}.png")
     print(f"Saving plot to {output_path}")
     plt.savefig(output_path)
@@ -45,6 +70,40 @@ def read_event_times(experiment_path, processed_data, target_muscle):
         start_time = attempt['Start']
         stop_time = attempt['Stop']
         plot_attempt(processed_data, experiment_path, (start_time, stop_time), target_muscle,attempt_id)
+
+    plot_attempt_comparison(AttemptResults,experiment_path)
+
+def plot_attempt_comparison(attempt_results,experiment_file):
+    attempt_results = np.array(attempt_results)
+    attempt_ids = attempt_results[:, 0]
+    attempt_times = attempt_results[:, 3].astype(float)
+    ratios = attempt_results[:, 1].astype(float)
+    filtered_ratios = attempt_results[:, 2].astype(float)
+    plt.figure(figsize=(8, 6))
+    plt.plot(attempt_ids, ratios, color='r', marker='o')
+    plt.plot(attempt_ids, filtered_ratios, color='y', linestyle='--')
+    plt.xlim(-0.1, attempt_ids[-1] + 1)
+    plt.ylim(-0.1, 1)
+    plt.xlabel("Attempt ID")
+    plt.ylabel("Target/Non-Target Ratio")
+    plt.title("Attempt Comparison")
+    plt.grid(True)
+    output_path = os.path.join(os.path.join(experiment_file), "Attempt_Comparison.png")
+    print(f"Saving plot to {output_path}")
+    plt.savefig(output_path)
+
+    # Save another figure that shows the difference in time between attempts
+    plt.figure(figsize=(8, 6))
+    plt.plot(attempt_ids, attempt_times, color='g', marker='x')
+    plt.xlim(-0.1, attempt_ids[-1] + 1)
+    plt.ylim(-0.1, np.max(attempt_times) + 1)
+    plt.xlabel("Attempt ID")
+    plt.ylabel("Duration (samples)")
+    plt.title("Attempt Duration")
+    plt.grid(True)
+    output_path = os.path.join(os.path.join(experiment_file), "Attempt_Duration.png")
+    print(f"Saving plot to {output_path}")
+    plt.savefig(output_path)
 
 def Rectify(RawData):
     return np.abs(RawData)
@@ -79,8 +138,9 @@ def process_data(experiment_file, Threshold, PeakActivation, SynergyBase, Muscle
     return ProcessedData, SynergyActivations
 
 
+
 # Main
-ExperimentPath = '.\ExperimentsFiles\Experiment-20250203-263922'
+ExperimentPath = '.\ExperimentsFiles\Experiment-20250203-262642'
 Target_muscle = 0 
 rawdata_file_path = os.path.join(ExperimentPath, 'RawData.csv')  
 Threshold, PeakActivation, SynergyBase, MusclesNumber = read_calibration_file(ExperimentPath)

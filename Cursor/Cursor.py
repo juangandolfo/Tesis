@@ -251,7 +251,7 @@ def getSpeedFromEMG():
     speed = [0,0]
     try:
         speed = Get_data()
-        print(f"--------------------------------------------{speed}")
+        #print(f"--------------------------------------------{speed}")
     except Exception as e:
         print(e)
     return speed
@@ -279,7 +279,9 @@ def K_Return_Callback():
         restartAttempt()
         started = False
     else:
+        #messagebox.alert(text='Start', title='Start', button='OK')
         Post_start()
+        #messagebox.alert(text='Start', title='Start', button='OK')
         getSpeedFromEMG()
         started = True
 

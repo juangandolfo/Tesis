@@ -59,7 +59,7 @@ def API_Server(AeroInstance,emgPositionVector):
             print(f"Connected by {addr}")
             params.CreateExperimentName()
             while True:
-                #print("                                                 API Server live")
+                print("                                                 API Server live")
                 try:
                     s.settimeout(600)
                     DataReceived = conn.recv(1024)
@@ -130,6 +130,14 @@ def API_Server(AeroInstance,emgPositionVector):
 
                 elif data == "GET /SampleRate":
                     serialized_data = pack.packb(params.SampleRate, use_bin_type=True)
+                    serialized_data  += b'END'
+                    try:
+                        conn.sendall(serialized_data)
+                    except Exception as e:
+                        print(e)
+                
+                elif data == "GET /DelsysMode":
+                    serialized_data = pack.packb(params.DelsysMode, use_bin_type=True)
                     serialized_data  += b'END'
                     try:
                         conn.sendall(serialized_data)

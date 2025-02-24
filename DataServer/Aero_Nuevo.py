@@ -65,6 +65,7 @@ class AeroPyNuevo:
                 stack_lock.acquire()  # Acquire lock before accessing the stack
                 row = np.array(row, dtype=np.float64)  # Convert the row to numpy array
                 stack.append(row)
+                print("Data added to stack-------------------------------------------------------------: ", row)
                 stack_lock.release()  # Release lock after modifying the stack
                 # lock after modifying the stack
                 time.sleep(1/frequency if frequency > 0 else 1)
@@ -72,6 +73,7 @@ class AeroPyNuevo:
                 if self.stop_flag:
                     return
             print("There's no more data")
+        
 
     def CheckDataQueue(self):
         # Check if there's new data in the internal buffer

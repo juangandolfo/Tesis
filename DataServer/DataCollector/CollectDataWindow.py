@@ -399,13 +399,6 @@ class SimulationWindow(QWidget):
         self.synergy_base = json_data['SynergyBase']
         self.thresholds = json_data['Thresholds']
         
-        # print("Angles:", self.angles)
-        # print("MusclesNumber:", self.muscles_number)
-        # print("Peaks:", self.peaks)
-        # print("SensorStickers:", self.sensor_stickers)
-        # print("SynergyBase:", self.synergy_base)
-        # print("Thresholds:", self.thresholds)
-
         # Check if the specified .json file exists in the selected folder
         events_file_path = os.path.join(self.selected_folder_path, self.events_file)
         if not os.path.exists(events_file_path):
@@ -414,35 +407,23 @@ class SimulationWindow(QWidget):
         # Read the .json file
         with open(events_file_path, 'r') as json_file:
             json_data = json.load(json_file)
-        
-        # # Create a list to store all attempts
-        # self.attempts_data = []
-
-        # # Extract the data from the JSON into variables
-        # for attempt in json_data:  # Use json_data, not json_file
-        #     attempt_info = {
-        #         "attemptNumber": attempt["attemptNumber"],
-        #         "start_Timestamp": attempt["start_Timestamp"],
-        #         "end_Timestamp": attempt["end_Timestamp"],
-        #         "result": attempt["result"],
-        #     }
-        #     self.attempts_data.append(attempt_info)  # Append each attempt to the list
-
-        # Print or process all attempts
-        # for attempt_info in attempts_data:
-        #     print(f"Attempt {attempt_info['attemptNumber']}:")
-        #     print(f"  Start: {attempt_info['start_Timestamp']}")
-        #     print(f"  End: {attempt_info['end_Timestamp']}")
-        #     print(f"  Result: {attempt_info['result']}")
 
         # Populate the dropdown with attempts
         self.attempts_dropdown.clear()  # Clear any existing items
+        params.attempts_dict = {}  # Dictionary to store attempt details
         for attempt in json_data:
             self.attempts_dropdown.addItem(f"Attempt {attempt['Id']}", attempt)
+            params.attempts_dict[attempt['Id']] = {
+            'Start': attempt['Start'],
+            'End': attempt['Stop']
+            }
 
         # Show the dropdown and label
         self.attempts_label.show()
         self.attempts_dropdown.show()
+        
+        # Save the ID of the selected atexperiment
+        params.selected_experiment_id = selected_folder
         
         # Logic to handle experiment file upload and data processing
         self.plot_data()
@@ -487,6 +468,8 @@ class SimulationWindow(QWidget):
         self.controller.showStartMenu()
 
     def start_simulation_callback(self):
+        params.selected_attempt_id = self.attempts_dropdown.currentData()['Id']
+        
         params.csvFile = os.path.join(self.selected_folder_path, self.raw_data_file)
 
         self.CallbackConnector.Connect_Callback()
@@ -505,9 +488,20 @@ class SimulationWindow(QWidget):
         params.SensorStickers = self.sensor_stickers
         params.SynergiesNumber = len(self.angles)
         params.SimulationCalibration = True
-        time.sleep(1)
-        self.CallbackConnector.StartCursor_Callback()
-        
+        params.X
+
+        try:
+                time.sleep(4)
+                params.SaveCalibrationToJson_simulation(
+                                                    params.ChannelsNumber,
+                                                    params.Thresholds,
+                                                    params.Peaks,
+                                                    params.AnglesOutput,
+                                                    params.SynergyBase,
+                                                    params.SensorStickers
+                                                    )
+        except Exception as e:
+            msgbox.alert(e)
     
     def start_cursor_simulation(self):
         self.CallbackConnector.StartCursor_Callback()
@@ -745,14 +739,14 @@ class CalibrationWindow(QMainWindow):
     def terminate_callback (self):
         params.TerminateCalibrationFlag = True
         try:
-            params.SaveCalibrationToJson(
-                                                params.ChannelsNumber,
-                                                params.Thresholds,
-                                                params.Peaks,
-                                                params.AnglesOutput,
-                                                params.SynergyBase,
-                                                params.SensorStickers
-                                                )
+                params.SaveCalibrationToJson(
+                                                    params.ChannelsNumber,
+                                                    params.Thresholds,
+                                                    params.Peaks,
+                                                    params.AnglesOutput,
+                                                    params.SynergyBase,
+                                                    params.SensorStickers
+                                                    )
         except Exception as e:
             msgbox.alert(e)
         self.close()
