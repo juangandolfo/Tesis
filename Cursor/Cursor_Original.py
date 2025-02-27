@@ -8,8 +8,6 @@ from multiprocessing import Process
 import msgpack as pack
 import csv
 import pymsgbox as messagebox
-import time
-import asyncio
 from pygame.locals import   (K_UP,
                             K_DOWN,
                             K_LEFT,
@@ -48,7 +46,6 @@ position=[(SCREEN_WIDTH/2,100),                 #norte
 
 HOST = "127.0.0.1"  # The server's hostname or IP address
 PORT2 = 6002  # The port used by the MP Server
-PORT_ASYNC = 6003  # The port used by the MP Server
 
 
 # TCP/IP Cursor client -------------------------------------------------------------------------------------
@@ -56,96 +53,15 @@ PORT_ASYNC = 6003  # The port used by the MP Server
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # Create a socket
 
 #-----------------------------------------------------------------------------------------------------------
-# def Connect():
-#     notConnected = True
-#     while notConnected:
-#         try:
-#             client_socket.connect((HOST, PORT2))
-#             notConnected = False
-#         except Exception as e:
-#             #print(e)
-#             pass
-
-# Asyncio Client with periodic messages
-async def async_client():
-    try:
-        reader, writer = await asyncio.open_connection(
-            HOST, PORT_ASYNC
-        )
-
-        print("Connected to server. Sending messages every second...")
-
-        async def read_from_server():
-            while True:
-                data = await reader.read(1024)
-                if not data:
-                    break
-                print(f"Server message: {data.decode()}")
-
-        asyncio.create_task(read_from_server())
-
-        message_count = 0
-        while True:
-            message = f"Message #{message_count}"
-            print(f"Sending: {message}")
-
-            writer.write(message.encode())
-            await writer.drain()
-
-            message_count += 1
-            await asyncio.sleep(1)
-
-    except asyncio.CancelledError:
-        print("Client shutting down...")
-    except Exception as e:
-        print(f"Error in client: {e}")
-    finally:
-        print("Closing connection...")
-        writer.close()
-        await writer.wait_closed()
-
-
-async def Connect():
-    global HOST, PORT_ASYNC, reader, writer,connected
-
-    try:
-        reader, writer = await asyncio.open_connection(
-            HOST, PORT_ASYNC
-        )
-    except Exception as e:
-        messagebox.alert(text='Error connecting to server', title='Error', button='OK')
-        messagebox.alert(text=e, title='Error', button='OK')
-
-    print("Connected to server. Sending messages every second...")
-
-    async def read_from_server():
-        while True:
-            data = await reader.read(1024)
-            if not data:
-                break
-            message = data.decode()
-            print(f"Server message: {message}")
-
-    asyncio.create_task(read_from_server())
-
-    async def Get_Async_data():
-        # Function to send the request and receive data from MP
-        request = "GET /data1"
-        while True:
-            try:
-                writer.write(request.encode())
-                await writer.drain()
-            except Exception as e:
-                messagebox.alert(text='Error in sending request', title='Error', button='OK')
-            await asyncio.sleep(1/60)
-
-    asyncio.create_task(Get_Async_data())
-
-    connected = True
-    
-    # return reader, writer
-    
-
+def Connect():
+    notConnected = True
+    while notConnected:
+        try:
+            client_socket.connect((HOST, PORT2))
+            notConnected = False
+        except Exception as e:
+            #print(e)
+            pass
 
 #-----------------------------------------------------------------------------------------------------------
 def Send_data(request):
@@ -170,12 +86,6 @@ def Get_data():
     request = "GET /data1"
     response_data = Send_data(request)
     return response_data
-
-def Get_Async_data():
-    # Function to send the request and receive data from MP
-    
-
-    
 
 #-----------------------------------------------------------------------------------------------------------
 def Post_start():
@@ -341,7 +251,6 @@ def getSpeedFromEMG():
     speed = [0,0]
     try:
         speed = Get_data()
-        speed = Get_Async_data()
         # print(f"--------------------------------------------{speed}")
     except Exception as e:
         print(e)
@@ -475,14 +384,8 @@ def Cursor():
     # set up the display and communication
     global SCREEN_HEIGHT, SCREEN_WIDTH
     global player, enemies, objectives, all_sprites,running, font, started, screen, text1, text2
-    global reader, writer, connected
     
-    try:
-        asyncio.run(Connect())
-        # reader, writer = Connect() 
-    except Exception as e:
-        messagebox.alert(text=e, title='Error', button='OK')
-        
+    Connect() 
     pygame.init()
     pygame.key.set_repeat(50,0)
 
@@ -493,10 +396,6 @@ def Cursor():
     
     running = True
     started = False
-
-    while not connected:
-        print('Waiting for connection')
-    messagebox.alert(text='Connected to server', title='Connection', button='OK')
     while running:
         # Main loop
         HandleEvents()

@@ -1,12 +1,11 @@
 import asyncio
 import datetime
 
-print(f'SET Speed/{[0,0]}')
-
-HOST = '127.0.0.1'
+HOST = "127.0.0.1"  # Standard adress (localhost)
+PORT_Client = 6001  # Port to get data from the File API Server
+PORT_Server = 6002 # The port used by the PM Server
 
 clients = set()  # Track connected clients
-
 
 # Function to send periodic messages to all clients
 async def broadcast_messages():
@@ -24,7 +23,7 @@ async def broadcast_messages():
                 clients.discard(writer)
 
 # Asyncio Server
-async def handle_async_client(reader, writer):
+async def handle_client(reader, writer):
     addr = writer.get_extra_info('peername')
     print(f"New connection from {addr}")
 
@@ -35,10 +34,8 @@ async def handle_async_client(reader, writer):
             data = await reader.read(1024)
             if not data:
                 break
-
             message = data.decode()
-            # writer.write(message.encode() + b'\n' + "Received".encode()) 
-            print(message)
+            writer.write(message.encode() + b'\n' + "Received".encode()) 
 
     except asyncio.CancelledError:
         pass
@@ -52,7 +49,7 @@ async def handle_async_client(reader, writer):
 
 async def async_server():
     server = await asyncio.start_server(
-        handle_async_client, HOST, 8888
+        handle_client, HOST, 8888
     )
 
     addr = server.sockets[0].getsockname()
@@ -68,7 +65,7 @@ async def async_server():
 async def async_client():
     try:
         reader, writer = await asyncio.open_connection(
-            HOST, 8888
+            HOST, PORT_Client
         )
 
         print("Connected to server. Sending messages every second...")
@@ -91,7 +88,7 @@ async def async_client():
             await writer.drain()
 
             message_count += 1
-            await asyncio.sleep(1/60)
+            await asyncio.sleep(1)
 
     except asyncio.CancelledError:
         print("Client shutting down...")
@@ -106,8 +103,8 @@ async def async_client():
 async def main():
     try:
         # Uncomment the one you want to run:
-        # await async_server()
-        await async_client()
+        await async_server()
+        # await async_client()
     except KeyboardInterrupt:
         print("Shutting down...")
 

@@ -10,10 +10,18 @@ import General.LocalCircularBufferVector as Buffer
 import pymsgbox as msgbox
 import threading
 import os
-import asyncio
+
+
+synergies_Lock = threading.Lock()
+
+HOST = "127.0.0.1"  # Standard adress (localhost)
+PORT_Client = 6001  # Port to get data from the File API Server
+PORT_Server = 6002 # The port used by the PM Server
+
+client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 class Attempt():
-
     def __init__(self):
         self.Id = 0
         self.Start = params.sampleCounter
@@ -60,120 +68,8 @@ class Attempt():
     def incrementId(self):
         self.Id += 1
 
-synergies_Lock = threading.Lock()
-
-HOST = "127.0.0.1"  # Standard adress (localhost)
-PORT_Client = 6001  # Port to get data from the File API Server
-PORT_Server = 6002 # The port used by the PM Server
-PORT_Async = 6003 # The port used by the PM Server
-
-clients = set()
-
-client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-
-
 
 # Auxiliar functions -------------------------------------------------------------------------------------------------------------------------------------------------------------
-def getAnswer(message,attempt):
-
-    if  message == "GET /data1":
-        PM_DS.PositionOutput_Semaphore.acquire()
-        response_data = np.trunc(PM_DS.PM_DataStruct.positionOutput)
-        PM_DS.PM_DataStruct.positionOutput = PM_DS.PM_DataStruct.positionOutput - response_data
-        PM_DS.PositionOutput_Semaphore.release()
-        
-        if response_data == []:
-            response_data = f'SET Speed/{[0,0]}'
-
-        response_data = np.asarray(response_data).tolist()
-        return response_data
-
-    elif message == "POST /startAttempt":
-        #msgbox.alert("Attempt started")
-        attempt.setStart()
-        return "Ok"
-    
-    elif message == "POST /win":
-        attempt.setStop()
-        attempt.setResult("Win")
-        attempt.saveAttempt()
-        return "Ok"
-
-    elif message == "POST /loss":
-        attempt.setStop()
-        attempt.setResult("Loss")
-        attempt.saveAttempt()
-        return "Ok"
-
-    elif message == "POST /restartAttempt":
-        attempt.setStop()
-        attempt.setResult("Restarted")
-        attempt.saveAttempt()
-        return "Ok"
-
-    elif message == "POST /exit":
-        attempt.setStop()
-        attempt.setResult("Exit")
-        attempt.saveAttempt()
-        return "Ok"
-
-    elif message == "GET /Muscles":
-        # with synergies_Lock:
-            #print("------------------------------------------------------GET /Muscles")
-            PM_DS.ProcessedDataBuffer_Semaphore.acquire()  # Acquire lock before accessing the stack
-            response_data = PM_DS.ProcessedDataBuffer.get_vectors(1)
-            PM_DS.ProcessedDataBuffer_Semaphore.release()  # Release lock after reading the stack
-            
-            if response_data == []:
-                #print("Empty data")
-                response_data = []
-            else:   
-                response_data = np.asarray(response_data).tolist()
-
-            return response_data
-
-    elif message == "GET /Synergies":
-        # with synergies_Lock:
-            PM_DS.SynergiesBuffer_Semaphore.acquire()  # Acquire lock before accessing the stack
-            response_data = PM_DS.SynergiesBuffer.get_vectors(1) #PM_DS.PM_DataStruct.circular_stack.get_vectors(3)
-            PM_DS.SynergiesBuffer_Semaphore.release()  # Release lock after reading the stack
-
-            if response_data == []:
-                #print("Empty data")
-                response_data = []
-            else:   
-                response_data = np.asarray(response_data).tolist()
-            return response_data        
-
-    elif message == "GET /Parameters":
-            response_data = {
-                'MusclesNumber': params.MusclesNumber,
-                'SynergiesNumber': params.synergiesNumber,
-                'SubSamplingRate': params.SubSamplingRate,
-                'SensorStickers': params.SensorStickers
-            }
-            if response_data == []:
-                #print("Empty data")
-                response_data = []
-            else:
-                response_data = np.array(response_data).tolist()
-            return response_data
-
-    elif message == "GET /Ping":
-        params.PingRequested = True
-        response_data = [1]
-        return response_data
-
-    elif message == "GET /PingUpdate":
-        response_data = [params.PingResponse, params.PingTimeFromDataServer]
-        params.PingResponse = 0
-        return response_data
-
-    else:
-        #print("Invalid request")
-        pass
 
 def Dictionary_to_matrix(dictionary):
 
@@ -274,12 +170,9 @@ def Request(request):
 
 # Function to handle the connection with a client
 def Handle_Client(conn,addr):
-    global attempt
-
     print(f"Connected by {addr}")
     conn.settimeout(600)
     attempt = Attempt()
-    
     try:
         while True:
             time.sleep(0.025)
@@ -455,68 +348,7 @@ def Handle_Client(conn,addr):
     finally:
         conn.close()
         msgbox.alert(f"Connection with {addr} closed")
-
-# Async Comms Server -------------------------------------------------------------------------------------------------------------------------------------------------------------
-# ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-async def broadcast_messages():
-    while True:
-        await asyncio.sleep(0.5)  # Wait for 3 seconds
-        message = f"Server broadcast"
-        print(f"Broadcasting: {message}")
-
-        for writer in clients.copy():
-            try:
-                writer.write(message.encode())
-                await writer.drain()
-            except Exception as e:
-                print(f"Error sending to client: {e}")
-                clients.discard(writer)
-
-async def handle_async_client(reader, writer):
-    addr = writer.get_extra_info('peername')
-    print(f"New connection from {addr}")
-
-    clients.add(writer)  # Register new client
-    attempt = Attempt()
-
-    try:
-        while True:
-            data = await reader.read(1024)
-            if not data:
-                break
-
-            message = data.decode()
-            Answer = getAnswer(message,attempt)
-            
-            writer.write(Answer.encode())
-
-    except asyncio.CancelledError:
-        pass
-    except Exception as e:
-        print(f"Error handling client {addr}: {e}")
-    finally:
-        print(f"Connection closed from {addr}")
-        clients.discard(writer)
-        writer.close()
-        await writer.wait_closed()
-
-async def async_server():
-    server = await asyncio.start_server(
-        handle_async_client, 
-        HOST, 
-        PORT_Async
-    )
-
-    addr = server.sockets[0].getsockname()
-    print(f'Serving on {addr} and port {addr[1]}')
-
-    # Start broadcasting messages independently
-    # asyncio.create_task(broadcast_messages())
-
-    async with server:
-        await server.serve_forever()
-
-
+    
 
 
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -720,6 +552,7 @@ def Processing_Module_Client():
     except Exception as e:
         msgbox.alert(e)
 
+
 def Processing_Module_Server():
     server_socket.bind((HOST, PORT_Server))
     
@@ -740,11 +573,3 @@ def Processing_Module_Server():
     
 PM_Client_thread = Thread(target=Processing_Module_Client,daemon=True)
 PM_Server_thread = Thread(target=Processing_Module_Server,daemon=True)
-
-async def start_async_server():
-    try:
-        # Uncomment the one you want to run:
-        await async_server()
-        # await async_client()
-    except KeyboardInterrupt:
-        print("Shutting down...")

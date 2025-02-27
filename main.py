@@ -2,6 +2,7 @@ from multiprocessing import Process
 import time
 import ProcessingModule.PM_Communications as PM_Comms
 import ProcessingModule.PM_Processing as PM_Proc
+import asyncio
 from DataServer.UIControls.FrameController import *
 
 def API_Server():
@@ -14,6 +15,7 @@ def PM():
     PM_Comms.PM_Client_thread.start()
     PM_Comms.PM_Server_thread.start()
     PM_Proc.PM_Calibration.start()
+    asyncio.run(PM_Comms.start_async_server())
     while True:
         time.sleep(0.001)
         pass
