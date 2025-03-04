@@ -247,9 +247,10 @@ class CollectDataWindow(QWidget):
     
     def ConfigureSensors_callback(self):
         self.CallbackConnector.setSampleMode_hardcoded()
-
+        self.CallbackConnector.FinishInitialization()
 
     def calibration_callback(self):
+        params.StartCalibration = True
         self.calibration_window.show()
         self.CallbackConnector.StartCalibration_Callback()
         self.visualization_button.setEnabled(True)

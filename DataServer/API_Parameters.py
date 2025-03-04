@@ -21,6 +21,7 @@ SampleRate = 0
 SensorStickers = []
 Channels_ID = []
 
+StartCalibration = False
 TerminateCalibrationFlag = False
 CalibrationStageInitialized = False
 CalibrationStageFinished = False

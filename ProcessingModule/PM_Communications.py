@@ -1,5 +1,6 @@
 import ProcessingModule.PM_Parameters as params
 import ProcessingModule.PM_DataStructure as PM_DS
+import ProcessingModule.PM_Processing as PM_Proc
 import socket
 import json
 import time
@@ -147,6 +148,12 @@ def Request(request):
                 chunk = chunk[:-3]
                 data += chunk
                 break
+            elif b"ICS" in chunk:
+                params.InitializeCalibration = True
+                chunk = chunk[:-3]
+                data += chunk
+                break
+
             else: 
                 data += chunk
                 
@@ -512,6 +519,12 @@ def Processing_Module_Client():
                             params.PingResponse = 1
                             params.PingTimeFromDataServer = response[1]
                             params.PingRequested = False
+
+                    elif params.InitializeCalibration == True:
+                        params.InitializeCalibration = False
+                        # Requests thread manager to initialize the calibration stage
+                        params.InitializeCalibrationRequest = True
+
 
                     else:
                         try:

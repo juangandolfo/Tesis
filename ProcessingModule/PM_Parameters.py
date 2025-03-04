@@ -46,6 +46,9 @@ DetectingSynergies = False
 UploadFromJson = False
 JsonReceived = False
 UploadSimulationConfig = False
+Processing = False
+InitializeCalibration = False
+InitializeCalibrationRequest = False
 PeakActivation = []
 Threshold = []
 

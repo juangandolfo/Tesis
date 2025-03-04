@@ -103,6 +103,10 @@ def API_Server(AeroInstance,emgPositionVector):
                     elif params.SimulationCalibration == True:
                         params.SimulationCalibration = False
                         serialized_data  += b"CS5" # Add a delimiter at the end
+
+                    elif params.StartCalibration == True:
+                        params.StartCalibration = False
+                        serialized_data  += b"ICS" # Add a delimiter at the end
                         
                     else:
                         serialized_data += b'END' # Add a delimiter at the end

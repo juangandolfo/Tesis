@@ -72,12 +72,10 @@ class PlottingManagement():
 
         time.sleep(3)
 
-        #if params.DelsysMode:
-        #    API_server_thread=Thread(target=API_Server.API_Server, args=(TrigBase,self.dataStreamIdx), daemon=True)
-        #    API_server_thread.start()
-        #else:
-        API_server_thread=Thread(target=API_Server.API_Server, args=(TrigBase,self.dataStreamIdx), daemon=True)
-        API_server_thread.start()
+        
+
+        if not self.API_server_thread.is_alive():
+            self.API_server_thread.start()
         
 
 
@@ -130,7 +128,7 @@ class PlottingManagement():
         TrigBase.SelectAllSensors()
         return self.nameList
 
-    def StartCalibration_Callback(self):
+    def FinishInitialization(self):
         
         """Callback to start the data stream from Sensors"""
         self.pauseFlag = False
@@ -179,6 +177,10 @@ class PlottingManagement():
             #self.EMGplot.initiateCanvas(None, None, plotCount, 1, self.numSamples)
 
         TrigBase.Start()
+        
+
+    def StartCalibration_Callback(self):
+        self.API_server_thread=Thread(target=API_Server.API_Server, args=(TrigBase,self.dataStreamIdx), daemon=True)
         self.threadManager()
 
     def Start_Callback(self):

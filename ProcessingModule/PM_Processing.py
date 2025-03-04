@@ -91,7 +91,7 @@ def Processing():
     #counter2 = 0
 
     
-    while True:
+    while PM_Parameters.Processing:
         print("PM: Processing live")
         PM_DS.stack_lock.acquire()
         #ExecutionTime.append(time.time() - t1)
@@ -133,6 +133,11 @@ def Processing():
             PM_DS.PositionOutput_Semaphore.acquire()
             PM_DS.PM_DataStruct.positionOutput = PM_DS.PM_DataStruct.positionOutput + PM_Parameters.CursorMovement_Gain*NewMovement/PM_Parameters.sampleRate
             PM_DS.PositionOutput_Semaphore.release()
+
+    file.close()
+    msgbox.alert("PM: Processing terminated")
+
+        
         
         # if counter2 > 3000:
             
@@ -152,16 +157,16 @@ def Processing():
         #     ExecutionTime = []
         # else: 
         #     counter2+=1
-            
+
 
 def CalibrationProcessing():
-
+    msgbox.alert("PM: Calibration Processing live")
     while(PM_Parameters.Initialized == False):
        pass
     DataProcessing.CreateLPF(PM_Parameters.sampleRate, PM_Parameters.MusclesNumber)
     print("PM: Calibration Processing live")
     while not PM_Parameters.TerminateCalibration:
-
+        
         print("PM: Calibration Processing live")
 
         if PM_Parameters.CalibrationStage == 1:
@@ -283,10 +288,9 @@ def CalibrationProcessing():
             PM_Parameters.UploadSimulationConfig = True
             PM_Parameters.CalibrationStage = 0            
 
-            
-
     print("PM: Calibration terminated")
-    PM_Processing.start()
+    PM_Parameters.Processing = True
+    
     
 
 PM_Calibration = Thread(target=CalibrationProcessing,daemon=True)
