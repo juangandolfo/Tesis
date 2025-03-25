@@ -88,13 +88,18 @@ def API_Server(AeroInstance,emgPositionVector):
                             params.CalibrationStageInitialized = False
 
                             if params.CalibrationStage == 1:
-                                serialized_data  += b"CS1" # Add a delimiter at the end
+                                try:
+                                    serialized_data  += b"CS1" + str(params.selectedSensorIndex).encode() # Add a delimiter at the end
+                                except Exception as e:
+                                    msgbox.alert(e)
                             elif params.CalibrationStage == 2:
-                                serialized_data  += b"CS2" # Add a delimiter at the end
+                                serialized_data  += b"CS2" + str(params.selectedSensorIndex).encode() # Add a delimiter at the end
                             elif params.CalibrationStage == 3:
                                 serialized_data  += b"CS3" # Add a delimiter at the end
                             elif params.CalibrationStage == 4:
                                 serialized_data  += b"CS4" # Add a delimiter at the end
+                            elif params.CalibrationStage == 6:
+                                serialized_data  += b"CS6" # Add a delimiter at the end
 
                     elif params.CalibrationStageFinished:
                         params.CalibrationStageFinished = False
@@ -123,6 +128,8 @@ def API_Server(AeroInstance,emgPositionVector):
                         conn.sendall(serialized_data)
                     except Exception as e:
                         print(e)
+                    params.Initialize()
+                    
                 
                 elif data == "GET /SensorStickers":
                     serialized_data = pack.packb(params.SensorStickers, use_bin_type=True)

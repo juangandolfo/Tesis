@@ -59,6 +59,7 @@ PingTimeFromDataServer = 0.0
 TerminateCalibration = False
 CalibrationStage = 0
 TimeCalibStage3 = 30
+Muscle2Calibrate_index = 0
 
 
 ExperimentTimestamp = ''

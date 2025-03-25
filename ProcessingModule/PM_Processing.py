@@ -135,7 +135,7 @@ def Processing():
             PM_DS.PositionOutput_Semaphore.release()
 
     file.close()
-    msgbox.alert("PM: Processing terminated")
+    #msgbox.alert("PM: Processing terminated")
 
         
         
@@ -160,7 +160,7 @@ def Processing():
 
 
 def CalibrationProcessing():
-    msgbox.alert("PM: Calibration Processing live")
+    # msgbox.alert("PM: Calibration Processing live")
     while(PM_Parameters.Initialized == False):
        pass
     DataProcessing.CreateLPF(PM_Parameters.sampleRate, PM_Parameters.MusclesNumber)
@@ -175,6 +175,7 @@ def CalibrationProcessing():
             PM_DS.PM_DataStruct.circular_stack.get_vectors(1)
             PM_DS.stack_lock.release()
 
+            
             thresholds = np.zeros(PM_Parameters.MusclesNumber)
             #LastData = np.zeros((1,GlobalParameters.MusclesNumber))
             Peaks = [[] for _ in range(PM_Parameters.MusclesNumber)]
@@ -194,11 +195,15 @@ def CalibrationProcessing():
                     for muscle in range(PM_Parameters.MusclesNumber):
                         Peaks[muscle].append(np.max(DataBatch[:,muscle]))
                 print("stage1")
+            
             for muscle in range(PM_Parameters.MusclesNumber):
-                thresholds[muscle] = np.median(np.array(Peaks[muscle]))
+                thresholds[muscle] = np.median(np.array(Peaks[muscle])) * 1.1
 
-            print("Thresholds:", thresholds)
-            PM_Parameters.Threshold = thresholds*1.1
+            if PM_Parameters.Muscle2Calibrate_index == 0:
+                PM_Parameters.Threshold = thresholds
+            else:
+                PM_Parameters.Threshold[PM_Parameters.Muscle2Calibrate_index - 1] = thresholds[PM_Parameters.Muscle2Calibrate_index - 1]
+            
             PM_Parameters.PlotThresholds = True
 
         elif PM_Parameters.CalibrationStage == 2:
@@ -208,6 +213,7 @@ def CalibrationProcessing():
             PM_DS.stack_lock.release()
 
             #LastData = np.zeros((1,GlobalParameters.MusclesNumber))
+            PeakActivation = np.ones(PM_Parameters.MusclesNumber)*0.1
 
             while(PM_Parameters.CalibrationStage == 2):
                 PM_DS.stack_lock.acquire()
@@ -219,13 +225,17 @@ def CalibrationProcessing():
                     #ProcessedData = DataProcessing.DummyLowPassFilter(RectifiedData, LastData).reshape(-1,1)
                     ProcessedData = DataProcessing.LowPassFilter(RectifiedData).reshape(-1,1)
                     #LastData = RectifiedData
-
+                    
                     for i in range(PM_Parameters.MusclesNumber):
-                        if ProcessedData[i] > PM_Parameters.PeakActivation[i]:
-                            PM_Parameters.PeakActivation[i] = ProcessedData[i]
+                        if ProcessedData[i] > PeakActivation[i]:
+                            PeakActivation[i] = ProcessedData[i]
                 print("stage2")
-            print("Peaks:", PM_Parameters.PeakActivation)
-            PM_Parameters.PeakActivation = PM_Parameters.PeakActivation*0.9
+            
+                if PM_Parameters.Muscle2Calibrate_index == 0:
+                    PM_Parameters.PeakActivation = PeakActivation * 0.9
+                else:
+                    PM_Parameters.PeakActivation[PM_Parameters.Muscle2Calibrate_index - 1] = PeakActivation[PM_Parameters.Muscle2Calibrate_index - 1] * 0.9
+        
             PM_Parameters.PlotPeaks = True
 
         elif PM_Parameters.CalibrationStage == 3:
@@ -286,7 +296,13 @@ def CalibrationProcessing():
         elif PM_Parameters.CalibrationStage == 5:
             print("stage5")
             PM_Parameters.UploadSimulationConfig = True
-            PM_Parameters.CalibrationStage = 0            
+            PM_Parameters.CalibrationStage = 0  
+
+        elif PM_Parameters.CalibrationStage == 6:
+            print("stage6")
+            PM_Parameters.CalibrationStage = 0
+            PM_Parameters.RequestAngles = True
+            break          
 
     print("PM: Calibration terminated")
     PM_Parameters.Processing = True

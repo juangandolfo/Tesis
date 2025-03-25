@@ -26,6 +26,7 @@ TerminateCalibrationFlag = False
 CalibrationStageInitialized = False
 CalibrationStageFinished = False
 CalibrationStage = 0
+selectedSensorIndex = 0
 SimulationCalibration = False
 
 AnglesReady = 0
@@ -45,9 +46,9 @@ PlotAngles = False
 PlotUploadedConfig = False
 
 
-TimeCalibStage1 = 5
-TimeCalibStage2 = 15
-TimeCalibStage3 = 30
+TimeCalibStage1 = 3
+TimeCalibStage2 = 3
+TimeCalibStage3 = 3
 
 remaining_time = 5
 
@@ -109,3 +110,27 @@ def SaveCalibrationToJson(ChannelsNumber,Thresholds, Peaks, AnglesOutput, Synerg
     f = open(file_path, 'w')
     f.write(json_array)
     f.close()
+
+def Initialize():
+    global SynergyBase
+    global SynergiesNumber
+    global Thresholds
+    global Peaks
+    global SensorStickers
+    global AnglesOutput
+    global SynergiesModels
+    global SynergyBase
+  
+
+    SynergyBase = np.identity(ChannelsNumber)
+    Thresholds = np.ones(ChannelsNumber) * 0.055
+    Peaks = np.ones(ChannelsNumber) * 0.1
+    SensorStickers = [''] * ChannelsNumber
+    AnglesOutput = [0] * ChannelsNumber
+    vafs = [0] * (ChannelsNumber -1)
+    SynergiesNumber = ChannelsNumber
+    
+    SynergiesModels = {
+        f'{i+2} Synergies': np.identity((2 + i) * ChannelsNumber).tolist() for i in range(SynergiesNumber - 1)
+    }
+    SynergiesModels['vafs'] = (np.asarray(vafs)).tolist()

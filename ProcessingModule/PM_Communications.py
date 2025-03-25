@@ -108,7 +108,7 @@ def Request(request):
     try:
         while True:
             chunk = client_socket.recv(1024)
-            if b'END'in chunk:
+            if b'END' in chunk: 
                 chunk = chunk[:-3]
                 data += chunk
                 #print("delimiter found")
@@ -120,12 +120,14 @@ def Request(request):
                 break
             elif b"CS1" in chunk:
                 params.CalibrationStage = 1
-                chunk = chunk[:-3]
+                params.Muscle2Calibrate_index = int(chunk[-1]) - 48 # Convert from ASCII to int
+                chunk = chunk[:-4]
                 data += chunk
                 break
             elif b"CS2" in chunk:
                 params.CalibrationStage = 2
-                chunk = chunk[:-3]
+                params.Muscle2Calibrate_index = int(chunk[-1]) - 48 # Convert from ASCII to int
+                chunk = chunk[:-4]
                 data += chunk
                 break
             elif b"CS3" in chunk:
@@ -140,6 +142,11 @@ def Request(request):
                 break
             elif b"CS5" in chunk:
                 params.CalibrationStage = 5
+                chunk = chunk[:-3]
+                data += chunk
+                break
+            elif b"CS6" in chunk:
+                params.CalibrationStage = 6
                 chunk = chunk[:-3]
                 data += chunk
                 break
@@ -469,8 +476,7 @@ def Processing_Module_Client():
                             if response[0] == 1:
                                 params.PlotSynergiesDetected = False
                                 params.AnglesRecieved = False
-                                params.RequestAngles = True
-
+                              
                     elif params.UploadFromJson == True:
                         params.UploadFromJson = False
                         try: 

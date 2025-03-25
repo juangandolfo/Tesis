@@ -607,18 +607,27 @@ class CalibrationWindow(QMainWindow):
         self.stage1_button = QPushButton("1 - Base Noise")
         self.stage1_button.setFixedSize(240, 30)  # Set a fixed size for the button
         self.stage1_button.setStyleSheet('QPushButton {color: #000066;}')
+
         self.stage2_button = QPushButton("2 - Maximum Activations")
         self.stage2_button.setFixedSize(240, 30)  # Set a fixed size for the button
         self.stage2_button.setStyleSheet('QPushButton {color: #000066;}')
+        
         self.stage3_button = QPushButton("3 - Synergy Basis")
         self.stage3_button.setFixedSize(240, 30)  # Set a fixed size for the button
         self.stage3_button.setStyleSheet('QPushButton {color: #000066;}')
+        
         self.upload_calibration_button = QPushButton("Upload Last Calibration")
         self.upload_calibration_button.setFixedSize(240, 30)  # Set a fixed size for the button
         self.upload_calibration_button.setStyleSheet('QPushButton {color: #000066;}')
+
+        self.choose_projection_button = QPushButton("Choose Projection")
+        self.choose_projection_button.setFixedSize(240, 30)  # Set a fixed size for the button
+        self.choose_projection_button.setStyleSheet('QPushButton {color: #000066;}')
+        
         self.terminate_button = QPushButton("Terminate Calibration")
         self.terminate_button.setFixedSize(240, 30)  # Set a fixed size for the button
         self.terminate_button.setStyleSheet('QPushButton {color: #000066;}')
+        
         self.set_synergy_base = QPushButton("Set Synergies Basis")
         self.set_synergy_base.setFixedSize(240, 30)  # Set a fixed size for the button
         self.set_synergy_base.setStyleSheet('QPushButton {color: #000066;}')
@@ -642,6 +651,14 @@ class CalibrationWindow(QMainWindow):
         self.start_stage_button.setFixedSize(240, 30)  # Set a fixed size for the button
         self.start_stage_button.hide()  # Initially hide the Start button
         
+        self.sensors_dropdown = QComboBox(self)
+        self.sensors_dropdown.setToolTip("Select a muscle to calibrate:")
+        self.sensors_dropdown.setStyleSheet("QComboBox {color: #000066; background: #848482;}")
+        self.sensors_dropdown.currentIndexChanged.connect(self.sensor_selected)
+        self.sensors_dropdown.hide()
+        self.sensors_dropdown_label = QTextBrowser()
+        self.sensors_dropdown_label.hide()
+        
         self.timer_widget = CountdownWidget()
         self.timer_widget.hide()  # Initially hide the CountdownWidget
 
@@ -649,6 +666,7 @@ class CalibrationWindow(QMainWindow):
         self.stage2_button.clicked.connect(self.stage2_callback)
         self.stage3_button.clicked.connect(self.stage3_callback)
         self.upload_calibration_button.clicked.connect(self.stage4_callback)
+        self.choose_projection_button.clicked.connect(self.show_select_model)
         self.terminate_button.clicked.connect(self.terminate_callback)
 
         # Connect Start button to start countdown
@@ -693,7 +711,9 @@ class CalibrationWindow(QMainWindow):
         layout.addWidget(self.stage2_button)
         layout.addWidget(self.stage3_button)
         layout.addWidget(self.upload_calibration_button)
+        layout.addWidget(self.choose_projection_button)
         layout.addWidget(self.stage_message_label)
+        layout.addWidget(self.sensors_dropdown)
         layout.addWidget(self.start_stage_button)
         layout.addWidget(self.timer_widget)
         layout.addWidget(self.synergies_lineedit_label)
@@ -706,31 +726,78 @@ class CalibrationWindow(QMainWindow):
         main_layout.setStretch(1, 1)
 
     def stage1_callback(self):
-        self.stage_message_label.setText("Calibration Stage 1: Activation Threshold Detection \nHold as still as possible to detect the baseline noise of each sensor. Try not to activate any muscles during the countdown.")
-        # Show Start button for Stage 1 only
+        self.save_button.hide()
+        for i in range(params.SynergiesNumber):
+            self.angle_lineedits[i].hide()
+            self.angle_labels[i].hide()
+        self.synergies_lineedit_label.hide()
+        self.synergy_base_lineedit.hide()
+        self.set_synergy_base.hide()
+
+        self.stage_message_label.show()
         self.start_stage_button.show()
+        self.sensors_dropdown.show()
+        
+        self.stage_message_label.setText("Calibration Stage 1: Activation Threshold Detection \nHold as still as possible to detect the baseline noise of each sensor. Try not to activate any muscles during the countdown.")
+        
+        self.populate_sensors_dropdown()
         self.CalibrationStage = 1
-        self.timer_widget.hide()  #Hide the countdown widget when stage changes
+      
 
     def stage2_callback(self):
-        self.stage_message_label.setText("Calibration Stage 2: Activation Peaks Detection \nTry to activate each muscle to its maximum during the countdown to determine the maximum activation.")
-        # Show Start button for Stage 2 only
+        self.save_button.hide()
+        for i in range(params.SynergiesNumber):
+            self.angle_lineedits[i].hide()
+            self.angle_labels[i].hide()
+        self.synergies_lineedit_label.hide()
+        self.synergy_base_lineedit.hide()
+        self.set_synergy_base.hide()
+
+        self.stage_message_label.show()
         self.start_stage_button.show()
+        self.sensors_dropdown.show()
+
+        self.stage_message_label.setText("Calibration Stage 2: Activation Peaks Detection \nTry to activate each muscle to its maximum during the countdown to determine the maximum activation.")
+       
+        self.populate_sensors_dropdown()
         self.CalibrationStage = 2
-        self.timer_widget.hide()  # Hide the countdown widget when stage changes
+        
 
     def stage3_callback(self):
+        self.save_button.hide()
+        for i in range(params.SynergiesNumber):
+            self.angle_lineedits[i].hide()
+            self.angle_labels[i].hide()
+        self.synergies_lineedit_label.hide()
+        self.synergy_base_lineedit.hide()
+        self.set_synergy_base.hide()
+        self.sensors_dropdown.hide()
+
+        self.stage_message_label.show()
+        self.start_stage_button.show()
+        
         self.stage_message_label.setText("Calibration Stage 3: Synergies Detection \nIn this stage, muscle synergies will be detected. During the countdown, try to activate all the involved muscles with random movements.")
-        # Show Start button for Stage 3 only
-        self.start_stage_button.show()
+      
         self.CalibrationStage = 3
-        self.timer_widget.hide()  # Hide the countdown widget when stage changes
-    
+        
+
     def stage4_callback(self):
-        self.stage_message_label.setText("Press Start to upload the calibration from the Configuration.json file located in the root of the project.")
+        for i in range(params.SynergiesNumber):
+            self.angle_lineedits[i].hide()
+            self.angle_labels[i].hide()
+        self.save_button.hide()
+        self.synergies_lineedit_label.hide()
+        self.synergy_base_lineedit.hide()
+        self.set_synergy_base.hide()
+        self.sensors_dropdown.hide()
+
+        self.stage_message_label.show()
         self.start_stage_button.show()
+        
+        self.stage_message_label.setText("Press Start to upload the calibration from the Configuration.json file located in the root of the project.")
+        
         self.CalibrationStage = 4
-        self.timer_widget.hide()  # Hide the countdown widget when stage changes
+        
 
     def start_countdown(self):
         print("timer")
@@ -740,8 +807,20 @@ class CalibrationWindow(QMainWindow):
         if self.CalibrationStage == 4:
             pass
         else:
+            self.timer_widget.timer_label.show()
             self.timer_widget.show()
             self.timer_widget.start_countdown()
+    
+    def sensor_selected(self, index):
+        if index >= 0:
+            selected_sensor = self.sensors_dropdown.itemText(index)
+            params.selectedSensorIndex = index
+            
+
+    def populate_sensors_dropdown(self):
+        self.sensors_dropdown.clear()
+        self.sensors_dropdown.addItems(['All'])
+        self.sensors_dropdown.addItems(params.SensorStickers)
 
     def terminate_callback (self):
         params.TerminateCalibrationFlag = True
@@ -758,14 +837,33 @@ class CalibrationWindow(QMainWindow):
             msgbox.alert(e)
         self.close()
 
+    def show_select_model(self):
+        self.start_stage_button.hide()
+        self.stage_message_label.hide()
+        self.sensors_dropdown.hide()
+        self.timer_widget.timer_label.hide()
+
+        params.CalibrationStage = 6
+        
+        self.synergies_lineedit_label.show()
+        self.synergy_base_lineedit.show()
+        self.set_synergy_base.show()
+
+        params.PlotModels = True
+        try:
+            self.update_plot()
+        except Exception as e:
+            msgbox.alert(e)
+
+        
+        
     def show_angle_window(self):
         self.save_button.show()
         params.AnglesOutput = []
         # Show the AngleWindow only in stage 3
-        if params.CalibrationStage == 3:
-            for i in range(params.SynergiesNumber):
-                self.angle_lineedits[i].show()
-                self.angle_labels[i].show()
+        for i in range(params.SynergiesNumber):
+            self.angle_lineedits[i].show()
+            self.angle_labels[i].show()
         params.PlotAngles = True
         self.update_plot()
 
@@ -836,9 +934,6 @@ class CalibrationWindow(QMainWindow):
             self.figure.tight_layout()
             self.figure.subplots_adjust(hspace=0.8, wspace=0.6)  # Adjust the spacing if needed
 
-            self.synergies_lineedit_label.show()
-            self.synergy_base_lineedit.show()
-            self.set_synergy_base.show()
             params.PlotModels = False
             
         elif params.PlotAngles:
