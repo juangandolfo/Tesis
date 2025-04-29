@@ -125,7 +125,6 @@ def Initialize():
     SynergyBase = np.identity(ChannelsNumber)
     Thresholds = np.ones(ChannelsNumber) * 0.055
     Peaks = np.ones(ChannelsNumber) * 0.1
-    SensorStickers = [''] * ChannelsNumber
     AnglesOutput = [0] * ChannelsNumber
     vafs = [0] * (ChannelsNumber -1)
     SynergiesNumber = ChannelsNumber
