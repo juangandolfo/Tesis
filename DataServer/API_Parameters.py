@@ -103,7 +103,6 @@ def SaveCalibrationToJson(ChannelsNumber,Thresholds, Peaks, AnglesOutput, Synerg
 
     # Generate a new folder path using the timestamp
     folder_path = 'ExperimentsFiles/Experiment-' + ExperimentTimestamp
-    os.makedirs(folder_path, exist_ok=True)  # Create the folder, no error if it already exists
 
     # Open the file inside the new folder
     file_path = os.path.join(folder_path, 'Calibration.json')

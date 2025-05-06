@@ -3,6 +3,10 @@ import numpy as np
 #import csvHandler
 from scipy.signal import butter
 import pymsgbox as msgbox
+from ProcessingModule.LogHandler import LogHandler
+import os
+import json
+import csv
 
 ModoDelsys = True # True if we use the Delsys API Server, False if we use the API Server from the PM.
 SubSamplingRate = 100
@@ -61,6 +65,8 @@ CalibrationStage = 0
 TimeCalibStage3 = 30
 Muscle2Calibrate_index = 0
 
+logHandler = 0
+attempt = 0
 
 ExperimentTimestamp = ''
 sampleCounter = 0
@@ -81,6 +87,9 @@ def Initialize():
     global projectionMatrix
     global coefficient1
     global coefficient2
+    global logHandler
+    global attempt
+    global RawDataFileName
 
     '''SynergyBase, synergy_CursorMap, MusclesNumberFromCSV, synergysNumber = csvHandler.Read_csv(SynergyConfigurationFile)
     print(SynergyBase)
@@ -101,6 +110,29 @@ def Initialize():
     normal_cutoff = LPF_cutoff / nyquist
     coefficient2, coefficient1 = butter(LPF_order, normal_cutoff, btype='low', analog=False)
 
+    msgbox.alert(1)
+    # Generate a new folder path using the timestamp
+    folder_path = 'ExperimentsFiles/Experiment-' + ExperimentTimestamp
+    os.makedirs(folder_path, exist_ok=True)  # Create the folder, no error if it already exists
+    msgbox.alert(2)
+    if saveCSV:
+        RawDataFileName = 'ExperimentsFiles\Experiment-' + ExperimentTimestamp + "\RawData.csv"
+        msgbox.alert(3)
+        file = open(RawDataFileName, 'w', newline='')
+        msgbox.alert(4)
+        writer = csv.writer(file)
+        msgbox.alert(5)
+        columns = ['Sample'] + [f'Muscle {i+1}' for i in range(MusclesNumber)]
+        writer.writerow(columns)
+        msgbox.alert(6)
+
+    logHandler = LogHandler(folder_path)
+    msgbox.alert(7)
+    attempt = Attempt()
+    msgbox.alert(8)
+
+    
+
     Initialized = True
 
 def GenerateProjectionMatrix(angles):
@@ -112,4 +144,51 @@ def GenerateProjectionMatrix(angles):
     # Construct the projection matrix
     projectionMatrix = np.column_stack((x, y))
     return projectionMatrix
+
+class Attempt():
+    def __init__(self):
+        self.Id = 0
+        self.Start = sampleCounter
+        self.Stop = sampleCounter
+        self.Result = ""
+        self.File = "ExperimentsFiles/Experiment-" + ExperimentTimestamp + "/Events.json" 
+        self.initializeExperimentFile()
+
+    def convertToJson(self):
+        attemptDictionary = {
+            "Id": self.Id,
+            "Start": self.Start,
+            "Stop": self.Stop,
+            "Result": self.Result,
+        }
+        return attemptDictionary
+    
+    def initializeExperimentFile(self):
+        filename = self.File
+        # Check if file exists to avoid overwriting
+        if not os.path.exists(filename):
+            experiment_data = []
+            with open(filename, 'w') as file:
+                json.dump(experiment_data, file, indent=4)
+    
+    def saveAttempt(self):
+        # Check if file exists to avoid overwriting
+        with open(self.File) as file:
+            data = json.load(file)
+            data.append(self.convertToJson())
+            with open(self.File, 'w') as file:
+                json.dump(data, file, indent=4) 
+        self.incrementId() 
+
+    def setStart(self):
+        self.Start = sampleCounter 
+
+    def setStop(self):
+        self.Stop = sampleCounter
+
+    def setResult(self, result):
+        self.Result = result    
+    
+    def incrementId(self):
+        self.Id += 1
 

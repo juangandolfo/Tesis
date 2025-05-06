@@ -11,6 +11,8 @@ import General.LocalCircularBufferVector as Buffer
 import pymsgbox as msgbox
 import threading
 import os
+from ProcessingModule.PM_Parameters import logHandler
+from ProcessingModule.PM_Parameters import attempt
 
 
 synergies_Lock = threading.Lock()
@@ -21,53 +23,6 @@ PORT_Server = 6002 # The port used by the PM Server
 
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-class Attempt():
-    def __init__(self):
-        self.Id = 0
-        self.Start = params.sampleCounter
-        self.Stop = params.sampleCounter
-        self.Result = ""
-        self.File = "ExperimentsFiles/Experiment-" + params.ExperimentTimestamp + "/Events.json" 
-        self.initializeExperimentFile()
-
-    def convertToJson(self):
-        attemptDictionary = {
-            "Id": self.Id,
-            "Start": self.Start,
-            "Stop": self.Stop,
-            "Result": self.Result,
-        }
-        return attemptDictionary
-    
-    def initializeExperimentFile(self):
-        filename = self.File
-        # Check if file exists to avoid overwriting
-        if not os.path.exists(filename):
-            experiment_data = []
-            with open(filename, 'w') as file:
-                json.dump(experiment_data, file, indent=4)
-    
-    def saveAttempt(self):
-        # Check if file exists to avoid overwriting
-        with open(self.File) as file:
-            data = json.load(file)
-            data.append(self.convertToJson())
-            with open(self.File, 'w') as file:
-                json.dump(data, file, indent=4) 
-        self.incrementId() 
-
-    def setStart(self):
-        self.Start = params.sampleCounter 
-
-    def setStop(self):
-        self.Stop = params.sampleCounter
-
-    def setResult(self, result):
-        self.Result = result    
-    
-    def incrementId(self):
-        self.Id += 1
 
 
 # Auxiliar functions -------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -177,7 +132,7 @@ def Request(request):
         else:
             response_data = pack.unpackb(data, max_array_len = len(data), raw=False)
     except Exception as e:
-        #msgbox.alert(e)
+        logHandler.LogError(f"PM_Client: {e}")
         pass
         
     return response_data
@@ -186,7 +141,6 @@ def Request(request):
 def Handle_Client(conn,addr):
     print(f"Connected by {addr}")
     conn.settimeout(600)
-    attempt = Attempt()
     try:
         while True:
             time.sleep(0.025)
@@ -349,19 +303,20 @@ def Handle_Client(conn,addr):
                     pass
                 
             except socket.timeout:
-                msgbox.alert(f"Client {addr} timed out")
+                logHandler.LogError(f"PM Server: Client {addr} timed out")
                 break
             except Exception as e:  
-                msgbox.alert(f"PM Server {e}")
+                logHandler.LogError(f"PM Server: {e}")
             
     except (ConnectionResetError, ConnectionAbortedError) as e:
-        print(f"Client {addr} connection lost: {e}")
+        logHandler.LogError(f"PM Server: Client {addr} connection lost: {e}")
 
     except Exception as e:
-        msgbox.alert(f'PM Comms Server {e}')
+        logHandler.LogError(f"PM Server: {e}")
     finally:
         conn.close()
         msgbox.alert(f"Connection with {addr} closed")
+        logHandler.LogMessage(f"Connection with {addr} closed")
     
 
 
@@ -387,7 +342,8 @@ def Processing_Module_Client():
         try:
             params.Initialize()
         except Exception as e:
-            print(e)
+            msgbox.alert("FALLO EL INITIALIZE")
+            msgbox.alert(e)
             return
         PM_DS.PM_DataStruct.InitializeRawDataBuffer()
 

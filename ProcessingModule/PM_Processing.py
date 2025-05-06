@@ -15,6 +15,7 @@ import pymsgbox as msgbox
 import csv
 import json
 import pandas as pd
+from ProcessingModule.PM_Parameters import logHandler
 
 class DataProcessing:
 
@@ -80,10 +81,9 @@ def Processing():
     counter = 0
     print("PM: Processing live")
     if PM_Parameters.saveCSV:
-        FileName = 'ExperimentsFiles\Experiment-' + PM_Parameters.ExperimentTimestamp + "\RawData.csv"
-        file = open(FileName, 'w', newline='')
+        file = open(PM_Parameters.rawDataFileName, 'w', newline='')
         writer = csv.writer(file)
-        writer.writerow([f'Muscle {i+1}' for i in range(PM_Parameters.MusclesNumber)])
+
 
     SubSamplingCounter = 0
     #ExecutionTime = []
@@ -102,9 +102,9 @@ def Processing():
         counter += 1
 
         if RawData != []:
-            
             if PM_Parameters.saveCSV:
-                writer.writerow(RawData)
+                Data2Save = [PM_Parameters.sampleCounter] + RawData
+                writer.writerow(Data2Save)
                 file.flush()
             
             PM_Parameters.sampleCounter = PM_Parameters.sampleCounter + 1 
@@ -290,7 +290,7 @@ def CalibrationProcessing():
                         PM_Parameters.SynergyBaseInverse = np.linalg.pinv(PM_Parameters.SynergyBase)
                         PM_Parameters.projectionMatrix = PM_Parameters.GenerateProjectionMatrix(PM_Parameters.synergy_CursorMap)    
                     except Exception as e:
-                        msgbox.alert(e)
+                        logHandler.LogError(f"PM: Error in SynergyBaseInverse: {e}")
                     break
 
         elif PM_Parameters.CalibrationStage == 5:
@@ -302,9 +302,9 @@ def CalibrationProcessing():
             print("stage6")
             PM_Parameters.CalibrationStage = 0
             PM_Parameters.RequestAngles = True
-            break          
+            break     
 
-    print("PM: Calibration terminated")
+    logHandler.LogMessage("PM: Calibration terminated")
     PM_Parameters.Processing = True
     
     
