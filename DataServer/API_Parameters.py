@@ -86,7 +86,6 @@ def UploadCalibrationFromJson():
     return Thresholds, Peaks, AnglesOutput, SynergiesModels, SensorStickers
         
 def SaveCalibrationToJson(ChannelsNumber,Thresholds, Peaks, AnglesOutput, SynergyBase, SensorStickers):
-
     global ExperimentTimestamp
     data = {
             'MusclesNumber': ChannelsNumber,

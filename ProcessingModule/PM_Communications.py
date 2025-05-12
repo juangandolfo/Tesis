@@ -11,9 +11,6 @@ import General.LocalCircularBufferVector as Buffer
 import pymsgbox as msgbox
 import threading
 import os
-from ProcessingModule.PM_Parameters import logHandler
-from ProcessingModule.PM_Parameters import attempt
-
 
 synergies_Lock = threading.Lock()
 
@@ -59,7 +56,6 @@ def Request(request):
     except socket.error as e:
             print("PM request:", e)
     data = b''
-    
     try:
         while True:
             chunk = client_socket.recv(1024)
@@ -128,11 +124,12 @@ def Request(request):
     
     try:
         if data == b'\x90': 
-            raise Exception("PM:No data received")
+            pass
         else:
             response_data = pack.unpackb(data, max_array_len = len(data), raw=False)
     except Exception as e:
-        logHandler.LogError(f"PM_Client: {e}")
+        # msgbox.alert(f"PM Client: {e}")
+        params.logHandler.LogError(f"PM_Client: {e}")
         pass
         
     return response_data
@@ -169,36 +166,35 @@ def Handle_Client(conn,addr):
                     #print("PM: Data sent:", response_data)
 
                 elif data.decode().strip() == "POST /startAttempt":
-                    #msgbox.alert("Attempt started")
-                    attempt.setStart()
+                    params.attempt.setStart()
                     serialized_data = pack.packb("Ok")
                     conn.sendall(serialized_data)
                 
                 elif data.decode().strip() == "POST /win":
-                    attempt.setStop()
-                    attempt.setResult("Win")
-                    attempt.saveAttempt()
+                    params.attempt.setStop()
+                    params.attempt.setResult("Win")
+                    params.attempt.saveAttempt()
                     serialized_data = pack.packb("Ok")
                     conn.sendall(serialized_data)
 
                 elif data.decode().strip() == "POST /loss":
-                    attempt.setStop()
-                    attempt.setResult("Loss")
-                    attempt.saveAttempt()   
+                    params.attempt.setStop()
+                    params.attempt.setResult("Loss")
+                    params.attempt.saveAttempt()   
                     serialized_data = pack.packb("Ok")
                     conn.sendall(serialized_data)
 
                 elif data.decode().strip() == "POST /restartAttempt":
-                    attempt.setStop()
-                    attempt.setResult("Restarted")
-                    attempt.saveAttempt()
+                    params.attempt.setStop()
+                    params.attempt.setResult("Restarted")
+                    params.attempt.saveAttempt()
                     serialized_data = pack.packb("Ok")
                     conn.sendall(serialized_data)
 
                 elif data.decode().strip() == "POST /exit":
-                    attempt.setStop()
-                    attempt.setResult("Exit")
-                    attempt.saveAttempt()
+                    params.attempt.setStop()
+                    params.attempt.setResult("Exit")
+                    params.attempt.saveAttempt()
                     serialized_data = pack.packb("Ok")
                     conn.sendall(serialized_data)
 
@@ -303,20 +299,20 @@ def Handle_Client(conn,addr):
                     pass
                 
             except socket.timeout:
-                logHandler.LogError(f"PM Server: Client {addr} timed out")
+                params.logHandler.LogError(f"PM Server: Client {addr} timed out")
                 break
             except Exception as e:  
-                logHandler.LogError(f"PM Server: {e}")
+                params.logHandler.LogError(f"PM Server: {e}")
             
     except (ConnectionResetError, ConnectionAbortedError) as e:
-        logHandler.LogError(f"PM Server: Client {addr} connection lost: {e}")
+        params.logHandler.LogError(f"PM Server: Client {addr} connection lost: {e}")
 
     except Exception as e:
-        logHandler.LogError(f"PM Server: {e}")
+        params.logHandler.LogError(f"PM Server: {e.with_traceback()}")
     finally:
         conn.close()
         msgbox.alert(f"Connection with {addr} closed")
-        logHandler.LogMessage(f"Connection with {addr} closed")
+        params.logHandler.LogMessage(f"Connection with {addr} closed")
     
 
 

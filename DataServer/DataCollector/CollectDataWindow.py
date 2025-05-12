@@ -824,17 +824,17 @@ class CalibrationWindow(QMainWindow):
 
     def terminate_callback (self):
         params.TerminateCalibrationFlag = True
-        try:
-            params.SaveCalibrationToJson(
-                                                params.ChannelsNumber,
-                                                params.Thresholds,
-                                                params.Peaks,
-                                                params.AnglesOutput,
-                                                params.SynergyBase,
-                                                params.SensorStickers
-                                                )
-        except Exception as e:
-            msgbox.alert(e)
+        # try:
+        #     params.SaveCalibrationToJson(
+        #                                         params.ChannelsNumber,
+        #                                         params.Thresholds,
+        #                                         params.Peaks,
+        #                                         params.AnglesOutput,
+        #                                         params.SynergyBase,
+        #                                         params.SensorStickers
+        #                                         )
+        # except Exception as e:
+        #     msgbox.alert(e)
         self.close()
 
     def show_select_model(self):

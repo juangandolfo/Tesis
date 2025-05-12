@@ -15,7 +15,6 @@ import pymsgbox as msgbox
 import csv
 import json
 import pandas as pd
-from ProcessingModule.PM_Parameters import logHandler
 
 class DataProcessing:
 
@@ -81,7 +80,7 @@ def Processing():
     counter = 0
     print("PM: Processing live")
     if PM_Parameters.saveCSV:
-        file = open(PM_Parameters.rawDataFileName, 'w', newline='')
+        file = open(PM_Parameters.RawDataFileName, 'a', newline='')
         writer = csv.writer(file)
 
 
@@ -103,7 +102,7 @@ def Processing():
 
         if RawData != []:
             if PM_Parameters.saveCSV:
-                Data2Save = [PM_Parameters.sampleCounter] + RawData
+                Data2Save = [PM_Parameters.sampleCounter] + list(RawData)
                 writer.writerow(Data2Save)
                 file.flush()
             
@@ -290,7 +289,7 @@ def CalibrationProcessing():
                         PM_Parameters.SynergyBaseInverse = np.linalg.pinv(PM_Parameters.SynergyBase)
                         PM_Parameters.projectionMatrix = PM_Parameters.GenerateProjectionMatrix(PM_Parameters.synergy_CursorMap)    
                     except Exception as e:
-                        logHandler.LogError(f"PM: Error in SynergyBaseInverse: {e}")
+                        PM_Parameters.logHandler.LogError(f"PM: Error in SynergyBaseInverse: {e}")
                     break
 
         elif PM_Parameters.CalibrationStage == 5:
@@ -303,8 +302,17 @@ def CalibrationProcessing():
             PM_Parameters.CalibrationStage = 0
             PM_Parameters.RequestAngles = True
             break     
-
-    logHandler.LogMessage("PM: Calibration terminated")
+    try:
+        calibrationFileName = PM_Parameters.fileHandler.SaveCalibrationToJson(
+                                                                PM_Parameters.MusclesNumber,
+                                                                PM_Parameters.Threshold, 
+                                                                PM_Parameters.PeakActivation, 
+                                                                PM_Parameters.synergy_CursorMap, 
+                                                                PM_Parameters.SynergyBase, 
+                                                                PM_Parameters.SensorStickers) 
+        PM_Parameters.logHandler.LogCalibration(calibrationFileName, PM_Parameters.sampleCounter)
+    except Exception as e:
+        msgbox.alert(f"PM: Error in LogMessage: {e}")
     PM_Parameters.Processing = True
     
     

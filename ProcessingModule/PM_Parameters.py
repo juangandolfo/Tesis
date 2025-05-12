@@ -3,7 +3,7 @@ import numpy as np
 #import csvHandler
 from scipy.signal import butter
 import pymsgbox as msgbox
-from ProcessingModule.LogHandler import LogHandler
+from ProcessingModule.FileHandler import LogHandler, FileHandler
 import os
 import json
 import csv
@@ -67,6 +67,7 @@ Muscle2Calibrate_index = 0
 
 logHandler = 0
 attempt = 0
+fileHandler = 0
 
 ExperimentTimestamp = ''
 sampleCounter = 0
@@ -90,6 +91,7 @@ def Initialize():
     global logHandler
     global attempt
     global RawDataFileName
+    global fileHandler
 
     '''SynergyBase, synergy_CursorMap, MusclesNumberFromCSV, synergysNumber = csvHandler.Read_csv(SynergyConfigurationFile)
     print(SynergyBase)
@@ -110,28 +112,19 @@ def Initialize():
     normal_cutoff = LPF_cutoff / nyquist
     coefficient2, coefficient1 = butter(LPF_order, normal_cutoff, btype='low', analog=False)
 
-    msgbox.alert(1)
     # Generate a new folder path using the timestamp
     folder_path = 'ExperimentsFiles/Experiment-' + ExperimentTimestamp
     os.makedirs(folder_path, exist_ok=True)  # Create the folder, no error if it already exists
-    msgbox.alert(2)
     if saveCSV:
         RawDataFileName = 'ExperimentsFiles\Experiment-' + ExperimentTimestamp + "\RawData.csv"
-        msgbox.alert(3)
         file = open(RawDataFileName, 'w', newline='')
-        msgbox.alert(4)
         writer = csv.writer(file)
-        msgbox.alert(5)
         columns = ['Sample'] + [f'Muscle {i+1}' for i in range(MusclesNumber)]
         writer.writerow(columns)
-        msgbox.alert(6)
 
+    fileHandler = FileHandler(folder_path)
     logHandler = LogHandler(folder_path)
-    msgbox.alert(7)
-    attempt = Attempt()
-    msgbox.alert(8)
-
-    
+    attempt = Attempt()   
 
     Initialized = True
 
