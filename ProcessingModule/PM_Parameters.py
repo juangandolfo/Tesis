@@ -81,13 +81,9 @@ def Initialize():
     global projectionMatrix
     global coefficient1
     global coefficient2
+    global modelsList
 
-    '''SynergyBase, synergy_CursorMap, MusclesNumberFromCSV, synergysNumber = csvHandler.Read_csv(SynergyConfigurationFile)
-    print(SynergyBase)
-    #SynergyBase = np.identity(MusclesNumber)
-    #print(SynergyBase)
-    if MusclesNumberFromCSV != MusclesNumber:
-        raise Exception("The number of muscles in the configuration file is different from the number of muscles in the PM")    '''
+   
     PeakActivation = np.ones(MusclesNumber)*0.1
     Threshold = np.ones(MusclesNumber) * 0.055
     synergiesNumber = MusclesNumber
@@ -101,6 +97,20 @@ def Initialize():
     normal_cutoff = LPF_cutoff / nyquist
     coefficient2, coefficient1 = butter(LPF_order, normal_cutoff, btype='low', analog=False)
 
+    modelsList = {}
+
+    for i in range(2, synergiesNumber + 1):
+        n_components = i
+
+        # Create h_norm with repeated identity pattern
+        h_norm = np.array([np.identity(MusclesNumber)[k % MusclesNumber] for k in range(n_components)])
+
+        H_inv = np.linalg.pinv(h_norm)
+        r_squared = np.zeros(1)
+        vaf = np.zeros(1)
+
+        modelsList[i - 2] = (n_components, h_norm, H_inv, r_squared, vaf)  # use integer key
+   
     Initialized = True
 
 def GenerateProjectionMatrix(angles):

@@ -130,6 +130,8 @@ def Initialize():
     SynergiesNumber = ChannelsNumber
     
     SynergiesModels = {
-        f'{i+2} Synergies': np.identity((2 + i) * ChannelsNumber).tolist() for i in range(SynergiesNumber - 1)
+    f'{i+2} Synergies': [np.identity(ChannelsNumber)[k % ChannelsNumber].tolist() for k in range(i+2)]
+    for i in range(SynergiesNumber - 1)
     }
     SynergiesModels['vafs'] = (np.asarray(vafs)).tolist()
+

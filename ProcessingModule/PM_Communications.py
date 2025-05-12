@@ -147,6 +147,7 @@ def Request(request):
                 break
             elif b"CS6" in chunk:
                 params.CalibrationStage = 6
+                msgbox.alert("Calibration CS6")
                 chunk = chunk[:-3]
                 data += chunk
                 break
@@ -399,6 +400,7 @@ def Processing_Module_Client():
             try:
                 try:
                     if params.RequestAngles == True:
+                        msgbox.alert("Requesting angles")
                         data = Request("GET /Angles")
                         angles = []
                         if data != []:
@@ -411,11 +413,14 @@ def Processing_Module_Client():
                             params.RequestAngles = False
                             params.CalibrationStage = 0
                             params.synergiesNumber = len(angles)
-                            params.SynergyBase = params.modelsList[params.synergiesNumber-2][1]
-                            params.SynergyBaseInverse = params.modelsList[params.synergiesNumber-2][2]
-                            
-                            # print("Angles recieved", angles)
-                            #msgbox.alert(text = str(params.SynergyBase), title = "Angles", button = "OK")
+
+                            try:
+                                params.SynergyBase = params.modelsList[params.synergiesNumber-2][1]
+                                params.SynergyBaseInverse = params.modelsList[params.synergiesNumber-2][2]
+                                msgbox.alert(params.SynergyBaseInverse)
+                            except Exception as e:
+                                msgbox.alert(f"SynergyBase {e}")
+                           
                     
                     elif params.RequestCalibrationTime == True:
                         try: 
