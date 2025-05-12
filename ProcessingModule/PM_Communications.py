@@ -198,6 +198,12 @@ def Handle_Client(conn,addr):
                     serialized_data = pack.packb("Ok")
                     conn.sendall(serialized_data)
 
+                elif data.decode().strip() == "GET /attempt":
+                    #msgbox.alert("Attempt started")
+                    response_data = attempt.Id
+                    serialized_data = pack.packb(response_data)  # Convert the dictionary to JSON and enconde into bytes
+                    conn.sendall(serialized_data)
+
                 elif data.decode().strip() == "GET /Muscles":
                     # with synergies_Lock:
                         #print("------------------------------------------------------GET /Muscles")
