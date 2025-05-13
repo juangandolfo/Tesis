@@ -59,6 +59,11 @@ class LogHandler:
         message = "Calibration file saved: " + CalibrationFileName + " - Sample: " + str(Sample)
         self.LogMessage(message)
     
+    def LogAttempt(self, AttemptId):
+        message = "Attempt saved: " + str(AttemptId)
+        self.LogMessage(message)
+
+
 class FileHandler:
     def __init__(self, folder_path):
         self.folder_path = folder_path

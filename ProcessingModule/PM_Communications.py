@@ -12,6 +12,7 @@ import pymsgbox as msgbox
 import threading
 import os
 
+
 synergies_Lock = threading.Lock()
 
 HOST = "127.0.0.1"  # Standard adress (localhost)
@@ -174,13 +175,15 @@ def Handle_Client(conn,addr):
                     params.attempt.setStop()
                     params.attempt.setResult("Win")
                     params.attempt.saveAttempt()
+                    params.logHandler.LogAttempt(params.attempt.Id)
                     serialized_data = pack.packb("Ok")
                     conn.sendall(serialized_data)
 
                 elif data.decode().strip() == "POST /loss":
                     params.attempt.setStop()
                     params.attempt.setResult("Loss")
-                    params.attempt.saveAttempt()   
+                    params.attempt.saveAttempt()
+                    params.logHandler.LogAttempt(params.attempt.Id)   
                     serialized_data = pack.packb("Ok")
                     conn.sendall(serialized_data)
 
@@ -188,6 +191,7 @@ def Handle_Client(conn,addr):
                     params.attempt.setStop()
                     params.attempt.setResult("Restarted")
                     params.attempt.saveAttempt()
+                    params.logHandler.LogAttempt(params.attempt.Id)
                     serialized_data = pack.packb("Ok")
                     conn.sendall(serialized_data)
 
@@ -195,12 +199,19 @@ def Handle_Client(conn,addr):
                     params.attempt.setStop()
                     params.attempt.setResult("Exit")
                     params.attempt.saveAttempt()
+                    params.logHandler.LogAttempt(params.attempt.Id)
+                    params.logHandler.LogMessage("Cursor closed on sample: " + str(params.attempt.Stop))
+                    serialized_data = pack.packb("Ok")
+                    conn.sendall(serialized_data)
+
+                elif data.decode().strip() == "POST /cursorStart":
+                    params.logHandler.LogMessage("Cursor started on sample: " + str(params.sampleCounter))
                     serialized_data = pack.packb("Ok")
                     conn.sendall(serialized_data)
 
                 elif data.decode().strip() == "GET /attempt":
                     #msgbox.alert("Attempt started")
-                    response_data = attempt.Id
+                    response_data = params.attempt.Id
                     serialized_data = pack.packb(response_data)  # Convert the dictionary to JSON and enconde into bytes
                     conn.sendall(serialized_data)
 

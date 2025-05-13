@@ -138,6 +138,13 @@ def Get_attempt():
     response_data = Send_data(request)
     return response_data
 
+#-----------------------------------------------------------------------------------------------------------
+def Post_cursorStart():
+    # Function to send the request and receive data from MP
+    request = "POST /cursorStart"
+    response_data = Send_data(request)
+    return response_data
+
 ### CLASSES ------------------------------------------------------------------------------------------------
 #-----------------------------------------------------------------------------------------------------------
 class Player(pygame.sprite.Sprite):
@@ -376,6 +383,7 @@ def HandleCollideObjective():
     returnToCenter()
     KillEnemies()
     GenerateEnemiesFromList()
+    Post_start()
     # started = False
         
 # ----------------------------------------------------------------------------------------------------------
@@ -390,6 +398,7 @@ def HandleCollideEnemy():
     returnToCenter()
     KillEnemies()
     GenerateEnemiesFromList()
+    Post_start()
     # started = False   
 
 ### MAIN LOOP ----------------------------------------------------------------------------------------------
@@ -399,7 +408,8 @@ def Cursor():
     global SCREEN_HEIGHT, SCREEN_WIDTH
     global player, enemies, objectives, all_sprites,running, font, started, screen, text1, text2
     
-    Connect() 
+    Connect()
+    Post_cursorStart() 
     pygame.init()
     pygame.key.set_repeat(50,0)
 
