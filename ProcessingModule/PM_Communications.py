@@ -166,10 +166,27 @@ def Handle_Client(conn,addr):
                     conn.sendall(response_json)
                     #print("PM: Data sent:", response_data)
 
-                elif data.decode().strip() == "POST /startAttempt":
+                elif data.decode().strip().startswith("POST /startAttempt"):
+                    # Accepts: "POST /startAttempt" or "POST /startAttempt <number>"
+                    parts = data.decode().strip().split()
+                    if len(parts) > 2:
+                        try:
+                            target_number = int(parts[2])
+                        except ValueError:
+                            target_number = 0
+                    else:
+                        target_number = 0
                     params.attempt.setStart()
+                    params.attempt.setTarget(target_number)
+                    # msgbox.alert("Attempt started " + str(target_number))
                     serialized_data = pack.packb("Ok")
                     conn.sendall(serialized_data)
+
+                # elif data.decode().strip() == "POST /startAttempt":
+                #     params.attempt.setStart()
+                #     params.attempt.setTarget()
+                #     serialized_data = pack.packb("Ok")
+                #     conn.sendall(serialized_data)
                 
                 elif data.decode().strip() == "POST /win":
                     params.attempt.setStop()
@@ -196,6 +213,7 @@ def Handle_Client(conn,addr):
                     conn.sendall(serialized_data)
 
                 elif data.decode().strip() == "POST /exit":
+                    params.attempt.setStart()
                     params.attempt.setStop()
                     params.attempt.setResult("Exit")
                     params.attempt.saveAttempt()

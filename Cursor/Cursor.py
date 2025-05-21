@@ -93,7 +93,7 @@ def Get_data():
 #-----------------------------------------------------------------------------------------------------------
 def Post_start():
     # Function to send the request and receive data from MP
-    request = "POST /startAttempt"
+    request = "POST /startAttempt " + str(objectiveEnemy)
     try:
         response_data = Send_data(request)
         if response_data == "Ok":
@@ -203,7 +203,7 @@ all_sprites.add(player)
 ### FUNCTIONS ----------------------------------------------------------------------------------------------
 #-----------------------------------------------------------------------------------------------------------
 def GenerateEnemiesFromList():
-    global position, enemies, objectives, all_sprites
+    global position, enemies, objectives, all_sprites, objectiveEnemy
     # objectiveEnemy=random.randint(1,8)
     attempt = Get_attempt()
     objectiveEnemy = objectiveList[attempt % len(objectiveList)]

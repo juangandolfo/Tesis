@@ -144,6 +144,7 @@ class Attempt():
         self.Start = sampleCounter
         self.Stop = sampleCounter
         self.Result = ""
+        self.Target = 0
         self.File = "ExperimentsFiles/Experiment-" + ExperimentTimestamp + "/Events.json" 
         self.initializeExperimentFile()
 
@@ -153,6 +154,7 @@ class Attempt():
             "Start": self.Start,
             "Stop": self.Stop,
             "Result": self.Result,
+            "target": self.Target,
         }
         return attemptDictionary
     
@@ -175,6 +177,9 @@ class Attempt():
 
     def setStart(self):
         self.Start = sampleCounter 
+
+    def setTarget(self, target):
+        self.Target = target
 
     def setStop(self):
         self.Stop = sampleCounter
