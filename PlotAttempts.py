@@ -8,13 +8,14 @@ import scipy.signal
 AttemptResults = []
 
 def read_calibration_file(experiment_path):
-    config_file_path = os.path.join(experiment_path, 'Calibration.json')
+    config_file_path = os.path.join(experiment_path, 'Calibrations\Calibration_0.json')
     with open(config_file_path, 'r') as file:
         data = json.load(file)
         Threshold = np.array(data['Thresholds'])
         PeakActivation = np.array(data['Peaks'])
         SynergyBase = np.array(data['SynergyBase'])
         MusclesNumber = data['MusclesNumber']
+        print(f"Threshold: {Threshold}, PeakActivation: {PeakActivation}, SynergyBase: {SynergyBase}, MusclesNumber: {MusclesNumber}")
     return Threshold, PeakActivation, SynergyBase, MusclesNumber
     
 def plot_attempt(data, experiment_file, timestamps, target_muscle,atttempt_id):
@@ -126,7 +127,8 @@ def process_data(experiment_file, Threshold, PeakActivation, SynergyBase, Muscle
     with open(experiment_file, newline='') as file:
         reader = csv.reader(file)
         next(reader)  # Skip the first row
-        RawData = np.array(list(reader)).astype(float)
+        #RawData = np.array(list(reader)).astype(float)
+        RawData = np.array([row[1:] for row in reader]).astype(float)
         
     RectifiedData = Rectify(RawData)
     NormalizedData = Normalize(RectifiedData, PeakActivation, MusclesNumber, Threshold)
@@ -141,7 +143,7 @@ def process_data(experiment_file, Threshold, PeakActivation, SynergyBase, Muscle
 
 # Main
 # ExperimentPath = '.\ExperimentsFiles\Experiment-20250203-262642'
-ExperimentPath = '.\ExperimentsFiles\Experiment-20250224-251741'
+ExperimentPath = '.\ExperimentsFiles\Experiment-20250606-045230'
 Target_muscle = 0 
 rawdata_file_path = os.path.join(ExperimentPath, 'RawData.csv')  
 Threshold, PeakActivation, SynergyBase, MusclesNumber = read_calibration_file(ExperimentPath)
