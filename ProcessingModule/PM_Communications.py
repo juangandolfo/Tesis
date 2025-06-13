@@ -22,53 +22,6 @@ PORT_Server = 6002 # The port used by the PM Server
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-class Attempt():
-    def __init__(self):
-        self.Id = 0
-        self.Start = params.sampleCounter
-        self.Stop = params.sampleCounter
-        self.Result = ""
-        self.File = "ExperimentsFiles/Experiment-" + params.ExperimentTimestamp + "/Events.json" 
-        self.initializeExperimentFile()
-
-    def convertToJson(self):
-        attemptDictionary = {
-            "Id": self.Id,
-            "Start": self.Start,
-            "Stop": self.Stop,
-            "Result": self.Result,
-        }
-        return attemptDictionary
-    
-    def initializeExperimentFile(self):
-        filename = self.File
-        # Check if file exists to avoid overwriting
-        if not os.path.exists(filename):
-            experiment_data = []
-            with open(filename, 'w') as file:
-                json.dump(experiment_data, file, indent=4)
-    
-    def saveAttempt(self):
-        # Check if file exists to avoid overwriting
-        with open(self.File) as file:
-            data = json.load(file)
-            data.append(self.convertToJson())
-            with open(self.File, 'w') as file:
-                json.dump(data, file, indent=4) 
-        self.incrementId() 
-
-    def setStart(self):
-        self.Start = params.sampleCounter 
-
-    def setStop(self):
-        self.Stop = params.sampleCounter
-
-    def setResult(self, result):
-        self.Result = result    
-    
-    def incrementId(self):
-        self.Id += 1
-
 
 # Auxiliar functions -------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -104,7 +57,6 @@ def Request(request):
     except socket.error as e:
             print("PM request:", e)
     data = b''
-    
     try:
         while True:
             chunk = client_socket.recv(1024)
@@ -174,11 +126,12 @@ def Request(request):
     
     try:
         if data == b'\x90': 
-            raise Exception("PM:No data received")
+            pass
         else:
             response_data = pack.unpackb(data, max_array_len = len(data), raw=False)
     except Exception as e:
-        #msgbox.alert(e)
+        # msgbox.alert(f"PM Client: {e}")
+        params.logHandler.LogError(f"PM_Client: {e}")
         pass
         
     return response_data
@@ -187,7 +140,6 @@ def Request(request):
 def Handle_Client(conn,addr):
     print(f"Connected by {addr}")
     conn.settimeout(600)
-    attempt = Attempt()
     try:
         while True:
             time.sleep(0.025)
@@ -216,37 +168,52 @@ def Handle_Client(conn,addr):
                     #print("PM: Data sent:", response_data)
 
                 elif data.decode().strip() == "POST /startAttempt":
-                    #msgbox.alert("Attempt started")
-                    attempt.setStart()
+                    params.attempt.setStart()
                     serialized_data = pack.packb("Ok")
                     conn.sendall(serialized_data)
                 
                 elif data.decode().strip() == "POST /win":
-                    attempt.setStop()
-                    attempt.setResult("Win")
-                    attempt.saveAttempt()
+                    params.attempt.setStop()
+                    params.attempt.setResult("Win")
+                    params.attempt.saveAttempt()
+                    params.logHandler.LogAttempt(params.attempt.Id)
                     serialized_data = pack.packb("Ok")
                     conn.sendall(serialized_data)
 
                 elif data.decode().strip() == "POST /loss":
-                    attempt.setStop()
-                    attempt.setResult("Loss")
-                    attempt.saveAttempt()   
+                    params.attempt.setStop()
+                    params.attempt.setResult("Loss")
+                    params.attempt.saveAttempt()
+                    params.logHandler.LogAttempt(params.attempt.Id)   
                     serialized_data = pack.packb("Ok")
                     conn.sendall(serialized_data)
 
                 elif data.decode().strip() == "POST /restartAttempt":
-                    attempt.setStop()
-                    attempt.setResult("Restarted")
-                    attempt.saveAttempt()
+                    params.attempt.setStop()
+                    params.attempt.setResult("Restarted")
+                    params.attempt.saveAttempt()
+                    params.logHandler.LogAttempt(params.attempt.Id)
                     serialized_data = pack.packb("Ok")
                     conn.sendall(serialized_data)
 
                 elif data.decode().strip() == "POST /exit":
-                    attempt.setStop()
-                    attempt.setResult("Exit")
-                    attempt.saveAttempt()
+                    params.attempt.setStop()
+                    params.attempt.setResult("Exit")
+                    params.attempt.saveAttempt()
+                    params.logHandler.LogAttempt(params.attempt.Id)
+                    params.logHandler.LogMessage("Cursor closed on sample: " + str(params.attempt.Stop))
                     serialized_data = pack.packb("Ok")
+                    conn.sendall(serialized_data)
+
+                elif data.decode().strip() == "POST /cursorStart":
+                    params.logHandler.LogMessage("Cursor started on sample: " + str(params.sampleCounter))
+                    serialized_data = pack.packb("Ok")
+                    conn.sendall(serialized_data)
+
+                elif data.decode().strip() == "GET /attempt":
+                    #msgbox.alert("Attempt started")
+                    response_data = params.attempt.Id
+                    serialized_data = pack.packb(response_data)  # Convert the dictionary to JSON and enconde into bytes
                     conn.sendall(serialized_data)
 
                 elif data.decode().strip() == "GET /Muscles":
@@ -350,19 +317,20 @@ def Handle_Client(conn,addr):
                     pass
                 
             except socket.timeout:
-                msgbox.alert(f"Client {addr} timed out")
+                params.logHandler.LogError(f"PM Server: Client {addr} timed out")
                 break
             except Exception as e:  
-                msgbox.alert(f"PM Server {e}")
+                params.logHandler.LogError(f"PM Server: {e}")
             
     except (ConnectionResetError, ConnectionAbortedError) as e:
-        print(f"Client {addr} connection lost: {e}")
+        params.logHandler.LogError(f"PM Server: Client {addr} connection lost: {e}")
 
     except Exception as e:
-        msgbox.alert(f'PM Comms Server {e}')
+        params.logHandler.LogError(f"PM Server: {e.with_traceback()}")
     finally:
         conn.close()
         msgbox.alert(f"Connection with {addr} closed")
+        params.logHandler.LogMessage(f"Connection with {addr} closed")
     
 
 
@@ -388,7 +356,8 @@ def Processing_Module_Client():
         try:
             params.Initialize()
         except Exception as e:
-            print(e)
+            msgbox.alert("FALLO EL INITIALIZE")
+            msgbox.alert(e)
             return
         PM_DS.PM_DataStruct.InitializeRawDataBuffer()
 

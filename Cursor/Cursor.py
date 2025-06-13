@@ -34,15 +34,18 @@ frequency = 120
 SCREEN_WIDTH = 700
 SCREEN_HEIGHT = 700
 
-position=[(SCREEN_WIDTH/2,100),                 #norte
-        (SCREEN_WIDTH-180,180),                 #noroeste
-        (SCREEN_WIDTH-100,SCREEN_HEIGHT/2),     #este
-        (SCREEN_WIDTH-180,SCREEN_HEIGHT-180),   #sureste
-        (SCREEN_WIDTH/2,SCREEN_HEIGHT-100),     #sur
-        (180,SCREEN_HEIGHT-180),                #suroeste
-        (100,SCREEN_HEIGHT/2),                  #oeste
-        (180,180),                              #noreste
-        ]
+position =  [(SCREEN_WIDTH/2,100),                 #norte
+            (SCREEN_WIDTH-180,180),                 #noroeste
+            (SCREEN_WIDTH-100,SCREEN_HEIGHT/2),     #este
+            (SCREEN_WIDTH-180,SCREEN_HEIGHT-180),   #sureste
+            (SCREEN_WIDTH/2,SCREEN_HEIGHT-100),     #sur
+            (180,SCREEN_HEIGHT-180),                #suroeste
+            (100,SCREEN_HEIGHT/2),                  #oeste
+            (180,180),                              #noreste
+            ]
+
+objectiveList = [1,2,3,4,5,6,7,8,8,7,6,5,4,3,2,1]
+
 
 HOST = "127.0.0.1"  # The server's hostname or IP address
 PORT2 = 6002  # The port used by the MP Server
@@ -128,6 +131,20 @@ def Post_Exit():
     response_data = Send_data(request)
     return response_data
 
+#-----------------------------------------------------------------------------------------------------------
+def Get_attempt():
+    # Function to send the request and receive data from MP
+    request = "GET /attempt"
+    response_data = Send_data(request)
+    return response_data
+
+#-----------------------------------------------------------------------------------------------------------
+def Post_cursorStart():
+    # Function to send the request and receive data from MP
+    request = "POST /cursorStart"
+    response_data = Send_data(request)
+    return response_data
+
 ### CLASSES ------------------------------------------------------------------------------------------------
 #-----------------------------------------------------------------------------------------------------------
 class Player(pygame.sprite.Sprite):
@@ -185,9 +202,11 @@ all_sprites.add(player)
 
 ### FUNCTIONS ----------------------------------------------------------------------------------------------
 #-----------------------------------------------------------------------------------------------------------
-def GenerateRandomEnemies():
+def GenerateEnemiesFromList():
     global position, enemies, objectives, all_sprites
-    objectiveEnemy=random.randint(1,8)
+    # objectiveEnemy=random.randint(1,8)
+    attempt = Get_attempt()
+    objectiveEnemy = objectiveList[attempt % len(objectiveList)]
     GenerateEnemies(objectiveEnemy)
 
 # ----------------------------------------------------------------------------------------------------------
@@ -228,7 +247,7 @@ def restartAttempt():
     
     returnToCenter()
     KillEnemies()
-    GenerateRandomEnemies()
+    GenerateEnemiesFromList()
 
 # ----------------------------------------------------------------------------------------------------------
 def getSpeedFromKeyboard(pressed_keys):
@@ -363,8 +382,9 @@ def HandleCollideObjective():
     Post_Win()
     returnToCenter()
     KillEnemies()
-    GenerateRandomEnemies()
-    started = False
+    GenerateEnemiesFromList()
+    Post_start()
+    # started = False
         
 # ----------------------------------------------------------------------------------------------------------
 def CheckCollideEnemy():
@@ -376,7 +396,10 @@ def HandleCollideEnemy():
     global started 
     Post_Loss()
     returnToCenter()
-    started = False   
+    KillEnemies()
+    GenerateEnemiesFromList()
+    Post_start()
+    # started = False   
 
 ### MAIN LOOP ----------------------------------------------------------------------------------------------
 #-----------------------------------------------------------------------------------------------------------
@@ -385,14 +408,15 @@ def Cursor():
     global SCREEN_HEIGHT, SCREEN_WIDTH
     global player, enemies, objectives, all_sprites,running, font, started, screen, text1, text2
     
-    Connect() 
+    Connect()
+    Post_cursorStart() 
     pygame.init()
     pygame.key.set_repeat(50,0)
 
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     font = pygame.font.Font(None, 36)
     
-    GenerateRandomEnemies()
+    GenerateEnemiesFromList()
     
     running = True
     started = False
