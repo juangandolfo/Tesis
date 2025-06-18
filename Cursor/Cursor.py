@@ -7,6 +7,7 @@ import random
 from multiprocessing import Process
 import msgpack as pack
 import csv
+import time
 import pymsgbox as messagebox
 from pygame.locals import   (K_UP,
                             K_DOWN,
@@ -33,6 +34,7 @@ from pygame.locals import   (K_UP,
 frequency = 120
 SCREEN_WIDTH = 700
 SCREEN_HEIGHT = 700
+attemptTimeout = 3000 # milliseconds
 
 position =  [(SCREEN_WIDTH/2,100),                 #norte
             (SCREEN_WIDTH-180,180),                 #noroeste
@@ -97,6 +99,7 @@ def Post_start():
     try:
         response_data = Send_data(request)
         if response_data == "Ok":
+            startAttemptTimer()
             return 
         else:
             messagebox.alert(text='Error in starting the attempt', title='Error', button='OK')
@@ -289,6 +292,22 @@ def EraseText():
     text1 = font.render("", True, (255, 255, 255))
     text2 = font.render("", True, (255, 255, 255))
 
+# ----------------------------------------------------------------------------------------------------------
+def startAttemptTimer():
+    global attemptTimer
+    attemptTimer = time.time()  # Start the timer
+
+# ----------------------------------------------------------------------------------------------------------
+def checkAttemptTiemout():
+    global attemptTimer, attemptTimeout
+    if (time.time() - attemptTimer)*1000 > attemptTimeout:  # Check if the timeout has been reached
+        Post_Loss()
+        returnToCenter()
+        KillEnemies()
+        GenerateEnemiesFromList()
+        Post_start()
+
+
 ### CALLBACKS ----------------------------------------------------------------------------------------------
 # ----------------------------------------------------------------------------------------------------------
 def K_Return_Callback():
@@ -429,6 +448,7 @@ def Cursor():
         if started:
             EraseText()
             player.update(speed)
+            checkAttemptTiemout()
         else:
             addText()
 

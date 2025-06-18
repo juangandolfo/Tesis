@@ -154,7 +154,7 @@ class Attempt():
             "Start": self.Start,
             "Stop": self.Stop,
             "Result": self.Result,
-            "target": self.Target,
+            "Target": self.Target,
         }
         return attemptDictionary
     
