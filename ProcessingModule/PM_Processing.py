@@ -298,6 +298,7 @@ def CalibrationProcessing():
             PM_Parameters.CalibrationStage = 0  
 
         elif PM_Parameters.CalibrationStage == 6:
+            msgbox.alert("Calibration 6")
             print("stage6")
             PM_Parameters.CalibrationStage = 0
             PM_Parameters.RequestAngles = True

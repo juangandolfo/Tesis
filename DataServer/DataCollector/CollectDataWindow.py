@@ -18,6 +18,7 @@ from matplotlib.figure import Figure
 import pymsgbox as msgbox
 import os 
 import json
+import ExportData
 
 
 
@@ -172,6 +173,15 @@ class CollectDataWindow(QWidget):
         self.visualization_button.setEnabled(False)
         buttonLayout.addWidget(self.visualization_button)
 
+        #---- Export Data Button
+        self.export_button = QPushButton('Export Data', self)
+        self.export_button.setToolTip('Export Data')
+        self.export_button.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
+        self.export_button.objectName = 'Export Data'
+        self.export_button.clicked.connect(self.export_data)
+        self.export_button.setStyleSheet('QPushButton {color: #000066;}')
+        buttonLayout.addWidget(self.export_button)
+
         #---- Home Button
         button = QPushButton('Home', self)
         button.setToolTip('Return to Start Menu')
@@ -261,6 +271,13 @@ class CollectDataWindow(QWidget):
 
     def start_visualization(self):
         self.CallbackConnector.StartVisualization_Callback()
+    
+    def export_data(self):
+        # Replace these paths with your actual local folder and OneDrive sync folder
+        local_folder = r"C:\Users\melis\OneDrive\Documents\GitHub\Tesis\ExperimentsFiles"
+        onedrive_folder = r"C:\Users\melis\OneDrive - Universidad Católica del Uruguay\Tesis\Etapa Caracterización\Experimental Data"
+        ExportData.upload_folder_to_onedrive(local_folder, onedrive_folder)
+
 
 class SimulationWindow(QWidget):
     def __init__(self, controller, config_folder):

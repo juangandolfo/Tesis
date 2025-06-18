@@ -46,9 +46,9 @@ PlotAngles = False
 PlotUploadedConfig = False
 
 
-TimeCalibStage1 = 3
-TimeCalibStage2 = 3
-TimeCalibStage3 = 3
+TimeCalibStage1 = 10
+TimeCalibStage2 = 15
+TimeCalibStage3 = 30
 
 remaining_time = 5
 
@@ -128,6 +128,8 @@ def Initialize():
     SynergiesNumber = ChannelsNumber
     
     SynergiesModels = {
-        f'{i+2} Synergies': np.identity((2 + i) * ChannelsNumber).tolist() for i in range(SynergiesNumber - 1)
+    f'{i+2} Synergies': [np.identity(ChannelsNumber)[k % ChannelsNumber].tolist() for k in range(i+2)]
+    for i in range(SynergiesNumber - 1)
     }
     SynergiesModels['vafs'] = (np.asarray(vafs)).tolist()
+

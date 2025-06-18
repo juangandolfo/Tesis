@@ -112,6 +112,20 @@ def Initialize():
     normal_cutoff = LPF_cutoff / nyquist
     coefficient2, coefficient1 = butter(LPF_order, normal_cutoff, btype='low', analog=False)
 
+    modelsList = {}
+
+    for i in range(2, synergiesNumber + 1):
+        n_components = i
+
+        # Create h_norm with repeated identity pattern
+        h_norm = np.array([np.identity(MusclesNumber)[k % MusclesNumber] for k in range(n_components)])
+
+        H_inv = np.linalg.pinv(h_norm)
+        r_squared = np.zeros(1)
+        vaf = np.zeros(1)
+
+        modelsList[i - 2] = (n_components, h_norm, H_inv, r_squared, vaf)  # use integer key
+   
     # Generate a new folder path using the timestamp
     folder_path = 'ExperimentsFiles/Experiment-' + ExperimentTimestamp
     os.makedirs(folder_path, exist_ok=True)  # Create the folder, no error if it already exists
