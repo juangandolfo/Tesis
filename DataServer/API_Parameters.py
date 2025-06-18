@@ -46,9 +46,9 @@ PlotAngles = False
 PlotUploadedConfig = False
 
 
-TimeCalibStage1 = 3
-TimeCalibStage2 = 3
-TimeCalibStage3 = 3
+TimeCalibStage1 = 10
+TimeCalibStage2 = 15
+TimeCalibStage3 = 30
 
 remaining_time = 5
 

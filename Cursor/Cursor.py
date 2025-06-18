@@ -44,7 +44,7 @@ position =  [(SCREEN_WIDTH/2,100),                 #norte
             (180,180),                              #noreste
             ]
 
-objectiveList = [1,2,3,4,5,6,7,8,8,7,6,5,4,3,2,1]
+objectiveList = [3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3]
 
 
 HOST = "127.0.0.1"  # The server's hostname or IP address

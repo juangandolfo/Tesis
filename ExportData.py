@@ -21,8 +21,8 @@ def upload_folder_to_onedrive(local_folder, onedrive_folder):
     
 # Example usage:
 # Replace these paths with your actual local folder and OneDrive sync folder
-local_folder = r"C:\Users\melis\OneDrive\Documents\GitHub\Tesis\ExperimentsFiles"
-onedrive_folder = r"C:\Users\melis\OneDrive - Universidad Católica del Uruguay\Tesis\Etapa Caracterización\Experiments Data"
+# local_folder = r"C:\Users\melis\OneDrive\Documents\GitHub\Tesis\ExperimentsFiles"
+# onedrive_folder = r"C:\Users\melis\OneDrive - Universidad Católica del Uruguay\Tesis\Etapa Caracterización\Experiments Data"
 
-upload_folder_to_onedrive(local_folder, onedrive_folder)
+# upload_folder_to_onedrive(local_folder, onedrive_folder)
 
