@@ -62,48 +62,55 @@ def Connect():
     notConnected = True
     while notConnected:
         try:
+            print("[DEBUG] Attempting to connect to server...")
             client_socket.connect((HOST, PORT2))
             notConnected = False
+            print("[DEBUG] Connected to server.")
         except Exception as e:
-            #print(e)
+            print(f"[DEBUG] Connection failed: {e}")
             pass
 
 #-----------------------------------------------------------------------------------------------------------
 def Send_data(request):
-    # Function to send the request and receive data from MP
+    print(f"[DEBUG] Sending request: {request}")
     client_socket.settimeout(100)
     try:
         client_socket.sendall(request.encode())
         try:
             data = client_socket.recv(1024)
+            print(f"[DEBUG] Received raw data: {data}")
             response_data = pack.unpackb(data, raw=False)
+            print(f"[DEBUG] Unpacked response data: {response_data}")
         except socket.timeout as e:
-            print(e)
+            print(f"[DEBUG] Socket timeout: {e}")
         except socket.error as e:
-            print(e)
+            print(f"[DEBUG] Socket error: {e}")
     except (socket.timeout, socket.error) as e:
-        print(f"Communication error: {e}")
+        print(f"[DEBUG] Communication error: {e}")
     return response_data
 
 #-----------------------------------------------------------------------------------------------------------
 def Get_data():
-    # Function to send the request and receive data from MP
+    print("[DEBUG] Calling Get_data()")
     request = "GET /data1"
     response_data = Send_data(request)
+    print(f"[DEBUG] Get_data() response: {response_data}")
     return response_data
 
 #-----------------------------------------------------------------------------------------------------------
 def Post_start():
-    # Function to send the request and receive data from MP
+    print(f"[DEBUG] Calling Post_start() with objectiveEnemy={objectiveEnemy}")
     request = "POST /startAttempt " + str(objectiveEnemy)
     try:
         response_data = Send_data(request)
+        print(f"[DEBUG] Post_start() response: {response_data}")
         if response_data == "Ok":
             startAttemptTimer()
             return 
         else:
             messagebox.alert(text='Error in starting the attempt', title='Error', button='OK')
     except Exception as e:
+        print(f"[DEBUG] Exception in Post_start: {e}")
         messagebox.alert(text='Error in starting the attempt sending', title='Error', button='OK')
 
 #-----------------------------------------------------------------------------------------------------------
@@ -207,18 +214,22 @@ all_sprites.add(player)
 #-----------------------------------------------------------------------------------------------------------
 def GenerateEnemiesFromList():
     global position, enemies, objectives, all_sprites, objectiveEnemy
-    # objectiveEnemy=random.randint(1,8)
+    print("[DEBUG] Generating enemies from list")
     attempt = Get_attempt()
+    print(f"[DEBUG] Current attempt: {attempt}")
     objectiveEnemy = objectiveList[attempt % len(objectiveList)]
+    print(f"[DEBUG] Selected objectiveEnemy: {objectiveEnemy}")
     GenerateEnemies(objectiveEnemy)
 
 # ----------------------------------------------------------------------------------------------------------
 def GenerateEnemies(objective):
     global position,enemies, objectives, all_sprites
+    print(f"[DEBUG] Generating enemies, objective index: {objective}")
     KillEnemies()
     objective = objective - 1
     for i in range(8):
         if i == objective:
+            print(f"[DEBUG] Placing objective at position {i}: {position[i]}")
             objective= Enemy()
             objective.name='objective'
             objective.surf.fill((0,255,0))
@@ -226,6 +237,7 @@ def GenerateEnemies(objective):
             objectives.add(objective)
             all_sprites.add(objective)
         else:
+            print(f"[DEBUG] Placing enemy at position {i}: {position[i]}")
             new_enemy = Enemy()
             new_enemy.surf.fill((255,0,0))
             new_enemy.moveEnemy(position[i])
@@ -234,6 +246,7 @@ def GenerateEnemies(objective):
 
 # ----------------------------------------------------------------------------------------------------------
 def KillEnemies():
+    print("[DEBUG] Killing all enemies and objectives")
     for objective in objectives:
         objective.kill()
     enemies.empty()
@@ -241,13 +254,14 @@ def KillEnemies():
 # ----------------------------------------------------------------------------------------------------------
 def returnToCenter():
     global player
+    print("[DEBUG] Returning player to center")
     player.update((SCREEN_WIDTH/2-player.rect.center[0],-SCREEN_HEIGHT/2+player.rect.center[1]))
 
 # ----------------------------------------------------------------------------------------------------------
 def restartAttempt():
     global SCREEN_HEIGHT, SCREEN_WIDTH
     global player, enemies, objectives, all_sprites
-    
+    print("[DEBUG] Restarting attempt")
     returnToCenter()
     KillEnemies()
     GenerateEnemiesFromList()
@@ -255,6 +269,7 @@ def restartAttempt():
 # ----------------------------------------------------------------------------------------------------------
 def getSpeedFromKeyboard(pressed_keys):
     # This function returns the speed of the cursor based on the keys pressed
+    print(f"[DEBUG] Getting speed from keyboard: {pressed_keys}")
     if pressed_keys[K_UP]:
         speed=(0, -20)
     elif pressed_keys[K_DOWN]:
@@ -265,6 +280,7 @@ def getSpeedFromKeyboard(pressed_keys):
         speed=(20, 0)
     else:
         speed=(0,0)
+    print(f"[DEBUG] Keyboard speed: {speed}")
     return speed
 
 # ----------------------------------------------------------------------------------------------------------
@@ -273,14 +289,15 @@ def getSpeedFromEMG():
     speed = [0,0]
     try:
         speed = Get_data()
-        print(f"--------------------------------------------{speed}")
+        print(f"[DEBUG] EMG speed: {speed}")
     except Exception as e:
-        print(e)
+        print(f"[DEBUG] Exception in getSpeedFromEMG: {e}")
     return speed
 
 # ----------------------------------------------------------------------------------------------------------
 def addText():
     global text1, text2,screen
+    print("[DEBUG] Adding text to screen")
     text1 = font.render("Press Enter to start or restart", True, (255, 255, 255))
     text2 = font.render("Press Esc to exit", True, (255, 255, 255))
     screen.blit(text1, (250, 380))
@@ -289,18 +306,23 @@ def addText():
 # ----------------------------------------------------------------------------------------------------------
 def EraseText():
     global text1, text2
+    print("[DEBUG] Erasing text from screen")
     text1 = font.render("", True, (255, 255, 255))
     text2 = font.render("", True, (255, 255, 255))
 
 # ----------------------------------------------------------------------------------------------------------
 def startAttemptTimer():
     global attemptTimer
+    print("[DEBUG] Starting attempt timer")
     attemptTimer = time.time()  # Start the timer
 
 # ----------------------------------------------------------------------------------------------------------
 def checkAttemptTiemout():
     global attemptTimer, attemptTimeout
-    if (time.time() - attemptTimer)*1000 > attemptTimeout:  # Check if the timeout has been reached
+    elapsed = (time.time() - attemptTimer)*1000
+    print(f"[DEBUG] Checking attempt timeout: elapsed={elapsed} ms, timeout={attemptTimeout} ms")
+    if elapsed > attemptTimeout:  # Check if the timeout has been reached
+        print("[DEBUG] Attempt timed out")
         Post_Loss()
         returnToCenter()
         KillEnemies()
@@ -312,6 +334,7 @@ def checkAttemptTiemout():
 # ----------------------------------------------------------------------------------------------------------
 def K_Return_Callback():
     global started
+    print(f"[DEBUG] K_RETURN pressed. started={started}")
     if started:
         Post_Restart()
         restartAttempt()
@@ -324,40 +347,41 @@ def K_Return_Callback():
 # ----------------------------------------------------------------------------------------------------------
 def K_Escape_Callback():
     global running
-    #messagebox.alert(text='Exit', title='Exit', button='OK')
+    print("[DEBUG] K_ESCAPE pressed. Exiting.")
     Post_Exit()
     running = False
 
 # ----------------------------------------------------------------------------------------------------------
 def k_1_Callback():
+    print("[DEBUG] k_1 pressed")
     GenerateEnemies(1)
 
-# ----------------------------------------------------------------------------------------------------------
 def k_2_Callback():
+    print("[DEBUG] k_2 pressed")
     GenerateEnemies(2)
 
-# ----------------------------------------------------------------------------------------------------------
 def k_3_Callback():
+    print("[DEBUG] k_3 pressed")
     GenerateEnemies(3)
 
-# ----------------------------------------------------------------------------------------------------------
 def k_4_Callback():
+    print("[DEBUG] k_4 pressed")
     GenerateEnemies(4)
 
-# ----------------------------------------------------------------------------------------------------------
 def k_5_Callback():
+    print("[DEBUG] k_5 pressed")
     GenerateEnemies(5)
 
-# ----------------------------------------------------------------------------------------------------------
 def k_6_Callback():
+    print("[DEBUG] k_6 pressed")
     GenerateEnemies(6)
 
-# ----------------------------------------------------------------------------------------------------------
 def k_7_Callback():
+    print("[DEBUG] k_7 pressed")
     GenerateEnemies(7)
 
-# ----------------------------------------------------------------------------------------------------------
 def k_8_Callback():
+    print("[DEBUG] k_8 pressed")
     GenerateEnemies(8)
 
 ### EVENTS -------------------------------------------------------------------------------------------------
@@ -365,9 +389,12 @@ def k_8_Callback():
 def HandleEvents():
     global running, started
     for event in pygame.event.get():
+        print(f"[DEBUG] Event: {event}")
         if event.type == QUIT:
+            print("[DEBUG] QUIT event received")
             running = False
         elif event.type == pygame.KEYUP:
+            print(f"[DEBUG] KEYUP event: {event.key}")
             if event.key == K_ESCAPE:
                 K_Escape_Callback()
             if event.key == K_RETURN:
@@ -393,26 +420,27 @@ def HandleEvents():
 # ----------------------------------------------------------------------------------------------------------
 def CheckCollideObjective():
     if pygame.sprite.spritecollideany(player, objectives):
+        print("[DEBUG] Player collided with objective")
         HandleCollideObjective()
 
-# ----------------------------------------------------------------------------------------------------------
 def HandleCollideObjective():
     global started
+    print("[DEBUG] Handling collision with objective")
     Post_Win()
     returnToCenter()
     KillEnemies()
     GenerateEnemiesFromList()
     Post_start()
     # started = False
-        
-# ----------------------------------------------------------------------------------------------------------
+
 def CheckCollideEnemy():
     if pygame.sprite.spritecollideany(player, enemies):
+        print("[DEBUG] Player collided with enemy")
         HandleCollideEnemy()
 
-# ----------------------------------------------------------------------------------------------------------
 def HandleCollideEnemy():
     global started 
+    print("[DEBUG] Handling collision with enemy")
     Post_Loss()
     returnToCenter()
     KillEnemies()
@@ -427,6 +455,7 @@ def Cursor():
     global SCREEN_HEIGHT, SCREEN_WIDTH
     global player, enemies, objectives, all_sprites,running, font, started, screen, text1, text2
     
+    print("[DEBUG] Starting Cursor()")
     Connect()
     Post_cursorStart() 
     pygame.init()
@@ -441,10 +470,12 @@ def Cursor():
     started = False
     while running:
         # Main loop
+        print("[DEBUG] Main loop iteration")
         HandleEvents()
         
         screen.fill((0, 0, 0))        
         speed=getSpeedFromEMG()
+        print(f"[DEBUG] Player speed: {speed}")
         if started:
             EraseText()
             player.update(speed)
@@ -463,5 +494,6 @@ def Cursor():
         pygame.display.flip()
         
 if __name__ == '__main__':
+    print("[DEBUG] __main__ starting Cursor process")
     Cursor_Process = Process(target=Cursor)
     Cursor_Process.start()
