@@ -204,7 +204,6 @@ class CollectDataWindow(QWidget):
         self.CallbackConnector.Connect_Callback()
         self.read_button.setEnabled(False)
 
-        self.pair_button.setEnabled(True)
         self.scan_button.setEnabled(True)
         self.getpipelinestate()
         self.pipelinestatelabel.setText(self.pipelinetext + " (Base Connected)")
