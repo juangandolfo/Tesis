@@ -14,10 +14,8 @@ import sys
 #from API_Server_Nuevo import *
 from DataServer.Aero_Nuevo import *
 import DataServer.SensorInformation as SensorInformation
-if params.DelsysMode:
-    import DataServer.Delsys_API_Server as API_Server
-else:
-    import DataServer.API_Server_Nuevo as API_Server
+import DataServer.Delsys_API_Server as API_Server
+
 
 import DataServer.API_Parameters as params
 import pymsgbox as msgbox
@@ -180,6 +178,7 @@ class PlottingManagement():
         
 
     def StartCalibration_Callback(self):
+        print(self.dataStreamIdx)
         self.API_server_thread=Thread(target=API_Server.API_Server, args=(TrigBase,self.dataStreamIdx), daemon=True)
         self.threadManager()
 

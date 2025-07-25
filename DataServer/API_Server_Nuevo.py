@@ -122,7 +122,6 @@ def API_Server(AeroInstance, emgPositionVector):
                         print(e)
 
                 elif data == "GET /SensorStickers":
-                    params.SensorStickers = ['M1', 'M2', 'M3']
                     serialized_data = pack.packb(params.SensorStickers, use_bin_type=True)
                     serialized_data  += b'END'
                     try:

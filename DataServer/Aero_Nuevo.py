@@ -36,6 +36,7 @@ class SensorsList:
         with open(params.csvFile, 'r') as file:
             csv_reader = csv.reader(file, delimiter=',')
             row = next(csv_reader)
+            row = row[1:]  # Remove the first column
             for channel in row:
                 sensorInstance = SensorObject(channel)
                 self.SensorsList.append(sensorInstance)     
@@ -62,13 +63,12 @@ class AeroPyNuevo:
             next(csv_reader)
             # Read each row of csv file
             for row in csv_reader:
+                row = row[1:]  # Remove the first column
                 stack_lock.acquire()  # Acquire lock before accessing the stack
                 row = np.array(row, dtype=np.float64)  # Convert the row to numpy array
                 stack.append(row)
                 stack_lock.release()  # Release lock after modifying the stack
-                # lock after modifying the stack
                 time.sleep(1/frequency if frequency > 0 else 1)
-                # Check if stop flag is set
                 if self.stop_flag:
                     return
             print("There's no more data")
