@@ -889,7 +889,14 @@ class CalibrationWindow(QMainWindow):
             self.figure.clear()
             ax = self.figure.add_subplot(111)
             data = params.Thresholds 
-            ax.bar(params.SensorStickers, data, color = '#00008B')
+            ax.bar(params.SensorStickers, data, color = "#1A4207")
+            # If any data values is more than .1, color it red
+            for i, value in enumerate(data):
+                if value > 0.1:
+                    ax.bar(params.SensorStickers[i], value, color = "#B11E1E")
+                # If any data value is between .08 and .1, color it orange
+                elif 0.08 < value <= 0.1:
+                    ax.bar(params.SensorStickers[i], value, color = "#B46A0F")
             ax.set_xlabel('Muscles')  # X-axis label
             ax.set_ylabel('Muscle Activation (mV)')  # Y-axis label
             ax.set_title('Detected thresholds')  # Plot title
@@ -900,7 +907,16 @@ class CalibrationWindow(QMainWindow):
             self.figure.clear()
             ax = self.figure.add_subplot(111)
             data = params.Peaks 
-            ax.bar(params.SensorStickers, data, color = '#00008B')
+            ax.bar(params.SensorStickers, data, color = "#1A4207")
+            #If any data value is less than .5, color it red
+            for i, value in enumerate(data):
+                if value < 0.3:
+                    ax.bar(params.SensorStickers[i], value, color = "#B11E1E")
+                elif 0.3 <= value < 0.5:
+                    ax.bar(params.SensorStickers[i], value, color = "#B46A0F")
+            # Add bars with current thresholds overlaid on top of the peaks
+            thresholds = params.Thresholds
+            ax.bar(params.SensorStickers, thresholds, color = "#3B6CF3")
             ax.set_xlabel('Muscles')  # X-axis label
             ax.set_ylabel('Muscle Activation (mV)')  # Y-axis label
             ax.set_title('Detected Peaks')  # Plot title
