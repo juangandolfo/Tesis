@@ -19,6 +19,9 @@ import pymsgbox as msgbox
 import os 
 import json
 import ExportData
+import csv
+import numpy as np
+import time
 
 
 
@@ -38,6 +41,38 @@ class CollectDataWindow(QWidget):
         #---- Connect the controller to the GUI
         self.CallbackConnector = PlottingManagement()
     
+    def is_data_empty(self, data):
+        """Safely check if data is empty, handling both lists and numpy arrays"""
+        if data is None:
+            return True
+        
+        try:
+            if isinstance(data, np.ndarray):
+                return data.size == 0
+            elif hasattr(data, '__len__'):
+                return len(data) == 0
+            else:
+                return not bool(data)
+        except Exception as e:
+            print(f"[WARNING] Error checking data emptiness: {e}")
+            return True
+    
+    def get_data_length(self, data):
+        """Safely get the length of data, handling both lists and numpy arrays"""
+        if data is None:
+            return 0
+        
+        try:
+            if isinstance(data, np.ndarray):
+                return data.size
+            elif hasattr(data, '__len__'):
+                return len(data)
+            else:
+                return 1 if data else 0
+        except Exception as e:
+            print(f"[WARNING] Error getting data length: {e}")
+            return 0
+    
     #-----------------------------------------------------------------------
     #---- GUI Components
     def ButtonPanel(self):
@@ -54,14 +89,27 @@ class CollectDataWindow(QWidget):
         self.pipelinestatelabel.setStyleSheet("color:#000066")
         buttonLayout.addWidget(self.pipelinestatelabel)
 
-        #---- Connect Button
-        self.read_button = QPushButton('Connect', self)
-        self.read_button.setToolTip('Connect Base')
-        self.read_button.setSizePolicy(QSizePolicy.Preferred,QSizePolicy.Expanding)
-        self.read_button.objectName = 'Connect'
-        self.read_button.clicked.connect(self.connect_callback)
-        self.read_button.setStyleSheet('QPushButton {color: #000066;}')
-        buttonLayout.addWidget(self.read_button)
+        connect_layout = QHBoxLayout()
+        
+        #---- Connect Base Button
+        self.connect_base_button = QPushButton('Connect Base', self)
+        self.connect_base_button.setToolTip('Connect to Delsys Base')
+        self.connect_base_button.setSizePolicy(QSizePolicy.Preferred,QSizePolicy.Expanding)
+        self.connect_base_button.objectName = 'Connect Base'
+        self.connect_base_button.clicked.connect(self.connect_base_callback)
+        self.connect_base_button.setStyleSheet('QPushButton {color: #000066;}')
+        connect_layout.addWidget(self.connect_base_button)
+
+        #---- Connect From File Button
+        self.connect_file_button = QPushButton('Connect From File', self)
+        self.connect_file_button.setToolTip('Connect using CSV file')
+        self.connect_file_button.setSizePolicy(QSizePolicy.Preferred,QSizePolicy.Expanding)
+        self.connect_file_button.objectName = 'Connect From File'
+        self.connect_file_button.clicked.connect(self.connect_file_callback)
+        self.connect_file_button.setStyleSheet('QPushButton {color: #000066;}')
+        connect_layout.addWidget(self.connect_file_button)
+
+        buttonLayout.addLayout(connect_layout)
 
         findSensor_layout = QHBoxLayout()
         
@@ -200,13 +248,137 @@ class CollectDataWindow(QWidget):
         self.pipelinetext = self.CallbackConnector.PipelineState_Callback()
         self.pipelinestatelabel.setText(self.pipelinetext)
 
-    def connect_callback(self):
-        self.CallbackConnector.Connect_Callback()
-        self.read_button.setEnabled(False)
+    def connect_base_callback(self):
+        params.DelsysMode = True
+        try:
+            self.CallbackConnector.Connect_Callback()
+            # If connection successful, disable both buttons and enable scan
+            self.connect_base_button.setEnabled(False)
+            self.connect_file_button.setEnabled(False)
+            self.scan_button.setEnabled(True)
+            self.getpipelinestate()
+            self.pipelinestatelabel.setText(self.pipelinetext + " (Base Connected)")
+        except Exception as e:
+            # Handle connection error gracefully
+            msgbox.alert(f"Failed to connect to Delsys base:\n{str(e)}\n\nPlease check that:\n"
+                        "- The base is powered on and connected\n"
+                        "- Drivers are properly installed\n"
+                        "- No other application is using the base")
+            
+            # Reset the connection state to allow user to try again
+            self.reset_connection_state()
 
-        self.scan_button.setEnabled(True)
+    def connect_file_callback(self):
+        # Create a hidden tkinter root to prevent blank window
+        root = tk.Tk()
+        root.withdraw()  # Hide the main tkinter window
+        
+        # Open file dialog to select CSV file
+        file_path = filedialog.askopenfilename(
+            title="Select a CSV file containing muscle data to simulate connection",
+            filetypes=[("CSV Files", "*.csv"), ("All Files", "*.*")]
+        )
+        
+        # Destroy the tkinter root to clean up
+        root.destroy()
+        
+        if file_path:
+            # Validate the CSV file
+            if self.validate_csv_file(file_path):
+                params.DelsysMode = False
+                params.csvFile = file_path
+                try:
+                    self.CallbackConnector.Connect_Callback()
+                    # If connection successful, disable both buttons and enable scan
+                    self.connect_base_button.setEnabled(False)
+                    self.connect_file_button.setEnabled(False)
+                    self.scan_button.setEnabled(True)
+                    self.getpipelinestate()
+                    self.pipelinestatelabel.setText(self.pipelinetext + " (File Connected)")
+                except Exception as e:
+                    # Handle connection error gracefully
+                    msgbox.alert(f"Failed to connect using CSV file:\n{str(e)}\n\nPlease try selecting a different file.")
+                    self.reset_connection_state()
+            # Note: Error details are now provided by validate_csv_file method
+
+    def validate_csv_file(self, file_path):
+        """Validate that the CSV file has the expected format"""
+        try:
+            import csv
+            with open(file_path, 'r') as file:
+                csv_reader = csv.reader(file, delimiter=',')
+                
+                # Read header row
+                try:
+                    header = next(csv_reader)
+                    if len(header) < 2:  # At least timestamp + one data column
+                        msgbox.alert(f"CSV file error: Header row has only {len(header)} column(s).\n"
+                                   f"Expected at least 2 columns (timestamp + data columns).\n"
+                                   f"Header found: {header}")
+                        return False
+                    header_col_count = len(header)
+                except StopIteration:
+                    msgbox.alert("CSV file error: File appears to be empty (no header row found).")
+                    return False
+                
+                # Check data rows
+                row_count = 0
+                for row_num, row in enumerate(csv_reader, start=2):  # Start at 2 since header is row 1
+                    if len(row) != header_col_count:
+                        msgbox.alert(f"CSV file error: Row {row_num} has {len(row)} columns, "
+                                   f"but header has {header_col_count} columns.\n"
+                                   f"All rows must have the same number of columns.\n"
+                                   f"Problem row: {row[:5]}{'...' if len(row) > 5 else ''}")
+                        return False
+                    
+                    # Skip first column (timestamp), check remaining are numeric
+                    for col_idx, value in enumerate(row[1:], start=1):
+                        try:
+                            float(value)
+                        except ValueError:
+                            col_name = header[col_idx] if col_idx < len(header) else f"Column {col_idx + 1}"
+                            msgbox.alert(f"CSV file error: Non-numeric value found in row {row_num}, column '{col_name}'.\n"
+                                       f"Value: '{value}'\n"
+                                       f"All data columns (except the first one) must contain numeric values.\n"
+                                       f"First column (timestamp) can be any value and will be ignored.")
+                            return False
+                    
+                    row_count += 1
+                    if row_count > 10:  # Check first 10 rows for performance
+                        break
+                
+                if row_count == 0:
+                    msgbox.alert("CSV file error: No data rows found after the header.\n"
+                               "File must contain at least one row of data.")
+                    return False
+                
+                return True
+                
+        except FileNotFoundError:
+            msgbox.alert(f"CSV file error: Could not find file at path:\n{file_path}")
+            return False
+        except PermissionError:
+            msgbox.alert(f"CSV file error: Permission denied when trying to read file:\n{file_path}\n"
+                       "Please check that the file is not open in another application.")
+            return False
+        except Exception as e:
+            msgbox.alert(f"CSV file error: Unexpected error while reading file:\n{str(e)}")
+            return False
+
+    def reset_connection_state(self):
+        """Reset the UI to allow user to try connecting again"""
+        self.connect_base_button.setEnabled(True)
+        self.connect_file_button.setEnabled(True)
+        self.scan_button.setEnabled(False)
+        self.calibration_button.setEnabled(False)
+        self.cursor_button.setEnabled(False)
+        self.visualization_button.setEnabled(False)
         self.getpipelinestate()
-        self.pipelinestatelabel.setText(self.pipelinetext + " (Base Connected)")
+        self.pipelinestatelabel.setText("Connection Failed - Ready to Retry")
+
+    def connect_callback(self):
+        # Legacy method for backward compatibility
+        self.connect_base_callback()
 
     def pair_callback(self):
         self.CallbackConnector.Pair_Callback()
@@ -693,7 +865,7 @@ class CalibrationWindow(QMainWindow):
         self.canvas = FigureCanvas(self.figure)
         self.colors = ['Red', 'Blue', 'Yellow', 'Green', 'Orange', 'Purple', 'Grey', 'Brown']
         
-        params.PlotCalibrationSignal.signal.connect(self.update_plot)
+        params.PlotCalibrationSignal.signal.connect(self.update_plot_with_debug)
 
         # Angles selection window
         angles_layout = QVBoxLayout()
@@ -740,6 +912,38 @@ class CalibrationWindow(QMainWindow):
         main_layout.addLayout(layout)
         main_layout.addWidget(self.canvas)
         main_layout.setStretch(1, 1)
+
+    def is_data_empty(self, data):
+        """Safely check if data is empty, handling both lists and numpy arrays"""
+        if data is None:
+            return True
+        
+        try:
+            if isinstance(data, np.ndarray):
+                return data.size == 0
+            elif hasattr(data, '__len__'):
+                return len(data) == 0
+            else:
+                return not bool(data)
+        except Exception as e:
+            print(f"[WARNING] Error checking data emptiness: {e}")
+            return True
+    
+    def get_data_length(self, data):
+        """Safely get the length of data, handling both lists and numpy arrays"""
+        if data is None:
+            return 0
+        
+        try:
+            if isinstance(data, np.ndarray):
+                return data.size
+            elif hasattr(data, '__len__'):
+                return len(data)
+            else:
+                return 1 if data else 0
+        except Exception as e:
+            print(f"[WARNING] Error getting data length: {e}")
+            return 0
 
     def stage1_callback(self):
         self.save_button.hide()
@@ -867,12 +1071,12 @@ class CalibrationWindow(QMainWindow):
 
         params.PlotModels = True
         try:
+            print("[DEBUG] Calling update_plot from show_select_model")
             self.update_plot()
         except Exception as e:
-            msgbox.alert(e)
+            print(f"[ERROR] Error in show_select_model: {e}")
+            msgbox.alert(f"Error displaying synergy models: {str(e)}")
 
-        
-        
     def show_angle_window(self):
         self.save_button.show()
         params.AnglesOutput = []
@@ -881,173 +1085,402 @@ class CalibrationWindow(QMainWindow):
             self.angle_lineedits[i].show()
             self.angle_labels[i].show()
         params.PlotAngles = True
-        self.update_plot()
+        try:
+            print("[DEBUG] Calling update_plot from show_angle_window")
+            self.update_plot()
+        except Exception as e:
+            print(f"[ERROR] Error in show_angle_window: {e}")
+            msgbox.alert(f"Error displaying angle selection: {str(e)}")
 
     def update_plot(self):
-
-        if params.PlotThresholds:
-            self.figure.clear()
-            ax = self.figure.add_subplot(111)
-            data = params.Thresholds 
-            ax.bar(params.SensorStickers, data, color = "#1A4207")
-            # If any data values is more than .1, color it red
-            for i, value in enumerate(data):
-                if value > 0.1:
-                    ax.bar(params.SensorStickers[i], value, color = "#B11E1E")
-                # If any data value is between .08 and .1, color it orange
-                elif 0.08 < value <= 0.1:
-                    ax.bar(params.SensorStickers[i], value, color = "#B46A0F")
-            ax.set_xlabel('Muscles')  # X-axis label
-            ax.set_ylabel('Muscle Activation (mV)')  # Y-axis label
-            ax.set_title('Detected thresholds')  # Plot title
-            params.PlotThresholds = False
-            
+        print("[DEBUG] update_plot() called")
+        
+        try:
+            if params.PlotThresholds:
+                print("[DEBUG] Plotting thresholds")
+                print(f"[DEBUG] Thresholds data: {params.Thresholds}")
+                print(f"[DEBUG] Thresholds type: {type(params.Thresholds)}")
+                print(f"[DEBUG] SensorStickers: {params.SensorStickers}")
+                print(f"[DEBUG] SensorStickers type: {type(params.SensorStickers)}")
                 
-        elif params.PlotPeaks:
-            self.figure.clear()
-            ax = self.figure.add_subplot(111)
-            data = params.Peaks 
-            ax.bar(params.SensorStickers, data, color = "#1A4207")
-            #If any data value is less than .5, color it red
-            for i, value in enumerate(data):
-                if value < 0.3:
-                    ax.bar(params.SensorStickers[i], value, color = "#B11E1E")
-                elif 0.3 <= value < 0.5:
-                    ax.bar(params.SensorStickers[i], value, color = "#B46A0F")
-            # Add bars with current thresholds overlaid on top of the peaks
-            thresholds = params.Thresholds
-            ax.bar(params.SensorStickers, thresholds, color = "#3B6CF3")
-            ax.set_xlabel('Muscles')  # X-axis label
-            ax.set_ylabel('Muscle Activation (mV)')  # Y-axis label
-            ax.set_title('Detected Peaks')  # Plot title
-            params.PlotPeaks = False
-
-        elif params.PlotModels:
-            self.figure.clear()            
-            data = params.SynergiesModels
-            gs = self.figure.add_gridspec(params.ChannelsNumber + 1, params.ChannelsNumber - 1)  
-
-            subplots = []
-            for j in range(2, params.ChannelsNumber + 1):
-                for i in range (1, j+1):
-                    ax = self.figure.add_subplot(gs[i-1, j-2])
-                    ax.bar([str(index) for index in range(1, params.ChannelsNumber + 1)], data[f'{j} Synergies'][i-1], color='#00008B', alpha=0.6)
-                    subplots.append(ax)
-                    ax.set_ylim(0, 1)  # Set y-axis limits to be between 0 and 0.5
-                    ax.set_xlim(-0.5, params.ChannelsNumber-0.5) 
-                    ax.set_xticks(range(params.ChannelsNumber))  # Ensure all ticks are visible
-                    ax.set_yticks([0, 0.5, 1])  # Ensure y-ticks are visible
-                    if i == 1:
-                        ax.set_title(f'{j} Synergies')
-                        if j == 2:
-                            ax.set_xlabel('Muscles')  # X-axis label
-                            ax.set_ylabel('Relative Activation')  # Y-axis label
-                            ax.set_xticklabels(params.SensorStickers)
-                            ax.set_yticklabels([str(tick) for tick in [0, 0.5, 1]])
-                        else:
-                            ax.set_xticklabels([''] * params.ChannelsNumber)  # Remove x-axis tick labels but keep the ticks
-                            ax.set_yticklabels([''] * 3)  # Remove y-axis tick labels but keep the ticks
-                    else:
-                        ax.set_xticklabels([''] * params.ChannelsNumber)  # Remove x-axis tick labels but keep the ticks
-                        ax.set_yticklabels([''] * 3)  # Remove y-axis tick labels but keep the ticks
-                            
-            ax = self.figure.add_subplot(gs[params.ChannelsNumber , 0])
-            x = list(range(2, params.ChannelsNumber+1))  # Number of muscles
-            ax.plot(x, data['vafs'], marker='o', label='VAF Curve')
-            ax.set_xlabel('Number of Synergies')
-            ax.set_ylabel('VAF (%)')
-            ax.set_title('VAF vs Model')
-
-            # Ensure the x-axis contains only integers
-            ax.set_xticks(np.arange(2, params.ChannelsNumber + 1, 1))  # Set x-ticks from 2 to the number of channels
-            ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: '{:d}'.format(int(x))))  # Ensure x-ticks are displayed as integers
-
-            # Adjust the layout to expand subplots
-            self.figure.tight_layout()
-            self.figure.subplots_adjust(hspace=0.8, wspace=0.6)  # Adjust the spacing if needed
-
-            params.PlotModels = False
-            
-        elif params.PlotAngles:
-            self.figure.clear()
-            try:
-                angles = [lineedit.text() for lineedit in self.angle_lineedits]
+                # Check if thresholds data exists and is valid
+                if self.is_data_empty(params.Thresholds):
+                    print("[ERROR] Thresholds data is empty or None")
+                    msgbox.alert("Cannot plot thresholds: No threshold data available")
+                    return
+                    
+                # Check sensor stickers
+                if self.is_data_empty(params.SensorStickers):
+                    print("[ERROR] SensorStickers data is empty or None")
+                    msgbox.alert("Cannot plot thresholds: No sensor labels available")
+                    return
+                    
+                # Check data length consistency
+                thresholds_length = self.get_data_length(params.Thresholds)
+                stickers_length = self.get_data_length(params.SensorStickers)
+                    
+                if thresholds_length != stickers_length:
+                    print(f"[ERROR] Thresholds length ({thresholds_length}) != SensorStickers length ({stickers_length})")
+                    msgbox.alert(f"Cannot plot thresholds: Data mismatch ({thresholds_length} values vs {stickers_length} labels)")
+                    return
+                
                 try:
-                    angles = [int(angle) for angle in angles if angle]
-                except ValueError:
-                    return  # Ignore invalid input
-                
-                gs = self.figure.add_gridspec(params.SynergiesNumber, 2)  
-                # Plot Synergy Base ----------------------------------------------
-                for i in range (1, params.SynergiesNumber+1):
-                    ax = self.figure.add_subplot(gs[i-1, 0])
-                    ax.bar(range(np.asarray(params.SynergyBase).shape[1]), params.SynergyBase[i-1], color=self.colors[i-1], alpha=0.6)
-                    ax.set_ylim(0, 1)  # Set y-axis limits to be between 0 and 0.5
-                    ax.set_xlim(-0.5, params.ChannelsNumber-0.5)  
-                    ax.set_xticks(range(params.ChannelsNumber))  # Ensure all ticks are visible
-                    ax.set_yticks([0, 0.5, 1])  # Ensure y-ticks are visible
-
-                    if i == 1:
-                        ax.set_title(f'Synergy Basis ({params.SynergiesNumber} Synergies)')
-                        ax.set_xlabel('Muscles')  # X-axis label
-                        ax.set_ylabel('Reltive Activation')  # Y-axis label
-                        ax.set_xticklabels(params.SensorStickers)
-                        ax.set_yticklabels([str(tick) for tick in [0, 0.5, 1]])
-                    else: 
-                        ax.set_xticklabels([''] * params.ChannelsNumber)  # Remove x-axis tick labels but keep the ticks
-                        ax.set_yticklabels([''] * 3)  # Remove y-axis tick labels but keep the ticks
-            except Exception as e:
-                msgbox.alert(e)   
-            # Plot Projection Angles ----------------------------------------------
-            ax = self.figure.add_subplot(gs[:, 1], polar=True)
-            ax.set_title("Choose the projection angle of each synergy")
-            for i in range(len(angles)):
-                theta = np.radians(angles[i])  # Convert to radians
-                ax.plot([0, theta], [0, 1], marker='o', color=self.colors[i])  # Plot the vector
-            
-            # Adjust the layout to expand subplots
-            self.figure.tight_layout()
-            self.figure.subplots_adjust(hspace=0.8, wspace=0.6)  # Adjust the spacing if needed
-
-        elif params.PlotUploadedConfig:
-            self.figure.clear()
-            gs = self.figure.add_gridspec(params.SynergiesNumber, 2)  
-            
-            # Plot Synergy Base ----------------------------------------------
-            for i in range (1, params.SynergiesNumber+1):
-                ax = self.figure.add_subplot(gs[i-1, 0])
-                ax.bar(range(np.asarray(params.SynergyBase).shape[1]), params.SynergyBase[i-1], color=self.colors[i-1], alpha=0.6)
-                ax.set_ylim(0, 1)  # Set y-axis limits to be between 0 and 0.5
-                ax.set_xlim(-0.5, params.ChannelsNumber-0.5) 
-                ax.set_xticks(range(params.ChannelsNumber))  # Ensure all ticks are visible
-                ax.set_yticks([0, 0.5, 1])  # Ensure y-ticks are visible
-
-                if i == 1:
-                    ax.set_title(f'Synergy Basis ({params.SynergiesNumber} Synergies)')
+                    self.figure.clear()
+                    ax = self.figure.add_subplot(111)
+                    data = params.Thresholds 
+                    ax.bar(params.SensorStickers, data, color = "#1A4207")
+                    # If any data values is more than .1, color it red
+                    for i, value in enumerate(data):
+                        if value > 0.1:
+                            ax.bar(params.SensorStickers[i], value, color = "#B11E1E")
+                        # If any data value is between .08 and .1, color it orange
+                        elif 0.08 < value <= 0.1:
+                            ax.bar(params.SensorStickers[i], value, color = "#B46A0F")
                     ax.set_xlabel('Muscles')  # X-axis label
-                    ax.set_ylabel('Relative Activation')  # Y-axis label
-                    ax.set_xticklabels(params.SensorStickers)
-                    ax.set_yticklabels([str(tick) for tick in [0, 0.5, 1]])
-                else: 
-                    ax.set_xticklabels([''] * params.ChannelsNumber)  # Remove x-axis tick labels but keep the ticks
-                    ax.set_yticklabels([''] * 3)  # Remove y-axis tick labels but keep the ticks
+                    ax.set_ylabel('Muscle Activation (mV)')  # Y-axis label
+                    ax.set_title('Detected thresholds')  # Plot title
+                    self.canvas.draw()
+                    print("[DEBUG] Thresholds plot completed successfully")
+                    params.PlotThresholds = False
+                except Exception as e:
+                    print(f"[ERROR] Failed to plot thresholds: {e}")
+                    msgbox.alert(f"Failed to plot thresholds: {str(e)}")
+                    params.PlotThresholds = False
                 
-            # Plot Projection Angles ----------------------------------------------
-            ax = self.figure.add_subplot(gs[:, 1], polar=True)
-            ax.set_title("Projection Angles")
-            for i in range(len(params.AnglesOutput)):
-                theta = np.radians(int(params.AnglesOutput[i]))  # Convert to radians
-                ax.plot([0, theta], [0, 1], marker='o', color=self.colors[i])  # Plot the vector
-            
-            # Adjust the layout to expand subplots
-            self.figure.tight_layout()
-            self.figure.subplots_adjust(hspace=0.8, wspace=0.6)  # Adjust the spacing if needed
-            params.PlotUploadedConfig = False
-            
-        else:
-            print("Invalid Plot Mode")
+            elif params.PlotPeaks:
+                print("[DEBUG] Plotting peaks")
+                print(f"[DEBUG] Peaks data: {params.Peaks}")
+                print(f"[DEBUG] Peaks type: {type(params.Peaks)}")
+                print(f"[DEBUG] Thresholds data: {params.Thresholds}")
+                print(f"[DEBUG] SensorStickers: {params.SensorStickers}")
+                
+                # Check if peaks data exists and is valid
+                if self.is_data_empty(params.Peaks):
+                    print("[ERROR] Peaks data is empty or None")
+                    msgbox.alert("Cannot plot peaks: No peak data available")
+                    return
+                    
+                # Check sensor stickers
+                if self.is_data_empty(params.SensorStickers):
+                    print("[ERROR] SensorStickers data is empty or None")
+                    msgbox.alert("Cannot plot peaks: No sensor labels available")
+                    return
+                    
+                # Check data length consistency
+                peaks_length = self.get_data_length(params.Peaks)
+                stickers_length = self.get_data_length(params.SensorStickers)
+                    
+                if peaks_length != stickers_length:
+                    print(f"[ERROR] Peaks length ({peaks_length}) != SensorStickers length ({stickers_length})")
+                    msgbox.alert(f"Cannot plot peaks: Data mismatch ({peaks_length} values vs {stickers_length} labels)")
+                    return
+                
+                try:
+                    self.figure.clear()
+                    ax = self.figure.add_subplot(111)
+                    data = params.Peaks 
+                    ax.bar(params.SensorStickers, data, color = "#1A4207")
+                    #If any data value is less than .5, color it red
+                    for i, value in enumerate(data):
+                        if value < 0.3:
+                            ax.bar(params.SensorStickers[i], value, color = "#B11E1E")
+                        elif 0.3 <= value < 0.5:
+                            ax.bar(params.SensorStickers[i], value, color = "#B46A0F")
+                    
+                    # Add bars with current thresholds overlaid on top of the peaks
+                    try:
+                        # Check if thresholds data is available for overlay
+                        if not self.is_data_empty(params.Thresholds) and self.get_data_length(params.Thresholds) == stickers_length:
+                            thresholds = params.Thresholds
+                            ax.bar(params.SensorStickers, thresholds, color = "#3B6CF3")
+                            print("[DEBUG] Added thresholds overlay to peaks plot")
+                        else:
+                            print("[WARNING] Skipping thresholds overlay - data unavailable or mismatched")
+                    except Exception as overlay_error:
+                        print(f"[WARNING] Failed to add thresholds overlay: {overlay_error}")
+                        # Continue without overlay
+                    
+                    ax.set_xlabel('Muscles')  # X-axis label
+                    ax.set_ylabel('Muscle Activation (mV)')  # Y-axis label
+                    ax.set_title('Detected Peaks')  # Plot title
+                    self.canvas.draw()
+                    print("[DEBUG] Peaks plot completed successfully")
+                    params.PlotPeaks = False
+                except Exception as e:
+                    print(f"[ERROR] Failed to plot peaks: {e}")
+                    msgbox.alert(f"Failed to plot peaks: {str(e)}")
+                    params.PlotPeaks = False
 
-        self.canvas.draw()
+            elif params.PlotModels:
+                print("[DEBUG] Plotting models")
+                print(f"[DEBUG] ChannelsNumber: {params.ChannelsNumber}")
+                print(f"[DEBUG] SynergiesModels type: {type(params.SynergiesModels)}")
+                print(f"[DEBUG] SynergiesModels keys: {list(params.SynergiesModels.keys()) if isinstance(params.SynergiesModels, dict) else 'Not a dict'}")
+                
+                # Check if SynergiesModels data exists
+                models_available = False
+                if params.SynergiesModels is not None:
+                    if isinstance(params.SynergiesModels, dict):
+                        models_available = len(params.SynergiesModels) > 0
+                    elif hasattr(params.SynergiesModels, '__len__'):
+                        models_available = len(params.SynergiesModels) > 0
+                    else:
+                        models_available = bool(params.SynergiesModels)
+                
+                if not models_available:
+                    print("[ERROR] SynergiesModels data is empty or None")
+                    msgbox.alert("Cannot plot models: No synergy models available")
+                    return
+                    
+                if params.ChannelsNumber < 2:
+                    print(f"[ERROR] Invalid ChannelsNumber: {params.ChannelsNumber}")
+                    msgbox.alert(f"Cannot plot models: Invalid channel count ({params.ChannelsNumber})")
+                    return
+                
+                try:
+                    self.figure.clear()            
+                    data = params.SynergiesModels
+                    gs = self.figure.add_gridspec(params.ChannelsNumber + 1, params.ChannelsNumber - 1)  
+
+                    subplots = []
+                    for j in range(2, params.ChannelsNumber + 1):
+                        model_key = f'{j} Synergies'
+                        if model_key not in data:
+                            print(f"[WARNING] Missing model key: {model_key}")
+                            continue
+                            
+                        for i in range (1, j+1):
+                            try:
+                                ax = self.figure.add_subplot(gs[i-1, j-2])
+                                ax.bar([str(index) for index in range(1, params.ChannelsNumber + 1)], data[model_key][i-1], color='#00008B', alpha=0.6)
+                                subplots.append(ax)
+                                ax.set_ylim(0, 1)  # Set y-axis limits to be between 0 and 0.5
+                                ax.set_xlim(-0.5, params.ChannelsNumber-0.5) 
+                                ax.set_xticks(range(params.ChannelsNumber))  # Ensure all ticks are visible
+                                ax.set_yticks([0, 0.5, 1])  # Ensure y-ticks are visible
+                                if i == 1:
+                                    ax.set_title(f'{j} Synergies')
+                                    if j == 2:
+                                        ax.set_xlabel('Muscles')  # X-axis label
+                                        ax.set_ylabel('Relative Activation')  # Y-axis label
+                                        if params.SensorStickers:
+                                            ax.set_xticklabels(params.SensorStickers)
+                                        ax.set_yticklabels([str(tick) for tick in [0, 0.5, 1]])
+                                    else:
+                                        ax.set_xticklabels([''] * params.ChannelsNumber)  # Remove x-axis tick labels but keep the ticks
+                                        ax.set_yticklabels([''] * 3)  # Remove y-axis tick labels but keep the ticks
+                                else:
+                                    ax.set_xticklabels([''] * params.ChannelsNumber)  # Remove x-axis tick labels but keep the ticks
+                                    ax.set_yticklabels([''] * 3)  # Remove y-axis tick labels but keep the ticks
+                            except Exception as subplot_error:
+                                print(f"[ERROR] Failed to create subplot for {j} synergies, component {i}: {subplot_error}")
+                                continue
+                                
+                    # Plot VAF curve
+                    try:
+                        ax = self.figure.add_subplot(gs[params.ChannelsNumber , 0])
+                        x = list(range(2, params.ChannelsNumber+1))  # Number of muscles
+                        if 'vafs' in data:
+                            ax.plot(x, data['vafs'], marker='o', label='VAF Curve')
+                            ax.set_xlabel('Number of Synergies')
+                            ax.set_ylabel('VAF (%)')
+                            ax.set_title('VAF vs Model')
+
+                            # Ensure the x-axis contains only integers
+                            ax.set_xticks(np.arange(2, params.ChannelsNumber + 1, 1))  # Set x-ticks from 2 to the number of channels
+                            ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: '{:d}'.format(int(x))))  # Ensure x-ticks are displayed as integers
+                        else:
+                            print("[WARNING] No VAF data available for plotting")
+                    except Exception as vaf_error:
+                        print(f"[ERROR] Failed to plot VAF curve: {vaf_error}")
+
+                    # Adjust the layout to expand subplots
+                    self.figure.tight_layout()
+                    self.figure.subplots_adjust(hspace=0.8, wspace=0.6)  # Adjust the spacing if needed
+                    self.canvas.draw()
+                    print("[DEBUG] Models plot completed successfully")
+                    params.PlotModels = False
+                except Exception as e:
+                    print(f"[ERROR] Failed to plot models: {e}")
+                    msgbox.alert(f"Failed to plot models: {str(e)}")
+                    params.PlotModels = False
+                    
+            elif params.PlotAngles:
+                print("[DEBUG] Plotting angles")
+                print(f"[DEBUG] SynergiesNumber: {params.SynergiesNumber}")
+                print(f"[DEBUG] SynergyBase type: {type(params.SynergyBase)}")
+                
+                try:
+                    self.figure.clear()
+                    angles = [lineedit.text() for lineedit in self.angle_lineedits]
+                    try:
+                        angles = [int(angle) for angle in angles if angle]
+                    except ValueError:
+                        print("[WARNING] Invalid angle input, ignoring")
+                        return  # Ignore invalid input
+                    
+                    # Check if SynergyBase data exists
+                    synergy_base_available = False
+                    if params.SynergyBase is not None:
+                        if isinstance(params.SynergyBase, np.ndarray):
+                            synergy_base_available = params.SynergyBase.size > 0
+                        elif hasattr(params.SynergyBase, '__len__'):
+                            synergy_base_available = len(params.SynergyBase) > 0
+                        else:
+                            synergy_base_available = bool(params.SynergyBase)
+                    
+                    if not synergy_base_available:
+                        print("[ERROR] SynergyBase data is empty or None")
+                        msgbox.alert("Cannot plot angles: No synergy base data available")
+                        return
+                    
+                    gs = self.figure.add_gridspec(params.SynergiesNumber, 2)  
+                    # Plot Synergy Base ----------------------------------------------
+                    for i in range (1, params.SynergiesNumber+1):
+                        try:
+                            ax = self.figure.add_subplot(gs[i-1, 0])
+                            ax.bar(range(np.asarray(params.SynergyBase).shape[1]), params.SynergyBase[i-1], color=self.colors[i-1], alpha=0.6)
+                            ax.set_ylim(0, 1)  # Set y-axis limits to be between 0 and 0.5
+                            ax.set_xlim(-0.5, params.ChannelsNumber-0.5)  
+                            ax.set_xticks(range(params.ChannelsNumber))  # Ensure all ticks are visible
+                            ax.set_yticks([0, 0.5, 1])  # Ensure y-ticks are visible
+
+                            if i == 1:
+                                ax.set_title(f'Synergy Basis ({params.SynergiesNumber} Synergies)')
+                                ax.set_xlabel('Muscles')  # X-axis label
+                                ax.set_ylabel('Relative Activation')  # Y-axis label
+                                if params.SensorStickers:
+                                    ax.set_xticklabels(params.SensorStickers)
+                                ax.set_yticklabels([str(tick) for tick in [0, 0.5, 1]])
+                            else: 
+                                ax.set_xticklabels([''] * params.ChannelsNumber)  # Remove x-axis tick labels but keep the ticks
+                                ax.set_yticklabels([''] * 3)  # Remove y-axis tick labels but keep the ticks
+                        except Exception as subplot_error:
+                            print(f"[ERROR] Failed to create synergy subplot {i}: {subplot_error}")
+                            continue
+                    
+                    # Plot Projection Angles ----------------------------------------------
+                    try:
+                        ax = self.figure.add_subplot(gs[:, 1], polar=True)
+                        ax.set_title("Choose the projection angle of each synergy")
+                        for i in range(len(angles)):
+                            theta = np.radians(angles[i])  # Convert to radians
+                            ax.plot([0, theta], [0, 1], marker='o', color=self.colors[i])  # Plot the vector
+                    except Exception as polar_error:
+                        print(f"[ERROR] Failed to create polar plot: {polar_error}")
+                    
+                    # Adjust the layout to expand subplots
+                    self.figure.tight_layout()
+                    self.figure.subplots_adjust(hspace=0.8, wspace=0.6)  # Adjust the spacing if needed
+                    self.canvas.draw()
+                    print("[DEBUG] Angles plot completed successfully")
+                    
+                except Exception as e:
+                    print(f"[ERROR] Failed to plot angles: {e}")
+                    msgbox.alert(f"Failed to plot angles: {str(e)}")
+
+            elif params.PlotUploadedConfig:
+                print("[DEBUG] Plotting uploaded config")
+                print(f"[DEBUG] SynergiesNumber: {params.SynergiesNumber}")
+                print(f"[DEBUG] AnglesOutput: {params.AnglesOutput}")
+                
+                try:
+                    self.figure.clear()
+                    
+                    # Check if SynergyBase data exists
+                    synergy_base_available = False
+                    if params.SynergyBase is not None:
+                        if isinstance(params.SynergyBase, np.ndarray):
+                            synergy_base_available = params.SynergyBase.size > 0
+                        elif hasattr(params.SynergyBase, '__len__'):
+                            synergy_base_available = len(params.SynergyBase) > 0
+                        else:
+                            synergy_base_available = bool(params.SynergyBase)
+                    
+                    if not synergy_base_available:
+                        print("[ERROR] SynergyBase data is empty or None")
+                        msgbox.alert("Cannot plot uploaded config: No synergy base data available")
+                        return
+                        
+                    # Check if AnglesOutput data exists
+                    if self.is_data_empty(params.AnglesOutput):
+                        print("[ERROR] AnglesOutput data is empty or None")
+                        msgbox.alert("Cannot plot uploaded config: No angles data available")
+                        return
+                    
+                    gs = self.figure.add_gridspec(params.SynergiesNumber, 2)  
+                    
+                    # Plot Synergy Base ----------------------------------------------
+                    for i in range (1, params.SynergiesNumber+1):
+                        try:
+                            ax = self.figure.add_subplot(gs[i-1, 0])
+                            ax.bar(range(np.asarray(params.SynergyBase).shape[1]), params.SynergyBase[i-1], color=self.colors[i-1], alpha=0.6)
+                            ax.set_ylim(0, 1)  # Set y-axis limits to be between 0 and 0.5
+                            ax.set_xlim(-0.5, params.ChannelsNumber-0.5) 
+                            ax.set_xticks(range(params.ChannelsNumber))  # Ensure all ticks are visible
+                            ax.set_yticks([0, 0.5, 1])  # Ensure y-ticks are visible
+
+                            if i == 1:
+                                ax.set_title(f'Synergy Basis ({params.SynergiesNumber} Synergies)')
+                                ax.set_xlabel('Muscles')  # X-axis label
+                                ax.set_ylabel('Relative Activation')  # Y-axis label
+                                if params.SensorStickers:
+                                    ax.set_xticklabels(params.SensorStickers)
+                                ax.set_yticklabels([str(tick) for tick in [0, 0.5, 1]])
+                            else: 
+                                ax.set_xticklabels([''] * params.ChannelsNumber)  # Remove x-axis tick labels but keep the ticks
+                                ax.set_yticklabels([''] * 3)  # Remove y-axis tick labels but keep the ticks
+                        except Exception as subplot_error:
+                            print(f"[ERROR] Failed to create config subplot {i}: {subplot_error}")
+                            continue
+                        
+                    # Plot Projection Angles ----------------------------------------------
+                    try:
+                        ax = self.figure.add_subplot(gs[:, 1], polar=True)
+                        ax.set_title("Projection Angles")
+                        for i in range(len(params.AnglesOutput)):
+                            theta = np.radians(int(params.AnglesOutput[i]))  # Convert to radians
+                            ax.plot([0, theta], [0, 1], marker='o', color=self.colors[i])  # Plot the vector
+                    except Exception as angles_error:
+                        print(f"[ERROR] Failed to plot projection angles: {angles_error}")
+                    
+                    # Adjust the layout to expand subplots
+                    self.figure.tight_layout()
+                    self.figure.subplots_adjust(hspace=0.8, wspace=0.6)  # Adjust the spacing if needed
+                    self.canvas.draw()
+                    print("[DEBUG] Uploaded config plot completed successfully")
+                    params.PlotUploadedConfig = False
+                    
+                except Exception as e:
+                    print(f"[ERROR] Failed to plot uploaded config: {e}")
+                    msgbox.alert(f"Failed to plot uploaded config: {str(e)}")
+                    params.PlotUploadedConfig = False
+                    
+            else:
+                print("[DEBUG] No valid plot mode detected")
+                print(f"[DEBUG] PlotThresholds: {params.PlotThresholds}")
+                print(f"[DEBUG] PlotPeaks: {params.PlotPeaks}")
+                print(f"[DEBUG] PlotModels: {params.PlotModels}")
+                print(f"[DEBUG] PlotAngles: {params.PlotAngles}")
+                print(f"[DEBUG] PlotUploadedConfig: {params.PlotUploadedConfig}")
+
+        except Exception as main_error:
+            print(f"[ERROR] Critical error in update_plot: {main_error}")
+            msgbox.alert(f"Critical plotting error: {str(main_error)}\n\nPlease check the console for details.")
+        
+        print("[DEBUG] update_plot() finished")
+    
+    def update_plot_with_debug(self):
+        """Debug wrapper for update_plot called by signal"""
+        print("[DEBUG] update_plot_with_debug() called via signal")
+        print(f"[DEBUG] Signal triggered - PlotThresholds: {params.PlotThresholds}")
+        print(f"[DEBUG] Signal triggered - PlotPeaks: {params.PlotPeaks}")
+        print(f"[DEBUG] Signal triggered - PlotModels: {params.PlotModels}")
+        try:
+            self.update_plot()
+        except Exception as e:
+            print(f"[ERROR] Error in signal-triggered update_plot: {e}")
+            msgbox.alert(f"Error updating plot via signal: {str(e)}")
     
     def set_model(self):
         self.SynergiesNumber = int(self.synergy_base_lineedit.text())
