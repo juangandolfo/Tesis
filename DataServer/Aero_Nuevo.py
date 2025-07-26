@@ -13,7 +13,7 @@ frequency = params.SimulationFrequency  # Sample rate
 stack = deque(maxlen = 1000)
 stack_lock = Semaphore(1)  # Semaphore for stack access
 
-# Create channels ID
+# Create channel IDs
 channels = ['M1', 'M2', 'M3', 'M4', 'M5', 'M6', 'M7', 'M8']
 
 class FormattedDictionary:
