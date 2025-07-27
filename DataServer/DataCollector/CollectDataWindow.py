@@ -31,7 +31,7 @@ class CollectDataWindow(QWidget):
         self.pipelinetext = "Off"
         self.controller = controller
         self.buttonPanel = self.ButtonPanel()
-        self.calibration_window = CalibrationWindow()
+        self.calibration_window = CalibrationWindow(parent_window=self)
         layout = QHBoxLayout()
         self.setStyleSheet("background-color:#DDDDDD;")
         layout.addWidget(self.buttonPanel)
@@ -98,6 +98,7 @@ class CollectDataWindow(QWidget):
         self.connect_base_button.objectName = 'Connect Base'
         self.connect_base_button.clicked.connect(self.connect_base_callback)
         self.connect_base_button.setStyleSheet('QPushButton {color: #000066;}')
+        self.is_base_connected = False
         connect_layout.addWidget(self.connect_base_button)
 
         #---- Connect From File Button
@@ -107,6 +108,7 @@ class CollectDataWindow(QWidget):
         self.connect_file_button.objectName = 'Connect From File'
         self.connect_file_button.clicked.connect(self.connect_file_callback)
         self.connect_file_button.setStyleSheet('QPushButton {color: #000066;}')
+        self.is_file_connected = False
         connect_layout.addWidget(self.connect_file_button)
 
         buttonLayout.addLayout(connect_layout)
@@ -119,7 +121,7 @@ class CollectDataWindow(QWidget):
         self.pair_button.setSizePolicy(QSizePolicy.Preferred,QSizePolicy.Expanding)
         self.pair_button.objectName = 'Pair'
         self.pair_button.clicked.connect(self.pair_callback)
-        self.pair_button.setStyleSheet('QPushButton {color: #000066;}')
+        self.pair_button.setStyleSheet('QPushButton:enabled {color: #000066;} QPushButton:disabled {color: #888888; background-color: #CCCCCC;}')
         self.pair_button.setEnabled(False)
         findSensor_layout.addWidget(self.pair_button)
 
@@ -129,8 +131,8 @@ class CollectDataWindow(QWidget):
         self.scan_button.setSizePolicy(QSizePolicy.Preferred,QSizePolicy.Expanding)
         self.scan_button.objectName = 'Scan'
         self.scan_button.clicked.connect(self.scan_callback)
-        self.scan_button.setStyleSheet('QPushButton {color: #000066;}')
-        self.scan_button.setEnabled(True)
+        self.scan_button.setStyleSheet('QPushButton:enabled {color: #000066;} QPushButton:disabled {color: #888888; background-color: #CCCCCC;}')
+        self.scan_button.setEnabled(False)
         findSensor_layout.addWidget(self.scan_button)
 
         buttonLayout.addLayout(findSensor_layout)
@@ -171,8 +173,8 @@ class CollectDataWindow(QWidget):
         self.configure_button.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
         self.configure_button.objectName = 'Configure Sensors'
         self.configure_button.clicked.connect(self.ConfigureSensors_callback)  # Connect to the callback method
-        self.configure_button.setStyleSheet('QPushButton {color: #000066;}')
-        self.configure_button.setEnabled(True)
+        self.configure_button.setStyleSheet('QPushButton:enabled {color: #000066;} QPushButton:disabled {color: #888888; background-color: #CCCCCC;}')
+        self.configure_button.setEnabled(False)
         buttonLayout.addWidget(self.configure_button)
 
         '''#---- Drop-down menu of sensor modes
@@ -197,7 +199,7 @@ class CollectDataWindow(QWidget):
         self.calibration_button.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
         self.calibration_button.objectName = 'Start Calibration'
         self.calibration_button.clicked.connect(self.calibration_callback)  # Connect to the callback method
-        self.calibration_button.setStyleSheet('QPushButton {color: #000066;}')
+        self.calibration_button.setStyleSheet('QPushButton:enabled {color: #000066;} QPushButton:disabled {color: #888888; background-color: #CCCCCC;}')
         self.calibration_button.setEnabled(False)
         buttonLayout.addWidget(self.calibration_button)
 
@@ -207,7 +209,7 @@ class CollectDataWindow(QWidget):
         self.cursor_button.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
         self.cursor_button.objectName = 'Start Cursor'
         self.cursor_button.clicked.connect(self.start_cursor)
-        self.cursor_button.setStyleSheet('QPushButton {color: #000066;}')
+        self.cursor_button.setStyleSheet('QPushButton:enabled {color: #000066;} QPushButton:disabled {color: #888888; background-color: #CCCCCC;}')
         self.cursor_button.setEnabled(False)
         buttonLayout.addWidget(self.cursor_button)
 
@@ -217,7 +219,7 @@ class CollectDataWindow(QWidget):
         self.visualization_button.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
         self.visualization_button.objectName = 'Start Visualization'
         self.visualization_button.clicked.connect(self.start_visualization)
-        self.visualization_button.setStyleSheet('QPushButton {color: #000066;}')
+        self.visualization_button.setStyleSheet('QPushButton:enabled {color: #000066;} QPushButton:disabled {color: #888888; background-color: #CCCCCC;}')
         self.visualization_button.setEnabled(False)
         buttonLayout.addWidget(self.visualization_button)
 
@@ -249,57 +251,88 @@ class CollectDataWindow(QWidget):
         self.pipelinestatelabel.setText(self.pipelinetext)
 
     def connect_base_callback(self):
-        params.DelsysMode = True
-        try:
-            self.CallbackConnector.Connect_Callback()
-            # If connection successful, disable both buttons and enable scan
-            self.connect_base_button.setEnabled(False)
-            self.connect_file_button.setEnabled(False)
-            self.scan_button.setEnabled(True)
-            self.getpipelinestate()
-            self.pipelinestatelabel.setText(self.pipelinetext + " (Base Connected)")
-        except Exception as e:
-            # Handle connection error gracefully
-            msgbox.alert(f"Failed to connect to Delsys base:\n{str(e)}\n\nPlease check that:\n"
-                        "- The base is powered on and connected\n"
-                        "- Drivers are properly installed\n"
-                        "- No other application is using the base")
-            
-            # Reset the connection state to allow user to try again
-            self.reset_connection_state()
+        if self.is_base_connected:
+            # Disconnect from base
+            try:
+                # Add any necessary disconnection logic here
+                self.is_base_connected = False
+                self.connect_base_button.setText('Connect Base')
+                self.connect_base_button.setToolTip('Connect to Delsys Base')
+                self.connect_file_button.setEnabled(True)
+                self.reset_all_buttons_to_initial_state()
+                self.pipelinestatelabel.setText("Disconnected - Ready to Connect")
+            except Exception as e:
+                msgbox.alert(f"Error disconnecting from base: {str(e)}")
+        else:
+            # Connect to base
+            params.DelsysMode = True
+            try:
+                self.CallbackConnector.Connect_Callback()
+                # If connection successful, update button states
+                self.is_base_connected = True
+                self.connect_base_button.setText('Disconnect Base')
+                self.connect_base_button.setToolTip('Disconnect from Delsys Base')
+                self.connect_file_button.setEnabled(False)
+                self.scan_button.setEnabled(True)
+                self.getpipelinestate()
+                self.pipelinestatelabel.setText(self.pipelinetext + " (Base Connected)")
+            except Exception as e:
+                # Handle connection error gracefully
+                msgbox.alert(f"Failed to connect to Delsys base:\n{str(e)}\n\nPlease check that:\n"
+                            "- The base is powered on and connected\n"
+                            "- Drivers are properly installed\n"
+                            "- No other application is using the base")
+                
+                # Reset the connection state to allow user to try again
+                self.reset_connection_state()
 
     def connect_file_callback(self):
-        # Create a hidden tkinter root to prevent blank window
-        root = tk.Tk()
-        root.withdraw()  # Hide the main tkinter window
-        
-        # Open file dialog to select CSV file
-        file_path = filedialog.askopenfilename(
-            title="Select a CSV file containing muscle data to simulate connection",
-            filetypes=[("CSV Files", "*.csv"), ("All Files", "*.*")]
-        )
-        
-        # Destroy the tkinter root to clean up
-        root.destroy()
-        
-        if file_path:
-            # Validate the CSV file
-            if self.validate_csv_file(file_path):
-                params.DelsysMode = False
-                params.csvFile = file_path
-                try:
-                    self.CallbackConnector.Connect_Callback()
-                    # If connection successful, disable both buttons and enable scan
-                    self.connect_base_button.setEnabled(False)
-                    self.connect_file_button.setEnabled(False)
-                    self.scan_button.setEnabled(True)
-                    self.getpipelinestate()
-                    self.pipelinestatelabel.setText(self.pipelinetext + " (File Connected)")
-                except Exception as e:
-                    # Handle connection error gracefully
-                    msgbox.alert(f"Failed to connect using CSV file:\n{str(e)}\n\nPlease try selecting a different file.")
-                    self.reset_connection_state()
-            # Note: Error details are now provided by validate_csv_file method
+        if self.is_file_connected:
+            # Disconnect from file
+            try:
+                self.is_file_connected = False
+                self.connect_file_button.setText('Connect From File')
+                self.connect_file_button.setToolTip('Connect using CSV file')
+                self.connect_base_button.setEnabled(True)
+                self.reset_all_buttons_to_initial_state()
+                self.pipelinestatelabel.setText("Disconnected - Ready to Connect")
+            except Exception as e:
+                msgbox.alert(f"Error disconnecting from file: {str(e)}")
+        else:
+            # Connect from file
+            # Create a hidden tkinter root to prevent blank window
+            root = tk.Tk()
+            root.withdraw()  # Hide the main tkinter window
+            
+            # Open file dialog to select CSV file
+            file_path = filedialog.askopenfilename(
+                title="Select a CSV file containing muscle data to simulate connection",
+                filetypes=[("CSV Files", "*.csv"), ("All Files", "*.*")]
+            )
+            
+            # Destroy the tkinter root to clean up
+            root.destroy()
+            
+            if file_path:
+                # Validate the CSV file
+                if self.validate_csv_file(file_path):
+                    params.DelsysMode = False
+                    params.csvFile = file_path
+                    try:
+                        self.CallbackConnector.Connect_Callback()
+                        # If connection successful, update button states
+                        self.is_file_connected = True
+                        self.connect_file_button.setText('Disconnect File')
+                        self.connect_file_button.setToolTip('Disconnect from CSV file')
+                        self.connect_base_button.setEnabled(False)
+                        self.scan_button.setEnabled(True)
+                        self.getpipelinestate()
+                        self.pipelinestatelabel.setText(self.pipelinetext + " (File Connected)")
+                    except Exception as e:
+                        # Handle connection error gracefully
+                        msgbox.alert(f"Failed to connect using CSV file:\n{str(e)}\n\nPlease try selecting a different file.")
+                        self.reset_connection_state()
+                # Note: Error details are now provided by validate_csv_file method
 
     def validate_csv_file(self, file_path):
         """Validate that the CSV file has the expected format"""
@@ -369,12 +402,27 @@ class CollectDataWindow(QWidget):
         """Reset the UI to allow user to try connecting again"""
         self.connect_base_button.setEnabled(True)
         self.connect_file_button.setEnabled(True)
+        self.connect_base_button.setText('Connect Base')
+        self.connect_base_button.setToolTip('Connect to Delsys Base')
+        self.connect_file_button.setText('Connect From File')
+        self.connect_file_button.setToolTip('Connect using CSV file')
+        self.is_base_connected = False
+        self.is_file_connected = False
         self.scan_button.setEnabled(False)
+        self.configure_button.setEnabled(False)
         self.calibration_button.setEnabled(False)
         self.cursor_button.setEnabled(False)
         self.visualization_button.setEnabled(False)
         self.getpipelinestate()
         self.pipelinestatelabel.setText("Connection Failed - Ready to Retry")
+
+    def reset_all_buttons_to_initial_state(self):
+        """Reset all buttons to their initial disabled state after disconnection"""
+        self.scan_button.setEnabled(False)
+        self.configure_button.setEnabled(False)
+        self.calibration_button.setEnabled(False)
+        self.cursor_button.setEnabled(False)
+        self.visualization_button.setEnabled(False)
 
     def connect_callback(self):
         # Legacy method for backward compatibility
@@ -392,7 +440,7 @@ class CollectDataWindow(QWidget):
         self.SensorListBox.setCurrentRow(0)
 
         if len(sensorList)>0:
-            self.calibration_button.setEnabled(True)
+            self.configure_button.setEnabled(True)
         self.getpipelinestate()
 
     '''def start_callback(self):
@@ -429,11 +477,18 @@ class CollectDataWindow(QWidget):
     def ConfigureSensors_callback(self):
         self.CallbackConnector.setSampleMode_hardcoded()
         self.CallbackConnector.FinishInitialization()
+        # Enable calibration after sensors are configured
+        self.calibration_button.setEnabled(True)
 
     def calibration_callback(self):
         params.StartCalibration = True
         self.calibration_window.show()
         self.CallbackConnector.StartCalibration_Callback()
+        # Don't enable visualization and cursor buttons immediately
+        # They will be enabled only after a valid calibration is completed
+
+    def enable_post_calibration_buttons(self):
+        """Enable visualization and cursor buttons after successful calibration completion"""
         self.visualization_button.setEnabled(True)
         self.cursor_button.setEnabled(True)
 
@@ -779,10 +834,11 @@ class CountdownWidget(QWidget):
 
 class CalibrationWindow(QMainWindow):
 
-    def __init__(self):
+    def __init__(self, parent_window=None):
         super().__init__()
+        self.parent_window = parent_window  # Reference to CollectDataWindow
         self.setWindowTitle("Calibration Window")
-        self.setGeometry(100, 100, 800, 600)
+        self.setGeometry(100, 100, 1400, 800)  # Make window larger to accommodate all visualizations
         self.CalibrationStage = 0
 
         central_widget = QWidget()
@@ -791,6 +847,11 @@ class CalibrationWindow(QMainWindow):
         self.setStyleSheet("background-color:#DDDDDD;")
 
         layout = QVBoxLayout()
+
+        # Move upload button to top and reorganize button order
+        self.upload_calibration_button = QPushButton("Upload Last Calibration")
+        self.upload_calibration_button.setFixedSize(240, 30)  # Set a fixed size for the button
+        self.upload_calibration_button.setStyleSheet('QPushButton {color: #000066;}')
 
         self.stage1_button = QPushButton("1 - Base Noise")
         self.stage1_button.setFixedSize(240, 30)  # Set a fixed size for the button
@@ -803,10 +864,6 @@ class CalibrationWindow(QMainWindow):
         self.stage3_button = QPushButton("3 - Synergy Basis")
         self.stage3_button.setFixedSize(240, 30)  # Set a fixed size for the button
         self.stage3_button.setStyleSheet('QPushButton {color: #000066;}')
-        
-        self.upload_calibration_button = QPushButton("Upload Last Calibration")
-        self.upload_calibration_button.setFixedSize(240, 30)  # Set a fixed size for the button
-        self.upload_calibration_button.setStyleSheet('QPushButton {color: #000066;}')
 
         self.choose_projection_button = QPushButton("Choose Projection")
         self.choose_projection_button.setFixedSize(240, 30)  # Set a fixed size for the button
@@ -850,10 +907,11 @@ class CalibrationWindow(QMainWindow):
         self.timer_widget = CountdownWidget()
         self.timer_widget.hide()  # Initially hide the CountdownWidget
 
+        # Connect buttons to callbacks - all enabled simultaneously
+        self.upload_calibration_button.clicked.connect(self.stage4_callback)
         self.stage1_button.clicked.connect(self.stage1_callback)
         self.stage2_button.clicked.connect(self.stage2_callback)
         self.stage3_button.clicked.connect(self.stage3_callback)
-        self.upload_calibration_button.clicked.connect(self.stage4_callback)
         self.choose_projection_button.clicked.connect(self.show_select_model)
         self.terminate_button.clicked.connect(self.terminate_callback)
 
@@ -861,9 +919,13 @@ class CalibrationWindow(QMainWindow):
         self.start_stage_button.clicked.connect(self.start_countdown)
         self.set_synergy_base.clicked.connect(self.set_model)
 
-        self.figure = plt.figure() 
+        # Create figure with 4 subplots for comprehensive visualization
+        self.figure = plt.figure(figsize=(14, 10)) 
         self.canvas = FigureCanvas(self.figure)
         self.colors = ['Red', 'Blue', 'Yellow', 'Green', 'Orange', 'Purple', 'Grey', 'Brown']
+        
+        # Initialize default visualization
+        self.init_default_visualization()
         
         params.PlotCalibrationSignal.signal.connect(self.update_plot_with_debug)
 
@@ -894,11 +956,11 @@ class CalibrationWindow(QMainWindow):
 
         angles_layout.addWidget(self.save_button)
         
-        #Construct the layout 
+        #Construct the layout - Upload button first, then calibration steps
+        layout.addWidget(self.upload_calibration_button)
         layout.addWidget(self.stage1_button)
         layout.addWidget(self.stage2_button)
         layout.addWidget(self.stage3_button)
-        layout.addWidget(self.upload_calibration_button)
         layout.addWidget(self.choose_projection_button)
         layout.addWidget(self.stage_message_label)
         layout.addWidget(self.sensors_dropdown)
@@ -944,6 +1006,172 @@ class CalibrationWindow(QMainWindow):
         except Exception as e:
             print(f"[WARNING] Error getting data length: {e}")
             return 0
+
+    def init_default_visualization(self):
+        """Initialize the default visualization with 4 subplots showing default/empty states"""
+        try:
+            self.figure.clear()
+            
+            # Create 2x2 subplot grid
+            self.ax_thresholds = self.figure.add_subplot(2, 2, 1)
+            self.ax_peaks = self.figure.add_subplot(2, 2, 2) 
+            self.ax_synergies = self.figure.add_subplot(2, 2, 3)
+            self.ax_directions = self.figure.add_subplot(2, 2, 4, polar=True)
+            
+            # Initialize default data
+            default_muscles = ['M1', 'M2', 'M3', 'M4', 'M5', 'M6', 'M7', 'M8']
+            default_thresholds = [0.05] * 8
+            default_peaks = [0.5] * 8
+            default_synergies = [[0.2, 0.8, 0.1, 0.3, 0.6, 0.4, 0.7, 0.2],
+                                [0.7, 0.2, 0.5, 0.8, 0.1, 0.6, 0.3, 0.9]]
+            default_angles = [0, 90]
+            
+            # Plot default thresholds
+            self.ax_thresholds.bar(default_muscles, default_thresholds, color='#1A4207', alpha=0.6)
+            self.ax_thresholds.set_title('Thresholds (Default)')
+            self.ax_thresholds.set_ylabel('Activation (mV)')
+            self.ax_thresholds.tick_params(axis='x', rotation=45)
+            
+            # Plot default peaks
+            self.ax_peaks.bar(default_muscles, default_peaks, color='#1A4207', alpha=0.6)
+            # Add default thresholds overlay
+            self.ax_peaks.bar(default_muscles, default_thresholds, color='#808080', alpha=0.7)
+            self.ax_peaks.set_title('Peaks vs Thresholds (Default)')
+            self.ax_peaks.set_ylabel('Activation (mV)')
+            self.ax_peaks.tick_params(axis='x', rotation=45)
+            
+            # Plot default synergies
+            for i, synergy in enumerate(default_synergies):
+                self.ax_synergies.bar([x + i*0.4 for x in range(len(default_muscles))], 
+                                    synergy, width=0.35, color=self.colors[i], 
+                                    alpha=0.6, label=f'Synergy {i+1}')
+            self.ax_synergies.set_title('Synergy Basis (Default)')
+            self.ax_synergies.set_ylabel('Relative Activation')
+            self.ax_synergies.set_xticks(range(len(default_muscles)))
+            self.ax_synergies.set_xticklabels(default_muscles)
+            self.ax_synergies.legend()
+            
+            # Plot default directions
+            for i, angle in enumerate(default_angles):
+                theta = np.radians(angle)
+                self.ax_directions.plot([0, theta], [0, 1], marker='o', 
+                                      color=self.colors[i], linewidth=2, 
+                                      markersize=8, label=f'Synergy {i+1}')
+            self.ax_directions.set_title('Projection Angles (Default)')
+            self.ax_directions.legend()
+            
+            # Adjust layout and draw
+            self.figure.tight_layout()
+            self.canvas.draw()
+            
+        except Exception as e:
+            print(f"[ERROR] Failed to initialize default visualization: {e}")
+            msgbox.alert(f"Error initializing calibration visualization: {str(e)}")
+
+    def update_thresholds_subplot(self):
+        """Update only the thresholds subplot"""
+        try:
+            if not self.is_data_empty(params.Thresholds) and not self.is_data_empty(params.SensorStickers):
+                self.ax_thresholds.clear()
+                data = params.Thresholds
+                self.ax_thresholds.bar(params.SensorStickers, data, color="#1A4207")
+                
+                # Color code based on threshold values
+                for i, value in enumerate(data):
+                    if value > 0.1:
+                        self.ax_thresholds.bar(params.SensorStickers[i], value, color="#B11E1E")
+                    elif 0.08 < value <= 0.1:
+                        self.ax_thresholds.bar(params.SensorStickers[i], value, color="#B46A0F")
+                
+                self.ax_thresholds.set_title('Detected Thresholds')
+                self.ax_thresholds.set_ylabel('Muscle Activation (mV)')
+                self.ax_thresholds.tick_params(axis='x', rotation=45)
+                self.canvas.draw()
+        except Exception as e:
+            print(f"[ERROR] Failed to update thresholds subplot: {e}")
+
+    def update_peaks_subplot(self):
+        """Update only the peaks subplot"""
+        try:
+            if not self.is_data_empty(params.Peaks) and not self.is_data_empty(params.SensorStickers):
+                self.ax_peaks.clear()
+                data = params.Peaks
+                self.ax_peaks.bar(params.SensorStickers, data, color="#1A4207")
+                
+                # Color code based on peak values
+                for i, value in enumerate(data):
+                    if value < 0.3:
+                        self.ax_peaks.bar(params.SensorStickers[i], value, color="#B11E1E")
+                    elif 0.3 <= value < 0.5:
+                        self.ax_peaks.bar(params.SensorStickers[i], value, color="#B46A0F")
+                
+                # Add thresholds overlay if available
+                if not self.is_data_empty(params.Thresholds):
+                    thresholds = params.Thresholds
+                    self.ax_peaks.bar(params.SensorStickers, thresholds, color="#808080", alpha=0.7)
+                    
+                    # Add SNR text
+                    for i, (peak, threshold) in enumerate(zip(data, thresholds)):
+                        if threshold > 0:
+                            snr = peak / threshold
+                            self.ax_peaks.text(i, peak + 0.01, f'SNR: {snr:.1f}', 
+                                             ha='center', va='bottom', fontsize=8, fontweight='bold')
+                
+                self.ax_peaks.set_title('Detected Peaks vs Thresholds')
+                self.ax_peaks.set_ylabel('Muscle Activation (mV)')
+                self.ax_peaks.tick_params(axis='x', rotation=45)
+                self.canvas.draw()
+        except Exception as e:
+            print(f"[ERROR] Failed to update peaks subplot: {e}")
+
+    def update_synergies_subplot(self):
+        """Update only the synergies subplot"""
+        try:
+            if not self.is_data_empty(params.SynergyBase) and hasattr(params, 'SynergiesNumber'):
+                self.ax_synergies.clear()
+                synergy_data = np.array(params.SynergyBase)
+                
+                if len(synergy_data.shape) == 2:
+                    width = 0.8 / params.SynergiesNumber
+                    muscle_indices = np.arange(synergy_data.shape[1])
+                    
+                    for i in range(params.SynergiesNumber):
+                        offset = (i - params.SynergiesNumber/2 + 0.5) * width
+                        self.ax_synergies.bar(muscle_indices + offset, synergy_data[i], 
+                                            width=width, color=self.colors[i % len(self.colors)], 
+                                            alpha=0.7, label=f'Synergy {i+1}')
+                    
+                    self.ax_synergies.set_title(f'Synergy Basis ({params.SynergiesNumber} Synergies)')
+                    self.ax_synergies.set_ylabel('Relative Activation')
+                    self.ax_synergies.set_xticks(muscle_indices)
+                    if not self.is_data_empty(params.SensorStickers):
+                        self.ax_synergies.set_xticklabels(params.SensorStickers[:synergy_data.shape[1]], rotation=45)
+                    self.ax_synergies.legend()
+                    self.ax_synergies.set_ylim(0, 1)
+                    
+                self.canvas.draw()
+        except Exception as e:
+            print(f"[ERROR] Failed to update synergies subplot: {e}")
+
+    def update_directions_subplot(self):
+        """Update only the directions subplot"""
+        try:
+            if not self.is_data_empty(params.AnglesOutput):
+                self.ax_directions.clear()
+                angles = [int(angle) for angle in params.AnglesOutput if str(angle).isdigit()]
+                
+                for i, angle in enumerate(angles):
+                    theta = np.radians(angle)
+                    self.ax_directions.plot([0, theta], [0, 1], marker='o', 
+                                          color=self.colors[i % len(self.colors)], 
+                                          linewidth=3, markersize=10, 
+                                          label=f'Synergy {i+1}: {angle}°')
+                
+                self.ax_directions.set_title('Projection Angles')
+                self.ax_directions.legend(loc='upper right', bbox_to_anchor=(1.3, 1.0))
+                self.canvas.draw()
+        except Exception as e:
+            print(f"[ERROR] Failed to update directions subplot: {e}")
 
     def stage1_callback(self):
         self.save_button.hide()
@@ -1097,119 +1325,14 @@ class CalibrationWindow(QMainWindow):
         
         try:
             if params.PlotThresholds:
-                print("[DEBUG] Plotting thresholds")
-                print(f"[DEBUG] Thresholds data: {params.Thresholds}")
-                print(f"[DEBUG] Thresholds type: {type(params.Thresholds)}")
-                print(f"[DEBUG] SensorStickers: {params.SensorStickers}")
-                print(f"[DEBUG] SensorStickers type: {type(params.SensorStickers)}")
-                
-                # Check if thresholds data exists and is valid
-                if self.is_data_empty(params.Thresholds):
-                    print("[ERROR] Thresholds data is empty or None")
-                    msgbox.alert("Cannot plot thresholds: No threshold data available")
-                    return
-                    
-                # Check sensor stickers
-                if self.is_data_empty(params.SensorStickers):
-                    print("[ERROR] SensorStickers data is empty or None")
-                    msgbox.alert("Cannot plot thresholds: No sensor labels available")
-                    return
-                    
-                # Check data length consistency
-                thresholds_length = self.get_data_length(params.Thresholds)
-                stickers_length = self.get_data_length(params.SensorStickers)
-                    
-                if thresholds_length != stickers_length:
-                    print(f"[ERROR] Thresholds length ({thresholds_length}) != SensorStickers length ({stickers_length})")
-                    msgbox.alert(f"Cannot plot thresholds: Data mismatch ({thresholds_length} values vs {stickers_length} labels)")
-                    return
-                
-                try:
-                    self.figure.clear()
-                    ax = self.figure.add_subplot(111)
-                    data = params.Thresholds 
-                    ax.bar(params.SensorStickers, data, color = "#1A4207")
-                    # If any data values is more than .1, color it red
-                    for i, value in enumerate(data):
-                        if value > 0.1:
-                            ax.bar(params.SensorStickers[i], value, color = "#B11E1E")
-                        # If any data value is between .08 and .1, color it orange
-                        elif 0.08 < value <= 0.1:
-                            ax.bar(params.SensorStickers[i], value, color = "#B46A0F")
-                    ax.set_xlabel('Muscles')  # X-axis label
-                    ax.set_ylabel('Muscle Activation (mV)')  # Y-axis label
-                    ax.set_title('Detected thresholds')  # Plot title
-                    self.canvas.draw()
-                    print("[DEBUG] Thresholds plot completed successfully")
-                    params.PlotThresholds = False
-                except Exception as e:
-                    print(f"[ERROR] Failed to plot thresholds: {e}")
-                    msgbox.alert(f"Failed to plot thresholds: {str(e)}")
-                    params.PlotThresholds = False
+                print("[DEBUG] Updating thresholds subplot")
+                self.update_thresholds_subplot()
+                params.PlotThresholds = False
                 
             elif params.PlotPeaks:
-                print("[DEBUG] Plotting peaks")
-                print(f"[DEBUG] Peaks data: {params.Peaks}")
-                print(f"[DEBUG] Peaks type: {type(params.Peaks)}")
-                print(f"[DEBUG] Thresholds data: {params.Thresholds}")
-                print(f"[DEBUG] SensorStickers: {params.SensorStickers}")
-                
-                # Check if peaks data exists and is valid
-                if self.is_data_empty(params.Peaks):
-                    print("[ERROR] Peaks data is empty or None")
-                    msgbox.alert("Cannot plot peaks: No peak data available")
-                    return
-                    
-                # Check sensor stickers
-                if self.is_data_empty(params.SensorStickers):
-                    print("[ERROR] SensorStickers data is empty or None")
-                    msgbox.alert("Cannot plot peaks: No sensor labels available")
-                    return
-                    
-                # Check data length consistency
-                peaks_length = self.get_data_length(params.Peaks)
-                stickers_length = self.get_data_length(params.SensorStickers)
-                    
-                if peaks_length != stickers_length:
-                    print(f"[ERROR] Peaks length ({peaks_length}) != SensorStickers length ({stickers_length})")
-                    msgbox.alert(f"Cannot plot peaks: Data mismatch ({peaks_length} values vs {stickers_length} labels)")
-                    return
-                
-                try:
-                    self.figure.clear()
-                    ax = self.figure.add_subplot(111)
-                    data = params.Peaks 
-                    ax.bar(params.SensorStickers, data, color = "#1A4207")
-                    #If any data value is less than .5, color it red
-                    for i, value in enumerate(data):
-                        if value < 0.3:
-                            ax.bar(params.SensorStickers[i], value, color = "#B11E1E")
-                        elif 0.3 <= value < 0.5:
-                            ax.bar(params.SensorStickers[i], value, color = "#B46A0F")
-                    
-                    # Add bars with current thresholds overlaid on top of the peaks
-                    try:
-                        # Check if thresholds data is available for overlay
-                        if not self.is_data_empty(params.Thresholds) and self.get_data_length(params.Thresholds) == stickers_length:
-                            thresholds = params.Thresholds
-                            ax.bar(params.SensorStickers, thresholds, color = "#3B6CF3")
-                            print("[DEBUG] Added thresholds overlay to peaks plot")
-                        else:
-                            print("[WARNING] Skipping thresholds overlay - data unavailable or mismatched")
-                    except Exception as overlay_error:
-                        print(f"[WARNING] Failed to add thresholds overlay: {overlay_error}")
-                        # Continue without overlay
-                    
-                    ax.set_xlabel('Muscles')  # X-axis label
-                    ax.set_ylabel('Muscle Activation (mV)')  # Y-axis label
-                    ax.set_title('Detected Peaks')  # Plot title
-                    self.canvas.draw()
-                    print("[DEBUG] Peaks plot completed successfully")
-                    params.PlotPeaks = False
-                except Exception as e:
-                    print(f"[ERROR] Failed to plot peaks: {e}")
-                    msgbox.alert(f"Failed to plot peaks: {str(e)}")
-                    params.PlotPeaks = False
+                print("[DEBUG] Updating peaks subplot")
+                self.update_peaks_subplot()
+                params.PlotPeaks = False
 
             elif params.PlotModels:
                 print("[DEBUG] Plotting models")
@@ -1306,155 +1429,29 @@ class CalibrationWindow(QMainWindow):
                     params.PlotModels = False
                     
             elif params.PlotAngles:
-                print("[DEBUG] Plotting angles")
-                print(f"[DEBUG] SynergiesNumber: {params.SynergiesNumber}")
-                print(f"[DEBUG] SynergyBase type: {type(params.SynergyBase)}")
+                print("[DEBUG] Updating comprehensive display with angles")
+                # Recreate comprehensive display
+                self.init_default_visualization()
+                # Update all subplots with current data
+                self.update_thresholds_subplot()
+                self.update_peaks_subplot()
+                self.update_synergies_subplot()
+                self.update_directions_subplot()
                 
-                try:
-                    self.figure.clear()
-                    angles = [lineedit.text() for lineedit in self.angle_lineedits]
-                    try:
-                        angles = [int(angle) for angle in angles if angle]
-                    except ValueError:
-                        print("[WARNING] Invalid angle input, ignoring")
-                        return  # Ignore invalid input
-                    
-                    # Check if SynergyBase data exists
-                    synergy_base_available = False
-                    if params.SynergyBase is not None:
-                        if isinstance(params.SynergyBase, np.ndarray):
-                            synergy_base_available = params.SynergyBase.size > 0
-                        elif hasattr(params.SynergyBase, '__len__'):
-                            synergy_base_available = len(params.SynergyBase) > 0
-                        else:
-                            synergy_base_available = bool(params.SynergyBase)
-                    
-                    if not synergy_base_available:
-                        print("[ERROR] SynergyBase data is empty or None")
-                        msgbox.alert("Cannot plot angles: No synergy base data available")
-                        return
-                    
-                    gs = self.figure.add_gridspec(params.SynergiesNumber, 2)  
-                    # Plot Synergy Base ----------------------------------------------
-                    for i in range (1, params.SynergiesNumber+1):
-                        try:
-                            ax = self.figure.add_subplot(gs[i-1, 0])
-                            ax.bar(range(np.asarray(params.SynergyBase).shape[1]), params.SynergyBase[i-1], color=self.colors[i-1], alpha=0.6)
-                            ax.set_ylim(0, 1)  # Set y-axis limits to be between 0 and 0.5
-                            ax.set_xlim(-0.5, params.ChannelsNumber-0.5)  
-                            ax.set_xticks(range(params.ChannelsNumber))  # Ensure all ticks are visible
-                            ax.set_yticks([0, 0.5, 1])  # Ensure y-ticks are visible
-
-                            if i == 1:
-                                ax.set_title(f'Synergy Basis ({params.SynergiesNumber} Synergies)')
-                                ax.set_xlabel('Muscles')  # X-axis label
-                                ax.set_ylabel('Relative Activation')  # Y-axis label
-                                if params.SensorStickers:
-                                    ax.set_xticklabels(params.SensorStickers)
-                                ax.set_yticklabels([str(tick) for tick in [0, 0.5, 1]])
-                            else: 
-                                ax.set_xticklabels([''] * params.ChannelsNumber)  # Remove x-axis tick labels but keep the ticks
-                                ax.set_yticklabels([''] * 3)  # Remove y-axis tick labels but keep the ticks
-                        except Exception as subplot_error:
-                            print(f"[ERROR] Failed to create synergy subplot {i}: {subplot_error}")
-                            continue
-                    
-                    # Plot Projection Angles ----------------------------------------------
-                    try:
-                        ax = self.figure.add_subplot(gs[:, 1], polar=True)
-                        ax.set_title("Choose the projection angle of each synergy")
-                        for i in range(len(angles)):
-                            theta = np.radians(angles[i])  # Convert to radians
-                            ax.plot([0, theta], [0, 1], marker='o', color=self.colors[i])  # Plot the vector
-                    except Exception as polar_error:
-                        print(f"[ERROR] Failed to create polar plot: {polar_error}")
-                    
-                    # Adjust the layout to expand subplots
-                    self.figure.tight_layout()
-                    self.figure.subplots_adjust(hspace=0.8, wspace=0.6)  # Adjust the spacing if needed
-                    self.canvas.draw()
-                    print("[DEBUG] Angles plot completed successfully")
-                    
-                except Exception as e:
-                    print(f"[ERROR] Failed to plot angles: {e}")
-                    msgbox.alert(f"Failed to plot angles: {str(e)}")
-
             elif params.PlotUploadedConfig:
-                print("[DEBUG] Plotting uploaded config")
-                print(f"[DEBUG] SynergiesNumber: {params.SynergiesNumber}")
-                print(f"[DEBUG] AnglesOutput: {params.AnglesOutput}")
+                print("[DEBUG] Updating comprehensive display with uploaded config")
+                # Recreate comprehensive display
+                self.init_default_visualization()
+                # Update all subplots with current data
+                self.update_thresholds_subplot()
+                self.update_peaks_subplot()
+                self.update_synergies_subplot()
+                self.update_directions_subplot()
+                params.PlotUploadedConfig = False
                 
-                try:
-                    self.figure.clear()
-                    
-                    # Check if SynergyBase data exists
-                    synergy_base_available = False
-                    if params.SynergyBase is not None:
-                        if isinstance(params.SynergyBase, np.ndarray):
-                            synergy_base_available = params.SynergyBase.size > 0
-                        elif hasattr(params.SynergyBase, '__len__'):
-                            synergy_base_available = len(params.SynergyBase) > 0
-                        else:
-                            synergy_base_available = bool(params.SynergyBase)
-                    
-                    if not synergy_base_available:
-                        print("[ERROR] SynergyBase data is empty or None")
-                        msgbox.alert("Cannot plot uploaded config: No synergy base data available")
-                        return
-                        
-                    # Check if AnglesOutput data exists
-                    if self.is_data_empty(params.AnglesOutput):
-                        print("[ERROR] AnglesOutput data is empty or None")
-                        msgbox.alert("Cannot plot uploaded config: No angles data available")
-                        return
-                    
-                    gs = self.figure.add_gridspec(params.SynergiesNumber, 2)  
-                    
-                    # Plot Synergy Base ----------------------------------------------
-                    for i in range (1, params.SynergiesNumber+1):
-                        try:
-                            ax = self.figure.add_subplot(gs[i-1, 0])
-                            ax.bar(range(np.asarray(params.SynergyBase).shape[1]), params.SynergyBase[i-1], color=self.colors[i-1], alpha=0.6)
-                            ax.set_ylim(0, 1)  # Set y-axis limits to be between 0 and 0.5
-                            ax.set_xlim(-0.5, params.ChannelsNumber-0.5) 
-                            ax.set_xticks(range(params.ChannelsNumber))  # Ensure all ticks are visible
-                            ax.set_yticks([0, 0.5, 1])  # Ensure y-ticks are visible
-
-                            if i == 1:
-                                ax.set_title(f'Synergy Basis ({params.SynergiesNumber} Synergies)')
-                                ax.set_xlabel('Muscles')  # X-axis label
-                                ax.set_ylabel('Relative Activation')  # Y-axis label
-                                if params.SensorStickers:
-                                    ax.set_xticklabels(params.SensorStickers)
-                                ax.set_yticklabels([str(tick) for tick in [0, 0.5, 1]])
-                            else: 
-                                ax.set_xticklabels([''] * params.ChannelsNumber)  # Remove x-axis tick labels but keep the ticks
-                                ax.set_yticklabels([''] * 3)  # Remove y-axis tick labels but keep the ticks
-                        except Exception as subplot_error:
-                            print(f"[ERROR] Failed to create config subplot {i}: {subplot_error}")
-                            continue
-                        
-                    # Plot Projection Angles ----------------------------------------------
-                    try:
-                        ax = self.figure.add_subplot(gs[:, 1], polar=True)
-                        ax.set_title("Projection Angles")
-                        for i in range(len(params.AnglesOutput)):
-                            theta = np.radians(int(params.AnglesOutput[i]))  # Convert to radians
-                            ax.plot([0, theta], [0, 1], marker='o', color=self.colors[i])  # Plot the vector
-                    except Exception as angles_error:
-                        print(f"[ERROR] Failed to plot projection angles: {angles_error}")
-                    
-                    # Adjust the layout to expand subplots
-                    self.figure.tight_layout()
-                    self.figure.subplots_adjust(hspace=0.8, wspace=0.6)  # Adjust the spacing if needed
-                    self.canvas.draw()
-                    print("[DEBUG] Uploaded config plot completed successfully")
-                    params.PlotUploadedConfig = False
-                    
-                except Exception as e:
-                    print(f"[ERROR] Failed to plot uploaded config: {e}")
-                    msgbox.alert(f"Failed to plot uploaded config: {str(e)}")
-                    params.PlotUploadedConfig = False
+                # Enable visualization and cursor buttons after successful calibration upload
+                if self.parent_window:
+                    self.parent_window.enable_post_calibration_buttons()
                     
             else:
                 print("[DEBUG] No valid plot mode detected")
@@ -1509,6 +1506,10 @@ class CalibrationWindow(QMainWindow):
             params.AnglesReady = 1
             params.AnglesOutput = AnglesOutput
             params.AnglesOutputSemaphore.release()
+            
+            # Enable visualization and cursor buttons after successful calibration completion
+            if self.parent_window:
+                self.parent_window.enable_post_calibration_buttons()
            
             
 
