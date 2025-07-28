@@ -7,6 +7,8 @@ from ProcessingModule.FileHandler import LogHandler, FileHandler
 import os
 import json
 import csv
+from General.DefaultConfigGenerator import save_default_configuration
+from General.utils import GenerateProjectionMatrix
 
 ModoDelsys = True # True if we use the Delsys API Server, False if we use the API Server from the PM.
 SubSamplingRate = 100
@@ -129,6 +131,14 @@ def Initialize():
     # Generate a new folder path using the timestamp
     folder_path = 'ExperimentsFiles/Experiment-' + ExperimentTimestamp
     os.makedirs(folder_path, exist_ok=True)  # Create the folder, no error if it already exists
+    
+    # Create default configuration file in the experiment folder
+    try:
+        config_path = save_default_configuration(MusclesNumber, folder_path)
+        print(f"[DEBUG] Default configuration saved to: {config_path}")
+    except Exception as e:
+        print(f"[WARNING] Could not save default configuration: {e}")
+    
     if saveCSV:
         RawDataFileName = 'ExperimentsFiles\Experiment-' + ExperimentTimestamp + "\RawData.csv"
         file = open(RawDataFileName, 'w', newline='')
@@ -141,16 +151,6 @@ def Initialize():
     attempt = Attempt()   
 
     Initialized = True
-
-def GenerateProjectionMatrix(angles):
-    # Convert angles from degrees to radians
-    angles_rad = np.radians(synergy_CursorMap)
-    # Calculate the x and y components of each vector
-    x = np.cos(angles_rad)
-    y = np.sin(angles_rad)
-    # Construct the projection matrix
-    projectionMatrix = np.column_stack((x, y))
-    return projectionMatrix
 
 class Attempt():
     def __init__(self):

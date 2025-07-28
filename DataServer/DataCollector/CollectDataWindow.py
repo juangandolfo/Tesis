@@ -22,6 +22,7 @@ import ExportData
 import csv
 import numpy as np
 import time
+from General.DefaultConfigGenerator import save_default_configuration
 
 
 
@@ -441,6 +442,7 @@ class CollectDataWindow(QWidget):
 
         if len(sensorList)>0:
             self.configure_button.setEnabled(True)
+                    
         self.getpipelinestate()
 
     '''def start_callback(self):
@@ -482,10 +484,15 @@ class CollectDataWindow(QWidget):
 
     def calibration_callback(self):
         params.StartCalibration = True
+        
         # Reset calibration state to ensure stage buttons are disabled until new calibration is loaded
         self.calibration_window.reset_calibration_state()
         self.calibration_window.show()
         self.CallbackConnector.StartCalibration_Callback()
+        
+        # Wait for PM to create default config and auto-load it
+        self.calibration_window.wait_and_load_default_config()
+        
         # Don't enable visualization and cursor buttons immediately
         # They will be enabled only after a valid calibration is completed
 
@@ -982,6 +989,72 @@ class CalibrationWindow(QMainWindow):
         
         # Initialize calibration state
         self.calibration_loaded = False
+
+    def wait_and_load_default_config(self):
+        """Wait for PM to create default config file and auto-load it"""
+        print(f"[DEBUG] wait_and_load_default_config called")
+        
+        # First wait for experiment timestamp to be created
+        timestamp_timeout = 3.0
+        timestamp_elapsed = 0.0
+        check_interval = 0.1
+        
+        print(f"[DEBUG] Waiting for experiment timestamp...")
+        while timestamp_elapsed < timestamp_timeout:
+            print(f"[DEBUG] ExperimentTimestamp: '{params.ExperimentTimestamp}', ChannelsNumber: {params.ChannelsNumber}")
+            
+            if params.ExperimentTimestamp and params.ChannelsNumber:
+                print(f"[DEBUG] Experiment timestamp and channel count available")
+                break
+                
+            time.sleep(check_interval)
+            timestamp_elapsed += check_interval
+        
+        if not params.ExperimentTimestamp or not params.ChannelsNumber:
+            print("[DEBUG] No experiment timestamp or channel count available after waiting, skipping auto-load")
+            return
+            
+        # Construct expected default config file path
+        experiment_folder = f'ExperimentsFiles/Experiment-{params.ExperimentTimestamp}'
+        default_config_file = os.path.join(experiment_folder, f'Default_{params.ChannelsNumber}muscle_Calibration.json')
+        
+        print(f"[DEBUG] Waiting for default config file: {default_config_file}")
+        
+        # Wait for file to be created with timeout
+        timeout = 5.0  # 5 seconds timeout
+        elapsed_time = 0.0
+        
+        while elapsed_time < timeout:
+            print(f"[DEBUG] Checking for file existence... elapsed: {elapsed_time:.1f}s")
+            if os.path.exists(default_config_file):
+                print(f"[DEBUG] Default config file found, triggering stage 4 flow...")
+                try:
+                    # Set the file path for stage 4 to use
+                    params.SelectedCalibrationFilePath = default_config_file
+                    
+                    # Trigger the standard stage 4 flow (same as when user clicks stage 4)
+                    params.CalibrationStage = 4
+                    params.CalibrationStageInitialized = True
+                    
+                    print(f"[DEBUG] Stage 4 flow triggered for auto-loading: {default_config_file}")
+                    
+                    # Enable stage buttons since we're loading a calibration
+                    self.calibration_loaded = True
+                    self.enable_stage_buttons()
+                    
+                    return
+                    
+                except Exception as e:
+                    print(f"[WARNING] Failed to trigger stage 4 for default configuration: {e}")
+                    break
+            
+            time.sleep(check_interval)
+            elapsed_time += check_interval
+        
+        if elapsed_time >= timeout:
+            print(f"[WARNING] Timeout reached waiting for default config file: {default_config_file}")
+            print(f"[DEBUG] Final check - file exists: {os.path.exists(default_config_file)}")
+            msgbox.alert(f"Warning: Could not find or load default configuration file.\n\nExpected file: {default_config_file}\n\nPlease use 'Upload Last Calibration' to manually load a configuration file.")
 
     def enable_stage_buttons(self):
         """Enable stage buttons after successful calibration loading"""

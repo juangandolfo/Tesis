@@ -5,6 +5,7 @@ from PySide2.QtCore import QObject, Signal
 import json
 import time
 import os
+from General.utils import GenerateProjectionMatrix
 
 #csvFile = '202465_213928.csv'              #tiene 2 musculos
 #csvFile = 'Experiment-20240626-220405.csv' #tiene 3 musculos
@@ -39,6 +40,14 @@ Peaks = [0,0]
 SynergiesModels = []
 SynergiesNumber = 2
 SynergyBase = []
+SynergyBaseInverse = []
+projectionMatrix = []
+
+# PM-side parameters (lowercase versions)
+Threshold = [0,0]  # PM version of Thresholds
+PeakActivation = [0,0]  # PM version of Peaks
+synergy_CursorMap = []  # PM version of AnglesOutput
+synergiesNumber = 2  # PM version of SynergiesNumber
 
 PlotThresholds = False
 PlotPeaks = False
