@@ -56,22 +56,24 @@ class AeroPyNuevo:
         start_thread.start()
     
     def StartStreaming(self):
-        # Open CSV file
-        with open(params.csvFile, 'r') as file:
-            csv_reader = csv.reader(file, delimiter=',')
-            # Skip the headers row
-            next(csv_reader)
-            # Read each row of csv file
-            for row in csv_reader:
-                row = row[1:]  # Remove the first column
-                stack_lock.acquire()  # Acquire lock before accessing the stack
-                row = np.array(row, dtype=np.float64)  # Convert the row to numpy array
-                stack.append(row)
-                stack_lock.release()  # Release lock after modifying the stack
-                time.sleep(1/frequency if frequency > 0 else 1)
-                if self.stop_flag:
-                    return
-            print("There's no more data")
+        # Open CSV file and loop indefinitely
+        while not self.stop_flag:
+            with open(params.csvFile, 'r') as file:
+                csv_reader = csv.reader(file, delimiter=',')
+                # Skip the headers row
+                next(csv_reader)
+                # Read each row of csv file
+                for row in csv_reader:
+                    row = row[1:]  # Remove the first column
+                    stack_lock.acquire()  # Acquire lock before accessing the stack
+                    row = np.array(row, dtype=np.float64)  # Convert the row to numpy array
+                    stack.append(row)
+                    stack_lock.release()  # Release lock after modifying the stack
+                    time.sleep(1/frequency if frequency > 0 else 1)
+                    if self.stop_flag:
+                        return
+                # File ended, loop back to beginning
+                print("End of file reached, looping back to beginning")
 
     def CheckDataQueue(self):
         # Check if there's new data in the internal buffer
