@@ -102,16 +102,20 @@ class PlottingManagement():
 
         f = TrigBase.ScanSensors().Result
         self.nameList = TrigBase.GetSensorNames()
+        print(f"[DEBUG] Found sensors: {self.nameList}")
         
         self.ActiveSerialNumbers = []
         params.SensorStickers = []
         for i in range(len(self.nameList)):
             self.ActiveSerialNumbers.append(str(self.nameList[i]).split(" ")[0])
+        print(f"[DEBUG] Active Serial Numbers: {self.ActiveSerialNumbers}")
         
-        
+        unlistedSensorCount = 0
         for SerialNumber in self.ActiveSerialNumbers:
+            sensorSerialNumberFound = False
             for sensor in SensorInformation.sensors:
                 if SerialNumber == sensor["SerialNumber"]:
+                    sensorSerialNumberFound = True
                     if len(sensor["Channels"]) > 1:
                         for channel in sensor["Channels"]:
                             channelName = sensor["Sticker"] + channel 
@@ -119,7 +123,12 @@ class PlottingManagement():
                     else:
                         channelName = sensor["Sticker"] 
                         params.SensorStickers.append(channelName)
-                    
+                    break
+            if not sensorSerialNumberFound:
+                unlistedSensorCount += 1
+                print(f"[DEBUG] Serial number {SerialNumber} not found in sensor information. Assigning default sticker.")
+                params.SensorStickers.append(str(unlistedSensorCount))
+
         print(params.SensorStickers)
 
         self.SensorsFound = len(self.nameList)
