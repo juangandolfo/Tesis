@@ -27,6 +27,9 @@ CalibrationStage = 0
 selectedSensorIndex = 0
 SimulationCalibration = False
 
+# Store the selected calibration file path
+SelectedCalibrationFilePath = None
+
 AnglesReady = 0
 AnglesOutput = []
 AnglesOutputSemaphore = threading.Semaphore(1)
@@ -80,12 +83,16 @@ def CreateExperimentName():
     ExperimentTimestamp = str(t.tm_year) + TwoDigitString(t.tm_mon) + TwoDigitString(t.tm_mday) + "-" + TwoDigitString(t.tm_hour - UTF) + TwoDigitString(t.tm_min) + TwoDigitString(t.tm_sec)
     print(f"[DEBUG] Experiment timestamp: {ExperimentTimestamp}")
     
-def UploadCalibrationFromJson():
+def UploadCalibrationFromJson(file_path=None):
     print("[DEBUG] Uploading calibration from JSON")
+    # Use default Configuration.json if no file path provided
+    if file_path is None:
+        file_path = 'Configuration.json'
+    
     # Load the configuration from a JSON file
     try:
-        with open('Configuration.json') as file:
-            print("[DEBUG] Configuration.json opened successfully")
+        with open(file_path) as file:
+            print(f"[DEBUG] {file_path} opened successfully")
             data = json.load(file)
             
             # Sanity check: Verify all required fields exist
@@ -139,8 +146,8 @@ def UploadCalibrationFromJson():
             return thresholds, peaks, angles, synergy_base, final_sensor_stickers
             
     except FileNotFoundError:
-        print("[DEBUG] Configuration.json not found")
-        raise Exception("Configuration.json file not found. Please select another file.")
+        print(f"[DEBUG] {file_path} not found")
+        raise Exception(f"{file_path} file not found. Please select another file.")
     except json.JSONDecodeError as e:
         print(f"[DEBUG] JSON decode error: {e}")
         raise Exception(f"Invalid JSON format in configuration file: {e}. Please select another file.")

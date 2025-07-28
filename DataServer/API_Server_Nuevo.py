@@ -233,7 +233,7 @@ def API_Server(AeroInstance, emgPositionVector):
                 
                 elif data == "UPLOAD /Configurations":
                     try:
-                        Thresholds, Peaks, AnglesOutput, SynergyBase, SensorStickers = params.UploadCalibrationFromJson()
+                        Thresholds, Peaks, AnglesOutput, SynergyBase, SensorStickers = params.UploadCalibrationFromJson(params.SelectedCalibrationFilePath)
                         params.Thresholds = Thresholds
                         params.Peaks = Peaks
                         params.AnglesOutput = AnglesOutput

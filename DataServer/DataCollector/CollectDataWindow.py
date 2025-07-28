@@ -482,6 +482,8 @@ class CollectDataWindow(QWidget):
 
     def calibration_callback(self):
         params.StartCalibration = True
+        # Reset calibration state to ensure stage buttons are disabled until new calibration is loaded
+        self.calibration_window.reset_calibration_state()
         self.calibration_window.show()
         self.CallbackConnector.StartCalibration_Callback()
         # Don't enable visualization and cursor buttons immediately
@@ -855,15 +857,18 @@ class CalibrationWindow(QMainWindow):
 
         self.stage1_button = QPushButton("1 - Base Noise")
         self.stage1_button.setFixedSize(240, 30)  # Set a fixed size for the button
-        self.stage1_button.setStyleSheet('QPushButton {color: #000066;}')
+        self.stage1_button.setStyleSheet('QPushButton:enabled {color: #000066;} QPushButton:disabled {color: #888888; background-color: #CCCCCC;}')
+        self.stage1_button.setEnabled(False)  # Initially disabled
 
         self.stage2_button = QPushButton("2 - Maximum Activations")
         self.stage2_button.setFixedSize(240, 30)  # Set a fixed size for the button
-        self.stage2_button.setStyleSheet('QPushButton {color: #000066;}')
+        self.stage2_button.setStyleSheet('QPushButton:enabled {color: #000066;} QPushButton:disabled {color: #888888; background-color: #CCCCCC;}')
+        self.stage2_button.setEnabled(False)  # Initially disabled
         
         self.stage3_button = QPushButton("3 - Synergy Basis")
         self.stage3_button.setFixedSize(240, 30)  # Set a fixed size for the button
-        self.stage3_button.setStyleSheet('QPushButton {color: #000066;}')
+        self.stage3_button.setStyleSheet('QPushButton:enabled {color: #000066;} QPushButton:disabled {color: #888888; background-color: #CCCCCC;}')
+        self.stage3_button.setEnabled(False)  # Initially disabled
 
         self.choose_projection_button = QPushButton("Choose Projection")
         self.choose_projection_button.setFixedSize(240, 30)  # Set a fixed size for the button
@@ -974,6 +979,26 @@ class CalibrationWindow(QMainWindow):
         main_layout.addLayout(layout)
         main_layout.addWidget(self.canvas)
         main_layout.setStretch(1, 1)
+        
+        # Initialize calibration state
+        self.calibration_loaded = False
+
+    def enable_stage_buttons(self):
+        """Enable stage buttons after successful calibration loading"""
+        self.stage1_button.setEnabled(True)
+        self.stage2_button.setEnabled(True)
+        self.stage3_button.setEnabled(True)
+
+    def disable_stage_buttons(self):
+        """Disable stage buttons when no calibration is loaded"""
+        self.stage1_button.setEnabled(False)
+        self.stage2_button.setEnabled(False)
+        self.stage3_button.setEnabled(False)
+
+    def reset_calibration_state(self):
+        """Reset calibration state - disable stage buttons"""
+        self.calibration_loaded = False
+        self.disable_stage_buttons()
 
     def is_data_empty(self, data):
         """Safely check if data is empty, handling both lists and numpy arrays"""
@@ -1242,7 +1267,62 @@ class CalibrationWindow(QMainWindow):
         self.stage_message_label.show()
         self.start_stage_button.show()
         
-        self.stage_message_label.setText("Press Start to upload the calibration from the Configuration.json file located in the root of the project.")
+        # File selection logic
+        default_file = os.path.join(os.getcwd(), "Configuration.json")
+        
+        if os.path.exists(default_file):
+            # Configuration.json exists - ask user if they want to use it or browse
+            reply = msgbox.confirm(
+                f"Configuration.json found in the root folder.\n\nDo you want to use this file?\n\nClick 'OK' to use Configuration.json or 'Cancel' to browse for another file.",
+                "Configuration File Selection",
+                buttons=["OK", "Cancel"]
+            )
+            
+            if reply == "OK":
+                selected_file = default_file
+            else:
+                # User wants to browse for a different file
+                root = tk.Tk()
+                root.withdraw()  # Hide the main window
+                selected_file = filedialog.askopenfilename(
+                    title="Select Configuration File",
+                    filetypes=[("JSON files", "*.json"), ("All files", "*.*")],
+                    initialdir=os.getcwd()
+                )
+                root.destroy()
+                
+                if not selected_file:  # User cancelled file selection
+                    self.stage_message_label.setText("No file selected. Please try again.")
+                    self.start_stage_button.hide()
+                    return
+        else:
+            # Configuration.json doesn't exist - show file browser
+            msgbox.alert(
+                "Configuration.json not found in the root folder.\n\nPlease select a configuration file.",
+                "File Not Found"
+            )
+            root = tk.Tk()
+            root.withdraw()  # Hide the main window
+            selected_file = filedialog.askopenfilename(
+                title="Select Configuration File",
+                filetypes=[("JSON files", "*.json"), ("All files", "*.*")],
+                initialdir=os.getcwd()
+            )
+            root.destroy()
+            
+            if not selected_file:  # User cancelled file selection
+                self.stage_message_label.setText("No file selected. Please try again.")
+                self.start_stage_button.hide()
+                return
+        
+        # Store the selected file path
+        params.SelectedCalibrationFilePath = selected_file
+        filename = os.path.basename(selected_file)
+        
+        # Reset calibration state when starting new calibration loading
+        self.reset_calibration_state()
+        
+        self.stage_message_label.setText(f"Press Start to upload the calibration from:\n{filename}")
         
         self.CalibrationStage = 4
         
@@ -1322,6 +1402,16 @@ class CalibrationWindow(QMainWindow):
 
     def update_plot(self):
         print("[DEBUG] update_plot() called")
+        
+        # Check if calibration data is loaded and enable stage buttons
+        if (not self.is_data_empty(params.Thresholds) and 
+            not self.is_data_empty(params.Peaks) and 
+            not self.is_data_empty(params.SynergyBase) and 
+            not self.is_data_empty(params.AnglesOutput) and
+            not self.calibration_loaded):
+            self.calibration_loaded = True
+            self.enable_stage_buttons()
+            print("[DEBUG] Calibration data loaded - stage buttons enabled")
         
         try:
             if params.PlotThresholds:
