@@ -87,24 +87,63 @@ def UploadCalibrationFromJson():
         with open('Configuration.json') as file:
             print("[DEBUG] Configuration.json opened successfully")
             data = json.load(file)
-            if ChannelsNumber != data['MusclesNumber']:
-                print(f"[DEBUG] Channel number mismatch: current={ChannelsNumber}, config={data['MusclesNumber']}")
-                raise Exception("The number of channels in the configuration file is different from the current configuration")
+            
+            # Sanity check: Verify all required fields exist
+            required_fields = ['MusclesNumber', 'Thresholds', 'Peaks', 'Angles', 'SynergyBase', 'SensorStickers']
+            for field in required_fields:
+                if field not in data:
+                    raise Exception(f"Missing required field '{field}' in configuration file. Please select another file.")
+            
+            muscles_number = data['MusclesNumber']
+            thresholds = data['Thresholds']
+            peaks = data['Peaks']
+            angles = data['Angles']
+            synergy_base = data['SynergyBase']
+            sensor_stickers_from_file = data['SensorStickers']
+            
+            # Sanity check: Verify array lengths match MusclesNumber
+            if len(angles) != muscles_number:
+                raise Exception(f"Angles array length ({len(angles)}) does not match MusclesNumber ({muscles_number}). Please select another file.")
+            
+            if len(peaks) != muscles_number:
+                raise Exception(f"Peaks array length ({len(peaks)}) does not match MusclesNumber ({muscles_number}). Please select another file.")
+            
+            if len(thresholds) != muscles_number:
+                raise Exception(f"Thresholds array length ({len(thresholds)}) does not match MusclesNumber ({muscles_number}). Please select another file.")
+            
+            if len(sensor_stickers_from_file) != muscles_number:
+                raise Exception(f"SensorStickers array length ({len(sensor_stickers_from_file)}) does not match MusclesNumber ({muscles_number}). Please select another file.")
+            
+            # Sanity check: Verify SynergyBase is a square matrix of size MusclesNumber x MusclesNumber
+            if len(synergy_base) != muscles_number:
+                raise Exception(f"SynergyBase array length ({len(synergy_base)}) does not match MusclesNumber ({muscles_number}). Please select another file.")
+            
+            for i, row in enumerate(synergy_base):
+                if len(row) != muscles_number:
+                    raise Exception(f"SynergyBase row {i} length ({len(row)}) does not match MusclesNumber ({muscles_number}). SynergyBase must be a square matrix. Please select another file.")
+            
+            # Check if current number of available sensors matches MusclesNumber
+            if ChannelsNumber != muscles_number:
+                print(f"[DEBUG] Channel number mismatch: current={ChannelsNumber}, config={muscles_number}")
+                raise Exception(f"The number of current available sensors ({ChannelsNumber}) does not match the MusclesNumber in the configuration file ({muscles_number}). Please select another file.")
+            
+            # Check if current SensorStickers matches file's SensorStickers
+            if SensorStickers != sensor_stickers_from_file:
+                print(f"[WARNING] Current sensor stickers {SensorStickers} do not match file's sensor stickers {sensor_stickers_from_file}. Loading file anyway but ignoring file's sensor stickers.")
+                # Use current SensorStickers instead of file's
+                final_sensor_stickers = SensorStickers
             else:
-                print("[DEBUG] Channel numbers match, loading configuration")
-                Thresholds = data['Thresholds']
-                Peaks = data['Peaks']
-                AnglesOutput = data['Angles']
-                SynergiesModels= data['SynergyBase']
-                SensorStickers = data['SensorStickers']
-                print("[DEBUG] Configuration loaded successfully")
-        return Thresholds, Peaks, AnglesOutput, SynergiesModels, SensorStickers
+                final_sensor_stickers = sensor_stickers_from_file
+                
+            print("[DEBUG] All sanity checks passed, configuration loaded successfully")
+            return thresholds, peaks, angles, synergy_base, final_sensor_stickers
+            
     except FileNotFoundError:
         print("[DEBUG] Configuration.json not found")
-        raise
+        raise Exception("Configuration.json file not found. Please select another file.")
     except json.JSONDecodeError as e:
         print(f"[DEBUG] JSON decode error: {e}")
-        raise
+        raise Exception(f"Invalid JSON format in configuration file: {e}. Please select another file.")
         
 def SaveCalibrationToJson(ChannelsNumber,Thresholds, Peaks, AnglesOutput, SynergyBase, SensorStickers):
     global ExperimentTimestamp
