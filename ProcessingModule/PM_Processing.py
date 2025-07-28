@@ -78,6 +78,7 @@ def Processing():
     PM_Parameters.projectionMatrix = PM_Parameters.GenerateProjectionMatrix(PM_Parameters.synergy_CursorMap)
     
     counter = 0
+    last_print_time = time.time()
     print("PM: Processing live")
     if PM_Parameters.saveCSV:
         file = open(PM_Parameters.RawDataFileName, 'a', newline='')
@@ -91,7 +92,11 @@ def Processing():
 
     
     while PM_Parameters.Processing:
-        print("PM: Processing live")
+        # Print "PM: Processing live" only once every 3 seconds
+        current_time = time.time()
+        if current_time - last_print_time >= 3.0:
+            print("PM: Processing live")
+            last_print_time = current_time
         PM_DS.stack_lock.acquire()
         #ExecutionTime.append(time.time() - t1)
         RawData = PM_DS.PM_DataStruct.circular_stack.get_oldest_vector(1)
@@ -163,10 +168,15 @@ def CalibrationProcessing():
     while(PM_Parameters.Initialized == False):
        pass
     DataProcessing.CreateLPF(PM_Parameters.sampleRate, PM_Parameters.MusclesNumber)
+    last_print_time = time.time()
     print("PM: Calibration Processing live")
     while not PM_Parameters.TerminateCalibration:
         
-        print("PM: Calibration Processing live")
+        # Print "PM: Calibration Processing live" only once every 3 seconds
+        current_time = time.time()
+        if current_time - last_print_time >= 3.0:
+            print("PM: Calibration Processing live")
+            last_print_time = current_time
 
         if PM_Parameters.CalibrationStage == 1:
             print("Detecting Thresholds...")

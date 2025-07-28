@@ -140,10 +140,15 @@ def Request(request):
 def Handle_Client(conn,addr):
     print(f"Connected by {addr}")
     conn.settimeout(600)
+    last_print_time = time.time()
     try:
         while True:
             time.sleep(0.025)
-            print("                                                      PM Server live")
+            # Print "PM Server live" only once every 3 seconds
+            current_time = time.time()
+            if current_time - last_print_time >= 3.0:
+                print("                                                      PM Server live")
+                last_print_time = current_time
             try:
                 data = conn.recv(1024)
                 if not data:
@@ -381,9 +386,14 @@ def Processing_Module_Client():
 
         #RequestTimes = []
         #counter3 = 0
+        last_print_time = time.time()
         # Loop to request data
         while True:
-            print("                           PM Client live")
+            # Print "PM Client live" only once every 3 seconds
+            current_time = time.time()
+            if current_time - last_print_time >= 3.0:
+                print("                           PM Client live")
+                last_print_time = current_time
             try:
                 try:
                     if params.RequestAngles == True:
