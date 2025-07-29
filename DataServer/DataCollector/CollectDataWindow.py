@@ -60,7 +60,8 @@ class CollectDataWindow(QWidget):
         self.read_button.setSizePolicy(QSizePolicy.Preferred,QSizePolicy.Expanding)
         self.read_button.objectName = 'Connect'
         self.read_button.clicked.connect(self.connect_callback)
-        self.read_button.setStyleSheet('QPushButton {color: #000066;}')
+        self.read_button.setStyleSheet('QPushButton {background-color: #4CAF50; color: #FFFFFF;}')
+        self.read_button.setEnabled(True)
         buttonLayout.addWidget(self.read_button)
 
         findSensor_layout = QHBoxLayout()
@@ -82,7 +83,7 @@ class CollectDataWindow(QWidget):
         self.scan_button.objectName = 'Scan'
         self.scan_button.clicked.connect(self.scan_callback)
         self.scan_button.setStyleSheet('QPushButton {color: #000066;}')
-        self.scan_button.setEnabled(True)
+        self.scan_button.setEnabled(False)
         findSensor_layout.addWidget(self.scan_button)
 
         buttonLayout.addLayout(findSensor_layout)
@@ -124,7 +125,7 @@ class CollectDataWindow(QWidget):
         self.configure_button.objectName = 'Configure Sensors'
         self.configure_button.clicked.connect(self.ConfigureSensors_callback)  # Connect to the callback method
         self.configure_button.setStyleSheet('QPushButton {color: #000066;}')
-        self.configure_button.setEnabled(True)
+        self.configure_button.setEnabled(False)
         buttonLayout.addWidget(self.configure_button)
 
         '''#---- Drop-down menu of sensor modes
@@ -180,6 +181,7 @@ class CollectDataWindow(QWidget):
         self.export_button.objectName = 'Export Data'
         self.export_button.clicked.connect(self.export_data)
         self.export_button.setStyleSheet('QPushButton {color: #000066;}')
+        self.export_button.setEnabled(False)
         buttonLayout.addWidget(self.export_button)
 
         #---- Home Button
@@ -203,6 +205,9 @@ class CollectDataWindow(QWidget):
     def connect_callback(self):
         self.CallbackConnector.Connect_Callback()
         self.read_button.setEnabled(False)
+        self.read_button.setStyleSheet('QPushButton {color: #000066;}')
+        self.scan_button.setStyleSheet('QPushButton {background-color: #4CAF50; color: #FFFFFF;}')
+        self.scan_button.setEnabled(True)
 
         self.scan_button.setEnabled(True)
         self.getpipelinestate()
@@ -222,6 +227,11 @@ class CollectDataWindow(QWidget):
         if len(sensorList)>0:
             self.calibration_button.setEnabled(True)
         self.getpipelinestate()
+
+        self.configure_button.setEnabled(True)
+        self.configure_button.setStyleSheet('QPushButton {background-color: #4CAF50; color: #FFFFFF;}')
+        self.calibration_button.setEnabled(False)
+        self.calibration_button.setStyleSheet('QPushButton {color: #000066;}')
 
     '''def start_callback(self):
         self.CallbackConnector.Start_Callback()'''
@@ -258,12 +268,23 @@ class CollectDataWindow(QWidget):
         self.CallbackConnector.setSampleMode_hardcoded()
         self.CallbackConnector.FinishInitialization()
 
+        self.configure_button.setEnabled(False)
+        self.configure_button.setStyleSheet('QPushButton {color: #000066;}')
+        self.calibration_button.setEnabled(True)
+        self.calibration_button.setStyleSheet('QPushButton {background-color: #4CAF50; color: #FFFFFF;}')
+
     def calibration_callback(self):
         params.StartCalibration = True
         self.calibration_window.show()
         self.CallbackConnector.StartCalibration_Callback()
+        self.scan_button.setEnabled(False)
+        self.scan_button.setStyleSheet('QPushButton {color: #000066;}')
+        self.configure_button.setEnabled(False)
+        self.configure_button.setStyleSheet('QPushButton {color: #000066;}')
         self.visualization_button.setEnabled(True)
+        self.visualization_button.setStyleSheet('QPushButton {background-color: #4CAF50; color: #FFFFFF;}')
         self.cursor_button.setEnabled(True)
+        self.cursor_button.setStyleSheet('QPushButton {background-color: #4CAF50; color: #FFFFFF;}')
 
     def start_cursor(self):
         self.CallbackConnector.StartCursor_Callback()
@@ -612,6 +633,9 @@ class CalibrationWindow(QMainWindow):
         self.setWindowTitle("Calibration Window")
         self.setGeometry(100, 100, 800, 600)
         self.CalibrationStage = 0
+
+        # Disable the close (X) button
+        self.setWindowFlag(Qt.WindowCloseButtonHint, False)
 
         central_widget = QWidget()
         self.setCentralWidget(central_widget)

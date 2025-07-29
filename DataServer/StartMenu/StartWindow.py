@@ -28,7 +28,7 @@ class StartWindow(QWidget):
         button.objectName = 'Start Experiment'
         button.clicked.connect(self.Collect_Data_Callback)
         button.setFixedSize(200,100)
-        button.setStyleSheet('QPushButton {color: #000066;}')
+        button.setStyleSheet('QPushButton {background-color: #4CAF50; color: #FFFFFF;}')
         buttonBox.addWidget(button)
 
         button2 = QPushButton('Start Simulation', self)
@@ -36,7 +36,9 @@ class StartWindow(QWidget):
         button2.objectName = 'Start Simulation'
         button2.clicked.connect(self.Simulation_Callback)
         button2.setFixedSize(200,100)
+        # Set dark grey background for the button
         button2.setStyleSheet('QPushButton {color: #000066;}')
+        button2.setEnabled(False)  # Disable simulation button by default
         buttonBox.addWidget(button2)
 
         grid.addLayout(buttonBox,1,0)
