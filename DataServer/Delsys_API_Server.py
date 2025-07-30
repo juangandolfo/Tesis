@@ -64,7 +64,7 @@ def API_Server(AeroInstance,emgPositionVector):
                     s.settimeout(600)
                     DataReceived = conn.recv(1024)
                 except Exception as e:
-                    print("API", e)
+                    print("API1", e)
                 data = DataReceived.decode().strip()
                 #print(data)
               
@@ -91,7 +91,7 @@ def API_Server(AeroInstance,emgPositionVector):
                                 try:
                                     serialized_data  += b"CS1" + str(params.selectedSensorIndex).encode() # Add a delimiter at the end
                                 except Exception as e:
-                                    msgbox.alert(e)
+                                    msgbox.alert(f'[DAS-001] Error encoding calibration stage 1 sensor index: {e}')
                             elif params.CalibrationStage == 2:
                                 serialized_data  += b"CS2" + str(params.selectedSensorIndex).encode() # Add a delimiter at the end
                             elif params.CalibrationStage == 3:
@@ -100,6 +100,8 @@ def API_Server(AeroInstance,emgPositionVector):
                                 serialized_data  += b"CS4" # Add a delimiter at the end
                             elif params.CalibrationStage == 6:
                                 serialized_data  += b"CS6" # Add a delimiter at the end
+                            elif params.CalibrationStage == 7:
+                                serialized_data  += b"CS7"
 
                     elif params.CalibrationStageFinished:
                         params.CalibrationStageFinished = False
@@ -128,8 +130,7 @@ def API_Server(AeroInstance,emgPositionVector):
                         conn.sendall(serialized_data)
                     except Exception as e:
                         print(e)
-                    params.Initialize()
-                    
+                    params.Initialize() 
                 
                 elif data == "GET /SensorStickers":
                     serialized_data = pack.packb(params.SensorStickers, use_bin_type=True)
@@ -172,7 +173,7 @@ def API_Server(AeroInstance,emgPositionVector):
                     try:
                         serialized_data = pack.packb([1], use_bin_type=True)
                     except Exception as e:
-                        msgbox.alert(e)
+                        msgbox.alert(f'[DAS-002] Error packing threshold plot response: {e}')
                     serialized_data  += b'END'
                     try:
                         conn.sendall(serialized_data)
@@ -180,12 +181,13 @@ def API_Server(AeroInstance,emgPositionVector):
                         print(e)
                     
                     data = conn.recv(1024)
-                    params.Thresholds = np.array(pack.unpackb(data.strip(), raw=False))
+                    # params.Thresholds = np.array(pack.unpackb(data.strip(), raw=False))
+                    params.Thresholds = list(map(float, pack.unpackb(data.strip(), raw=False)))
                     params.PlotThresholds = True
                     try:
                         params.PlotCalibrationSignal.signal.emit()
                     except Exception as e:
-                        msgbox.alert(e)
+                        msgbox.alert(f'[DAS-003] Error emitting threshold plot calibration signal: {e}')
                     serialized_data = pack.packb([1], use_bin_type=True)
                     try:
                         conn.sendall(serialized_data)
@@ -201,12 +203,14 @@ def API_Server(AeroInstance,emgPositionVector):
                         print(e)
                     
                     DataReceived = conn.recv(1024)
-                    params.Peaks = np.array(pack.unpackb(DataReceived.strip(),  raw=False))
+                    # params.Peaks = np.array(pack.unpackb(DataReceived.strip(),  raw=False))
+                    # params.Peaks = pack.unpackb(DataReceived.strip(), raw=False)
+                    params.Peaks = list(map(float, pack.unpackb(DataReceived.strip(), raw=False)))
                     params.PlotPeaks = True
                     try:
                         params.PlotCalibrationSignal.signal.emit()
                     except Exception as e:
-                        msgbox.alert(e)
+                        msgbox.alert(f'[DAS-004] Error emitting peaks plot calibration signal: {e}')
                     serialized_data = pack.packb([1], use_bin_type=True)
                     try:
                         conn.sendall(serialized_data)
@@ -231,17 +235,17 @@ def API_Server(AeroInstance,emgPositionVector):
                             else:
                                 data += chunk
                         except Exception as e:
-                            msgbox.alert(e)
+                            msgbox.alert(f'[DAS-005] Error receiving detection data chunk: {e}')
                             break
                     try:
                         params.SynergiesModels = pack.unpackb(data, max_array_len = len(data), raw=False)
                     except Exception as e:
-                        msgbox.alert(e)
+                        msgbox.alert(f'[DAS-006] Error unpacking synergies models data: {e}')
                     params.PlotModels = True
                     try:
                         params.PlotCalibrationSignal.signal.emit()
                     except Exception as e:
-                        msgbox.alert(e)
+                        msgbox.alert(f'[DAS-007] Error emitting detection plot calibration signal: {e}')
                     serialized_data = pack.packb([1], use_bin_type=True)
                     try:
                         conn.sendall(serialized_data)
@@ -251,14 +255,20 @@ def API_Server(AeroInstance,emgPositionVector):
                 elif data == "UPLOAD /Configurations":
                     try:
                         Thresholds, Peaks, AnglesOutput, SynergyBase, SensorStickers = params.UploadCalibrationFromJson()
-                        params.Thresholds = Thresholds
-                        params.Peaks = Peaks
-                        params.AnglesOutput = AnglesOutput
-                        params.SynergyBase = SynergyBase
-                        params.SensorStickers = SensorStickers
+                        # Chequeo si cada uno es null, si no es mnull lo asigno y si es null vemos que hacemos 
+                        if Thresholds is not None:
+                            params.Thresholds = Thresholds
+                        if Peaks is not None:
+                            params.Peaks = Peaks
+                        if AnglesOutput is not None:
+                            params.AnglesOutput = AnglesOutput
+                        if SynergyBase is not None:
+                            params.SynergyBase = SynergyBase
+                        if SensorStickers is not None:
+                            params.SensorStickers = SensorStickers
                         params.SynergiesNumber = len(AnglesOutput)
                     except Exception as e:
-                        msgbox.alert(e)                    
+                        msgbox.alert(f'[DAS-008] Error uploading configuration from JSON: {e}')                    
                     
                     serialized_data = pack.packb([1], use_bin_type = True)
                     serialized_data  += b'END'
@@ -266,24 +276,50 @@ def API_Server(AeroInstance,emgPositionVector):
                     try:
                         conn.sendall(serialized_data)
                     except Exception as e:
-                        msgbox.alert(e)
+                        msgbox.alert(f'[DAS-009] Error sending configuration upload response: {e}')
+                    
+                    params.PlotUploadedConfig = True
+                    params.PlotCalibrationSignal.signal.emit()
+                    params.CalibrationStageFinished = True
+
+                elif data == "UPLOAD /Projections":
+                    try:
+                        Thresholds, Peaks, AnglesOutput, SynergyBase, SensorStickers = params.UploadCalibrationFromJson()
+                        params.AnglesOutput = AnglesOutput
+                        params.SynergyBase = SynergyBase
+                        params.SynergiesNumber = len(AnglesOutput)
+                    except Exception as e:
+                        msgbox.alert(f'[DAS-010] Error uploading projections from JSON: {e}')
+                    
+                    serialized_data = pack.packb([1], use_bin_type = True)
+                    serialized_data  += b'END'
+                    
+                    try:
+                        conn.sendall(serialized_data)
+                    except Exception as e:
+                        msgbox.alert(f'[DAS-011] Error sending projections upload response: {e}')
                     
                     params.PlotUploadedConfig = True
                     params.PlotCalibrationSignal.signal.emit()
                     params.CalibrationStageFinished = True
 
                 elif data == "GET /JsonConfiguration":
-                    dictionary = {"Thresholds": params.Thresholds,
-                                  "Peaks": params.Peaks,
-                                   "synergy_CursorMap": params.AnglesOutput,
-                                   "SynergyBase": params.SynergyBase,
-                                   "SensorStickers": params.SensorStickers}
-                    serialized_data = pack.packb(dictionary, use_bin_type = True)  
-                    serialized_data  += b'END' 
+                    # i need to make sure the format of thresholds and peaks is not numpy
                     try:
-                        conn.sendall(serialized_data)
+                        dictionary = {"Thresholds": params.Thresholds,
+                                    "Peaks": params.Peaks,
+                                    "synergy_CursorMap": params.AnglesOutput,
+                                    "SynergyBase": params.SynergyBase,
+                                    "SensorStickers": params.SensorStickers}
+                        print(dictionary)
+                        serialized_data = pack.packb(dictionary, use_bin_type = True)  
+                        serialized_data  += b'END' 
+                        try:
+                            conn.sendall(serialized_data)
+                        except Exception as e:
+                            msgbox.alert(f'[DAS-012] Error sending JSON configuration response: {e}')
                     except Exception as e:
-                        msgbox.alert(e)
+                        msgbox.alert(f'[DAS-013] Error processing JSON configuration request: {e}') 
 
                 elif data == "GET /ExperimentTimestamp":
                     serialized_data = pack.packb(params.ExperimentTimestamp, use_bin_type = True)
@@ -291,7 +327,7 @@ def API_Server(AeroInstance,emgPositionVector):
                     try:
                         conn.sendall(serialized_data)
                     except Exception as e:
-                        msgbox.alert(e)
+                        msgbox.alert(f'[DAS-014] Error sending experiment timestamp response: {e}')
 
                 elif data == "GET /Ping":
                     serialized_data = pack.packb([1,time.time()], use_bin_type = True)
@@ -299,7 +335,7 @@ def API_Server(AeroInstance,emgPositionVector):
                     try:
                         conn.sendall(serialized_data)
                     except Exception as e:
-                        msgbox.alert(e)
+                        msgbox.alert(f'[DAS-015] Error sending ping response: {e}')
 
                 else:
                    print("Invalid request", data)

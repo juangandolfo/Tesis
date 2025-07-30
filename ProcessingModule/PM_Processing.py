@@ -257,6 +257,7 @@ def CalibrationProcessing():
                 PM_DS.stack_lock.release()
                 if RawData != []:
                     RectifiedData = DataProcessing.Rectify(RawData)
+                    print("pm_parameters", PM_Parameters.PeakActivation, PM_Parameters.MusclesNumber, PM_Parameters.Threshold)
                     NormalizedData = DataProcessing.Normalize(RectifiedData, PM_Parameters.PeakActivation, PM_Parameters.MusclesNumber, PM_Parameters.Threshold)
                     ProcessedData = DataProcessing.DummyLowPassFilter(NormalizedData, LastData)
                     #ProcessedData = DataProcessing.LowPassFilter(NormalizedData)
@@ -303,6 +304,21 @@ def CalibrationProcessing():
             PM_Parameters.CalibrationStage = 0
             PM_Parameters.RequestAngles = True
             break     
+
+        elif PM_Parameters.CalibrationStage == 7:
+            PM_Parameters.UploadProjection = True
+            while PM_Parameters.CalibrationStage == 7:
+                time.sleep(0.01)
+                print("stage7")
+                if PM_Parameters.JsonReceived:
+                    PM_Parameters.JsonReceived = False 
+                    try:
+                        PM_Parameters.SynergyBaseInverse = np.linalg.pinv(PM_Parameters.SynergyBase)
+                        PM_Parameters.projectionMatrix = PM_Parameters.GenerateProjectionMatrix(PM_Parameters.synergy_CursorMap)    
+                    except Exception as e:
+                        PM_Parameters.logHandler.LogError(f"PM: Error in SynergyBaseInverse: {e}")
+                    break
+
     try:
         calibrationFileName = PM_Parameters.fileHandler.SaveCalibrationToJson(
                                                                 PM_Parameters.MusclesNumber,

@@ -464,10 +464,11 @@ class SimulationWindow(QWidget):
         # Logic to handle experiment file upload and data processing
         self.plot_data()
 
-    def plot_data(self):
+    def plot_synergy_and_calibration_data(self):
+        """Plot synergy basis, projection angles, and thresholds/peaks data"""
         self.figure.clear()
         self.synergiesNumber = np.array(self.synergy_base).shape[0]
-        gs = self.figure.add_gridspec(self.synergiesNumber, 2)  
+        gs = self.figure.add_gridspec(self.synergiesNumber + 1, 2)  # Added +1 for the new plot
         
         # Plot Synergy Base ----------------------------------------------
         for i in range (1, self.synergiesNumber+1):
@@ -489,16 +490,39 @@ class SimulationWindow(QWidget):
                 ax.set_yticklabels([''] * 3)  # Remove y-axis tick labels but keep the ticks
             
         # Plot Projection Angles ----------------------------------------------
-        ax = self.figure.add_subplot(gs[:, 1], polar=True)
+        ax = self.figure.add_subplot(gs[:self.synergiesNumber, 1], polar=True)
         ax.set_title("Projection Angles")
         for i in range(len(self.angles)):
             theta = np.radians(int(self.angles[i]))  # Convert to radians
             ax.plot([0, theta], [0, 1], marker='o', color=self.colors[i])  # Plot the vector
         
+        # Plot Thresholds and Peaks ----------------------------------------------
+        ax = self.figure.add_subplot(gs[self.synergiesNumber, :])
+        x_positions = range(len(self.sensor_stickers))
+        width = 0.35
+        
+        # Plot thresholds
+        ax.bar([x - width/2 for x in x_positions], self.thresholds, width, 
+               label='Thresholds', color='blue', alpha=0.7)
+        
+        # Plot peaks
+        ax.bar([x + width/2 for x in x_positions], self.peaks, width, 
+               label='Peaks', color='red', alpha=0.7)
+        
+        ax.set_xlabel('Muscles')
+        ax.set_ylabel('Muscle Activation (mV)')
+        ax.set_title('Thresholds and Peaks')
+        ax.set_xticks(x_positions)
+        ax.set_xticklabels(self.sensor_stickers)
+        ax.legend()
+        
         # Adjust the layout to expand subplots
         self.figure.tight_layout()
         self.figure.subplots_adjust(hspace=0.8, wspace=0.6)  # Adjust the spacing if needed
         self.canvas.draw()
+
+    def plot_data(self):
+        self.plot_synergy_and_calibration_data()
 
     def home_callback(self):
         self.controller.showStartMenu()
@@ -636,6 +660,10 @@ class CalibrationWindow(QMainWindow):
         self.upload_calibration_button.setFixedSize(240, 30)  # Set a fixed size for the button
         self.upload_calibration_button.setStyleSheet('QPushButton {color: #000066;}')
 
+        self.upload_configuration_button = QPushButton("Upload configuration")
+        self.upload_configuration_button.setFixedSize(240, 30)  # Set a fixed size for the button
+        self.upload_configuration_button.setStyleSheet('QPushButton {color: #000066;}')
+
         self.choose_projection_button = QPushButton("Choose Projection")
         self.choose_projection_button.setFixedSize(240, 30)  # Set a fixed size for the button
         self.choose_projection_button.setStyleSheet('QPushButton {color: #000066;}')
@@ -682,6 +710,7 @@ class CalibrationWindow(QMainWindow):
         self.stage2_button.clicked.connect(self.stage2_callback)
         self.stage3_button.clicked.connect(self.stage3_callback)
         self.upload_calibration_button.clicked.connect(self.stage4_callback)
+        self.upload_configuration_button.clicked.connect(self.stage7_callback)
         self.choose_projection_button.clicked.connect(self.show_select_model)
         self.terminate_button.clicked.connect(self.terminate_callback)
 
@@ -727,6 +756,7 @@ class CalibrationWindow(QMainWindow):
         layout.addWidget(self.stage2_button)
         layout.addWidget(self.stage3_button)
         layout.addWidget(self.upload_calibration_button)
+        layout.addWidget(self.upload_configuration_button)
         layout.addWidget(self.choose_projection_button)
         layout.addWidget(self.stage_message_label)
         layout.addWidget(self.sensors_dropdown)
@@ -813,14 +843,30 @@ class CalibrationWindow(QMainWindow):
         self.stage_message_label.setText("Press Start to upload the calibration from the Configuration.json file located in the root of the project.")
         
         self.CalibrationStage = 4
-        
 
+    def stage7_callback(self):
+        for i in range(params.SynergiesNumber):
+            self.angle_lineedits[i].hide()
+            self.angle_labels[i].hide()
+        self.save_button.hide()
+        self.synergies_lineedit_label.hide()
+        self.synergy_base_lineedit.hide()
+        self.set_synergy_base.hide()
+        self.sensors_dropdown.hide()
+
+        self.stage_message_label.show()
+        self.start_stage_button.show()
+
+        self.stage_message_label.setText("Press Start to upload the configuration from the Configuration.json file located in the root of the project.")
+        
+        self.CalibrationStage = 7
+        
     def start_countdown(self):
         print("timer")
         # Show the countdown widget and start the countdown
         params.CalibrationStage = self.CalibrationStage
         params.CalibrationStageInitialized = True
-        if self.CalibrationStage == 4:
+        if self.CalibrationStage == 4 or self.CalibrationStage == 7:
             pass
         else:
             self.timer_widget.timer_label.show()
@@ -831,7 +877,6 @@ class CalibrationWindow(QMainWindow):
         if index >= 0:
             selected_sensor = self.sensors_dropdown.itemText(index)
             params.selectedSensorIndex = index
-            
 
     def populate_sensors_dropdown(self):
         self.sensors_dropdown.clear()
@@ -870,8 +915,6 @@ class CalibrationWindow(QMainWindow):
             self.update_plot()
         except Exception as e:
             msgbox.alert(e)
-
-        
         
     def show_angle_window(self):
         self.save_button.show()
@@ -884,22 +927,21 @@ class CalibrationWindow(QMainWindow):
         self.update_plot()
 
     def update_plot(self):
-
         if params.PlotThresholds:
             self.figure.clear()
             ax = self.figure.add_subplot(111)
-            data = params.Thresholds 
+            data = np.array(params.Thresholds) 
             ax.bar(params.SensorStickers, data, color = '#00008B')
             ax.set_xlabel('Muscles')  # X-axis label
             ax.set_ylabel('Muscle Activation (mV)')  # Y-axis label
             ax.set_title('Detected thresholds')  # Plot title
             params.PlotThresholds = False
-            
                 
         elif params.PlotPeaks:
             self.figure.clear()
             ax = self.figure.add_subplot(111)
-            data = params.Peaks 
+            # data = params.Peaks
+            data = np.array(params.Peaks)  # Ensure data is in a suitable format for plotting 
             ax.bar(params.SensorStickers, data, color = '#00008B')
             ax.set_xlabel('Muscles')  # X-axis label
             ax.set_ylabel('Muscle Activation (mV)')  # Y-axis label
@@ -1060,7 +1102,6 @@ class CalibrationWindow(QMainWindow):
             params.AnglesReady = 1
             params.AnglesOutput = AnglesOutput
             params.AnglesOutputSemaphore.release()
-           
             
 
 if __name__ == '__main__':

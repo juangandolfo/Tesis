@@ -6,13 +6,13 @@ import json
 import time
 import os
 
-DelsysMode = True
+DelsysMode = False
 #csvFile = '202465_213928.csv'              #tiene 2 musculos
 #csvFile = 'Experiment-20240626-220405.csv' #tiene 3 musculos
 #csvFile = '202468_195248.csv'               #tiene 4 musculos
 # csvFile = 'experimento_prueba.csv'
 #csvFile = 'ExperimentsFiles\Experiment-20241202-261323\RawData.csv'
-csvFile = ''
+csvFile = 'ExperimentsFiles\Experiment-20250521-031035\RawData.csv'
 SimulationFrequency = 2148
 
 KeysLen = 0
@@ -71,19 +71,47 @@ def CreateExperimentName():
     UTF = -3
     ExperimentTimestamp = str(t.tm_year) + TwoDigitString(t.tm_mon) + TwoDigitString(t.tm_mday) + "-" + TwoDigitString(t.tm_hour - UTF) + TwoDigitString(t.tm_min) + TwoDigitString(t.tm_sec)
     
-def UploadCalibrationFromJson():
+def UploadCalibrationFromJson(filename = 'Configuration.json'):
     # Load the configuration from a JSON file
-    with open('Configuration.json') as file:
+    with open(filename) as file:
         data = json.load(file)
         if ChannelsNumber != data['MusclesNumber']:
             raise Exception("The number of channels in the configuration file is different from the current configuration")
         else:
-            Thresholds = data['Thresholds']
-            Peaks = data['Peaks']
-            AnglesOutput = data['Angles']
-            SynergiesModels= data['SynergyBase']
-            SensorStickers = data['SensorStickers']
+            # Agregar chequeo de que existen las keys previo a enviarlas, si no existe devolver null (notorio que no existe), 
+            # validar que el json sea consistente por ejemplo que sensor stickers tenga el mismo numero de elementos que los thresholds y peaks
+            # Get all keys from data
+            ValidKeys = ['Thresholds', 'Peaks', 'Angles', 'SynergyBase', 'SensorStickers']
+            dictionary = {}
+            keys = data.keys()
+            for key in ValidKeys:
+                if key not in keys:
+                    dictionary[key] = None
+                    # Output to VSCode's debug console 
+                    print(f"                                                Key '{key}' not found in JSON data.", flush=True)
+                else:
+                    dictionary[key] = data[key]
+            
+            Thresholds = dictionary['Thresholds']
+            Peaks = dictionary['Peaks']
+            AnglesOutput = dictionary['Angles']
+            SynergiesModels= dictionary['SynergyBase']
+            SensorStickers = dictionary['SensorStickers']
+
+            # Agregar alarm (msgbox) si no es consistente
+            # Devolver todo en un dictionary 
     return Thresholds, Peaks, AnglesOutput, SynergiesModels, SensorStickers
+
+def UploadProjectionFromJson():
+    # Load the projection from a JSON file
+    with open('Configuration.json') as file:
+        data = json.load(file)
+        if ChannelsNumber != data['MusclesNumber']:
+            raise Exception("The number of channels in the projection file is different from the current configuration")
+        else:
+            SynergyBase = data['SynergyBase']
+            AnglesOutput = data['Angles']
+    return SynergyBase, AnglesOutput
         
 def SaveCalibrationToJson(ChannelsNumber,Thresholds, Peaks, AnglesOutput, SynergyBase, SensorStickers):
     global ExperimentTimestamp
@@ -120,9 +148,12 @@ def Initialize():
     global SynergyBase
   
 
-    SynergyBase = np.identity(ChannelsNumber)
-    Thresholds = np.ones(ChannelsNumber) * 0.055
-    Peaks = np.ones(ChannelsNumber) * 0.1
+    SynergyBase = np.identity(ChannelsNumber).tolist()
+
+    # Thresholds = np.ones(ChannelsNumber) * 0.055
+    Thresholds = [0.055] * ChannelsNumber
+    # Peaks = np.ones(ChannelsNumber) * 0.1
+    Peaks = [0.1] * ChannelsNumber
     AnglesOutput = [0] * ChannelsNumber
     vafs = [0] * (ChannelsNumber -1)
     SynergiesNumber = ChannelsNumber

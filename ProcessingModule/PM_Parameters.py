@@ -14,31 +14,29 @@ saveCSV = True
 
 Initialized = False
 
-MusclesNumber = 8
+MusclesNumber = None
 SensorStickers = []
 
 RawData_BufferSize = 500
 sampleRate = 1
 Subsampling_NumberOfSamples = sampleRate/SubSamplingRate 
 SynergyConfigurationFile = 'SynergyConfigurationFromExcel.csv'
-if MusclesNumber == 4:
-    synergy_CursorMap = [30,210,120,300]
-else:
-    synergy_CursorMap = [30,120]
+synergy_CursorMap = []
 CursorMovement_Gain = 500
-SynergyBase = np.identity(MusclesNumber)
-SynergyBaseInverse = np.linalg.pinv(SynergyBase)
+SynergyBase = None 
+SynergyBaseInverse = None
 modelsList = []
 output = []
 recommendedModelNumber = 2
+synergiesNumber = None
 vafs = []
 # Convert angles from degrees to radians
-angles_rad = np.radians(synergy_CursorMap)
+angles_rad = None
 # Calculate the x and y components of each vector
-x = np.cos(angles_rad)
-y = np.sin(angles_rad)
+x = None
+y = None
 # Construct the projection matrix
-projectionMatrix = np.column_stack((x, y))
+projectionMatrix = None
 
 RequestCalibrationTime = False
 AnglesRecieved = False
@@ -48,6 +46,7 @@ PlotPeaks = False
 PlotSynergiesDetected = False
 DetectingSynergies = False
 UploadFromJson = False
+UploadProjection = False
 JsonReceived = False
 UploadSimulationConfig = False
 Processing = False
@@ -99,14 +98,14 @@ def Initialize():
     #print(SynergyBase)
     if MusclesNumberFromCSV != MusclesNumber:
         raise Exception("The number of muscles in the configuration file is different from the number of muscles in the PM")    '''
-    PeakActivation = np.ones(MusclesNumber)*0.1
-    Threshold = np.ones(MusclesNumber) * 0.055
-    synergiesNumber = MusclesNumber
-    synergy_CursorMap = np.zeros(MusclesNumber) #pensar en cambiar esto por algo equiespaciado (360*i/musclesunmber)
+    # PeakActivation = np.ones(MusclesNumber)*0.1
+    # Threshold = np.ones(MusclesNumber) * 0.055
+    # synergiesNumber = MusclesNumber
+    # synergy_CursorMap = np.zeros(MusclesNumber) #pensar en cambiar esto por algo equiespaciado (360*i/musclesunmber)
 
-    for synergy in range(synergiesNumber):
-        synergy_CursorMap[synergy] = 360*synergy/synergiesNumber
-    projectionMatrix = GenerateProjectionMatrix(synergy_CursorMap)
+    # for synergy in range(synergiesNumber):
+    #     synergy_CursorMap[synergy] = 360*synergy/synergiesNumber
+    # projectionMatrix = GenerateProjectionMatrix(synergy_CursorMap)
 
     nyquist = 0.5 * sampleRate
     normal_cutoff = LPF_cutoff / nyquist
