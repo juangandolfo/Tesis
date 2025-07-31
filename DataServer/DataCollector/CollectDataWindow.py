@@ -687,10 +687,6 @@ class CalibrationWindow(QMainWindow):
         self.upload_configuration_button = QPushButton("Upload configuration")
         self.upload_configuration_button.setFixedSize(240, 30)  # Set a fixed size for the button
         self.upload_configuration_button.setStyleSheet('QPushButton {color: #000066;}')
-
-        self.choose_projection_button = QPushButton("Choose Projection")
-        self.choose_projection_button.setFixedSize(240, 30)  # Set a fixed size for the button
-        self.choose_projection_button.setStyleSheet('QPushButton {color: #000066;}')
         
         self.terminate_button = QPushButton("Terminate Calibration")
         self.terminate_button.setFixedSize(240, 30)  # Set a fixed size for the button
@@ -734,7 +730,6 @@ class CalibrationWindow(QMainWindow):
         self.stage2_button.clicked.connect(self.stage2_callback)
         self.stage3_button.clicked.connect(self.stage3_callback)
         self.upload_calibration_button.clicked.connect(self.stage4_callback)
-        self.choose_projection_button.clicked.connect(self.show_select_model)
         self.terminate_button.clicked.connect(self.terminate_callback)
 
         # Connect Start button to start countdown
@@ -779,7 +774,6 @@ class CalibrationWindow(QMainWindow):
         layout.addWidget(self.stage2_button)
         layout.addWidget(self.stage3_button)
         layout.addWidget(self.upload_calibration_button)
-        layout.addWidget(self.choose_projection_button)
         layout.addWidget(self.stage_message_label)
         layout.addWidget(self.sensors_dropdown)
         layout.addWidget(self.start_stage_button)

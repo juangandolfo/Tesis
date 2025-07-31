@@ -533,26 +533,6 @@ def Processing_Module_Client():
                         # params.SynergyBaseInverse = np.linalg.pinv(params.SynergyBase)
                         Json_to_params()
                         params.TerminateCalibration = True
-
-                    elif params.UploadProjection == True:
-                        params.UploadProjection = False
-                        try: 
-                            response = Request("UPLOAD /Projections")
-                        except Exception as e:
-                            msgbox.alert(f'[PMC-014] Error uploading projections to server: {e}')
-                        if response[0] == 1:
-                            configurationDictionary = Request("GET /JsonConfiguration")
-                            params.Threshold = np.asarray(configurationDictionary['Thresholds'])
-                            params.PeakActivation = np.asarray(configurationDictionary['Peaks'])
-                            params.SynergyBase = np.asarray(configurationDictionary['SynergyBase'])
-                            params.SensorStickers = configurationDictionary['SensorStickers']
-                            synergy_CursorMap = np.asarray(configurationDictionary['synergy_CursorMap'])
-                            angles = []
-                            for element in synergy_CursorMap:
-                                angles.append(int(element))
-                            params.synergy_CursorMap = angles
-                            params.synergiesNumber = len(angles)
-                            params.JsonReceived = True
                     
                     elif params.PingRequested == True:
                         try: 

@@ -113,17 +113,6 @@ def UploadCalibrationFromJson(filename = 'Configuration.json'):
             # Agregar alarm (msgbox) si no es consistente
             # Devolver todo en un dictionary 
     return Thresholds, Peaks, AnglesOutput, SynergiesModels, SensorStickers
-
-def UploadProjectionFromJson():
-    # Load the projection from a JSON file
-    with open('Configuration.json') as file:
-        data = json.load(file)
-        if ChannelsNumber != data['MusclesNumber']:
-            raise Exception("The number of channels in the projection file is different from the current configuration")
-        else:
-            SynergyBase = data['SynergyBase']
-            AnglesOutput = data['Angles']
-    return SynergyBase, AnglesOutput
         
 def SaveCalibrationToJson(ChannelsNumber,Thresholds, Peaks, AnglesOutput, SynergyBase, SensorStickers):
     global ExperimentTimestamp

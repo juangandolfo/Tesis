@@ -287,27 +287,6 @@ def API_Server(AeroInstance,emgPositionVector):
                     params.PlotCalibrationSignal.signal.emit()
                     params.CalibrationStageFinished = True
 
-                elif data == "UPLOAD /Projections":
-                    try:
-                        Thresholds, Peaks, AnglesOutput, SynergyBase, SensorStickers = params.UploadCalibrationFromJson()
-                        params.AnglesOutput = AnglesOutput
-                        params.SynergyBase = SynergyBase
-                        params.SynergiesNumber = len(AnglesOutput)
-                    except Exception as e:
-                        msgbox.alert(f'[DAS-010] Error uploading projections from JSON: {e}')
-                    
-                    serialized_data = pack.packb([1], use_bin_type = True)
-                    serialized_data  += b'END'
-                    
-                    try:
-                        conn.sendall(serialized_data)
-                    except Exception as e:
-                        msgbox.alert(f'[DAS-011] Error sending projections upload response: {e}')
-                    
-                    params.PlotUploadedConfig = True
-                    params.PlotCalibrationSignal.signal.emit()
-                    params.CalibrationStageFinished = True
-
                 elif data == "GET /JsonConfiguration":
                     # i need to make sure the format of thresholds and peaks is not numpy
                     try:

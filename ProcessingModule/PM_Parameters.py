@@ -46,7 +46,6 @@ PlotPeaks = False
 PlotSynergiesDetected = False
 DetectingSynergies = False
 UploadFromJson = False
-UploadProjection = False
 JsonReceived = False
 UploadSimulationConfig = False
 Processing = False
