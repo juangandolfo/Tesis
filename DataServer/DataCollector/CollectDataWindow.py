@@ -793,6 +793,8 @@ class CalibrationWindow(QMainWindow):
         main_layout.addWidget(self.canvas)
         main_layout.setStretch(1, 1)
 
+        
+
     def stage1_callback(self):
         self.save_button.hide()
         for i in range(params.SynergiesNumber):
@@ -937,86 +939,72 @@ class CalibrationWindow(QMainWindow):
 
     def update_plot(self):
         if params.PlotThresholds:
-            self.figure.clear()
-            ax = self.figure.add_subplot(111)
-            data = np.array(params.Thresholds) 
-            ax.bar(params.SensorStickers, data, color = '#00008B')
-            # If any data values is more than .1, color it red
-            for i, value in enumerate(data):
-                if value > 0.1:
-                    ax.bar(params.SensorStickers[i], value, color = "#B11E1E")
-                # If any data value is between .08 and .1, color it orange
-                elif 0.08 < value <= 0.1:
-                    ax.bar(params.SensorStickers[i], value, color = "#B46A0F")
-            ax.set_xlabel('Muscles')  # X-axis label
-            ax.set_ylabel('Muscle Activation (mV)')  # Y-axis label
-            ax.set_title('Detected thresholds')  # Plot title
-            params.PlotThresholds = False
+        #     self.figure.clear()
+        #     ax = self.figure.add_subplot(111)
+        #     data = np.array(params.Thresholds) 
+        #     ax.bar(params.SensorStickers, data, color = '#00008B')
+        #     ax.set_xlabel('Muscles')  # X-axis label
+        #     ax.set_ylabel('Muscle Activation (mV)')  # Y-axis label
+        #     ax.set_title('Detected thresholds')  # Plot title
+        #     params.PlotThresholds = False
                 
-        elif params.PlotPeaks:
-            self.figure.clear()
-            ax = self.figure.add_subplot(111)
-            # data = params.Peaks
-            data = np.array(params.Peaks)  # Ensure data is in a suitable format for plotting 
-            ax.bar(params.SensorStickers, data, color = '#00008B')
-            #If any data value is less than .5, color it red
-            for i, value in enumerate(data):
-                if value < 0.3:
-                    ax.bar(params.SensorStickers[i], value, color = "#B11E1E")
-                elif 0.3 <= value < 0.5:
-                    ax.bar(params.SensorStickers[i], value, color = "#B46A0F")
-            # Add bars with current thresholds overlaid on top of the peaks
-            thresholds = params.Thresholds
-            ax.bar(params.SensorStickers, thresholds, color = "#3B6CF3")
-            ax.set_xlabel('Muscles')  # X-axis label
-            ax.set_ylabel('Muscle Activation (mV)')  # Y-axis label
-            ax.set_title('Detected Peaks')  # Plot title
+        # elif params.PlotPeaks:
+        #     self.figure.clear()
+        #     ax = self.figure.add_subplot(111)
+        #     # data = params.Peaks
+        #     data = np.array(params.Peaks)  # Ensure data is in a suitable format for plotting 
+        #     ax.bar(params.SensorStickers, data, color = '#00008B')
+        #     ax.set_xlabel('Muscles')  # X-axis label
+        #     ax.set_ylabel('Muscle Activation (mV)')  # Y-axis label
+        #     ax.set_title('Detected Peaks')  # Plot title
+        
+            self.plot_config()
             params.PlotPeaks = False
 
         elif params.PlotModels:
-            self.figure.clear()            
-            data = params.SynergiesModels
-            gs = self.figure.add_gridspec(params.ChannelsNumber + 1, params.ChannelsNumber - 1)  
+            # self.figure.clear()            
+            # data = params.SynergiesModels
+            # gs = self.figure.add_gridspec(params.ChannelsNumber + 1, params.ChannelsNumber - 1)  
 
-            subplots = []
-            for j in range(2, params.ChannelsNumber + 1):
-                for i in range (1, j+1):
-                    ax = self.figure.add_subplot(gs[i-1, j-2])
-                    ax.bar([str(index) for index in range(1, params.ChannelsNumber + 1)], data[f'{j} Synergies'][i-1], color='#00008B', alpha=0.6)
-                    subplots.append(ax)
-                    ax.set_ylim(0, 1)  # Set y-axis limits to be between 0 and 0.5
-                    ax.set_xlim(-0.5, params.ChannelsNumber-0.5) 
-                    ax.set_xticks(range(params.ChannelsNumber))  # Ensure all ticks are visible
-                    ax.set_yticks([0, 0.5, 1])  # Ensure y-ticks are visible
-                    if i == 1:
-                        ax.set_title(f'{j} Synergies')
-                        if j == 2:
-                            ax.set_xlabel('Muscles')  # X-axis label
-                            ax.set_ylabel('Relative Activation')  # Y-axis label
-                            ax.set_xticklabels(params.SensorStickers)
-                            ax.set_yticklabels([str(tick) for tick in [0, 0.5, 1]])
-                        else:
-                            ax.set_xticklabels([''] * params.ChannelsNumber)  # Remove x-axis tick labels but keep the ticks
-                            ax.set_yticklabels([''] * 3)  # Remove y-axis tick labels but keep the ticks
-                    else:
-                        ax.set_xticklabels([''] * params.ChannelsNumber)  # Remove x-axis tick labels but keep the ticks
-                        ax.set_yticklabels([''] * 3)  # Remove y-axis tick labels but keep the ticks
+            # subplots = []
+            # for j in range(2, params.ChannelsNumber + 1):
+            #     for i in range (1, j+1):
+            #         ax = self.figure.add_subplot(gs[i-1, j-2])
+            #         ax.bar([str(index) for index in range(1, params.ChannelsNumber + 1)], data[f'{j} Synergies'][i-1], color='#00008B', alpha=0.6)
+            #         subplots.append(ax)
+            #         ax.set_ylim(0, 1)  # Set y-axis limits to be between 0 and 0.5
+            #         ax.set_xlim(-0.5, params.ChannelsNumber-0.5) 
+            #         ax.set_xticks(range(params.ChannelsNumber))  # Ensure all ticks are visible
+            #         ax.set_yticks([0, 0.5, 1])  # Ensure y-ticks are visible
+            #         if i == 1:
+            #             ax.set_title(f'{j} Synergies')
+            #             if j == 2:
+            #                 ax.set_xlabel('Muscles')  # X-axis label
+            #                 ax.set_ylabel('Relative Activation')  # Y-axis label
+            #                 ax.set_xticklabels(params.SensorStickers)
+            #                 ax.set_yticklabels([str(tick) for tick in [0, 0.5, 1]])
+            #             else:
+            #                 ax.set_xticklabels([''] * params.ChannelsNumber)  # Remove x-axis tick labels but keep the ticks
+            #                 ax.set_yticklabels([''] * 3)  # Remove y-axis tick labels but keep the ticks
+            #         else:
+            #             ax.set_xticklabels([''] * params.ChannelsNumber)  # Remove x-axis tick labels but keep the ticks
+            #             ax.set_yticklabels([''] * 3)  # Remove y-axis tick labels but keep the ticks
                             
-            ax = self.figure.add_subplot(gs[params.ChannelsNumber , 0])
-            x = list(range(2, params.ChannelsNumber+1))  # Number of muscles
-            ax.plot(x, data['vafs'], marker='o', label='VAF Curve')
-            ax.set_xlabel('Number of Synergies')
-            ax.set_ylabel('VAF (%)')
-            ax.set_title('VAF vs Model')
+            # ax = self.figure.add_subplot(gs[params.ChannelsNumber , 0])
+            # x = list(range(2, params.ChannelsNumber+1))  # Number of muscles
+            # ax.plot(x, data['vafs'], marker='o', label='VAF Curve')
+            # ax.set_xlabel('Number of Synergies')
+            # ax.set_ylabel('VAF (%)')
+            # ax.set_title('VAF vs Model')
 
-            # Ensure the x-axis contains only integers
-            ax.set_xticks(np.arange(2, params.ChannelsNumber + 1, 1))  # Set x-ticks from 2 to the number of channels
-            ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: '{:d}'.format(int(x))))  # Ensure x-ticks are displayed as integers
+            # # Ensure the x-axis contains only integers
+            # ax.set_xticks(np.arange(2, params.ChannelsNumber + 1, 1))  # Set x-ticks from 2 to the number of channels
+            # ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: '{:d}'.format(int(x))))  # Ensure x-ticks are displayed as integers
 
-            # Adjust the layout to expand subplots
-            self.figure.tight_layout()
-            self.figure.subplots_adjust(hspace=0.8, wspace=0.6)  # Adjust the spacing if needed
-
+            # # Adjust the layout to expand subplots
+            # self.figure.tight_layout()
+            # self.figure.subplots_adjust(hspace=0.8, wspace=0.6)  # Adjust the spacing if needed
+            self.plot_config()
             params.PlotModels = False
             
         elif params.PlotAngles:
@@ -1061,38 +1049,7 @@ class CalibrationWindow(QMainWindow):
             self.figure.subplots_adjust(hspace=0.8, wspace=0.6)  # Adjust the spacing if needed
 
         elif params.PlotUploadedConfig:
-            self.figure.clear()
-            gs = self.figure.add_gridspec(params.SynergiesNumber, 2)  
-            
-            # Plot Synergy Base ----------------------------------------------
-            for i in range (1, params.SynergiesNumber+1):
-                ax = self.figure.add_subplot(gs[i-1, 0])
-                ax.bar(range(np.asarray(params.SynergyBase).shape[1]), params.SynergyBase[i-1], color=self.colors[i-1], alpha=0.6)
-                ax.set_ylim(0, 1)  # Set y-axis limits to be between 0 and 0.5
-                ax.set_xlim(-0.5, params.ChannelsNumber-0.5) 
-                ax.set_xticks(range(params.ChannelsNumber))  # Ensure all ticks are visible
-                ax.set_yticks([0, 0.5, 1])  # Ensure y-ticks are visible
-
-                if i == 1:
-                    ax.set_title(f'Synergy Basis ({params.SynergiesNumber} Synergies)')
-                    ax.set_xlabel('Muscles')  # X-axis label
-                    ax.set_ylabel('Relative Activation')  # Y-axis label
-                    ax.set_xticklabels(params.SensorStickers)
-                    ax.set_yticklabels([str(tick) for tick in [0, 0.5, 1]])
-                else: 
-                    ax.set_xticklabels([''] * params.ChannelsNumber)  # Remove x-axis tick labels but keep the ticks
-                    ax.set_yticklabels([''] * 3)  # Remove y-axis tick labels but keep the ticks
-                
-            # Plot Projection Angles ----------------------------------------------
-            ax = self.figure.add_subplot(gs[:, 1], polar=True)
-            ax.set_title("Projection Angles")
-            for i in range(len(params.AnglesOutput)):
-                theta = np.radians(int(params.AnglesOutput[i]))  # Convert to radians
-                ax.plot([0, theta], [0, 1], marker='o', color=self.colors[i])  # Plot the vector
-            
-            # Adjust the layout to expand subplots
-            self.figure.tight_layout()
-            self.figure.subplots_adjust(hspace=0.8, wspace=0.6)  # Adjust the spacing if needed
+            self.plot_config()
             params.PlotUploadedConfig = False
             
         else:
@@ -1127,7 +1084,60 @@ class CalibrationWindow(QMainWindow):
             params.AnglesReady = 1
             params.AnglesOutput = AnglesOutput
             params.AnglesOutputSemaphore.release()
-           
+
+    def plot_config(self):
+        self.figure.clear()
+        gs = self.figure.add_gridspec(params.SynergiesNumber + 1, 2)  # Added +1 for the new plot
+        
+        # Plot Synergy Base ----------------------------------------------
+        for i in range (1, params.SynergiesNumber+1):
+            ax = self.figure.add_subplot(gs[i-1, 0])
+            ax.bar(range(np.asarray(params.SynergyBase).shape[1]), params.SynergyBase[i-1], color=self.colors[i-1], alpha=0.6)
+            ax.set_ylim(0, 1)  # Set y-axis limits to be between 0 and 0.5
+            ax.set_xlim(-0.5, params.ChannelsNumber-0.5) 
+            ax.set_xticks(range(params.ChannelsNumber))  # Ensure all ticks are visible
+            ax.set_yticks([0, 0.5, 1])  # Ensure y-ticks are visible
+
+            if i == 1:
+                ax.set_title(f'Synergy Basis ({params.SynergiesNumber} Synergies)')
+                ax.set_xlabel('Muscles')  # X-axis label
+                ax.set_ylabel('Relative Activation')  # Y-axis label
+                ax.set_xticklabels(params.SensorStickers)
+                ax.set_yticklabels([str(tick) for tick in [0, 0.5, 1]])
+            else: 
+                ax.set_xticklabels([''] * params.ChannelsNumber)  # Remove x-axis tick labels but keep the ticks
+                ax.set_yticklabels([''] * 3)  # Remove y-axis tick labels but keep the ticks
+            
+        # Plot Projection Angles ----------------------------------------------
+        ax = self.figure.add_subplot(gs[:params.SynergiesNumber, 1], polar=True)
+        ax.set_title("Projection Angles")
+        for i in range(len(params.AnglesOutput)):
+            theta = np.radians(int(params.AnglesOutput[i]))  # Convert to radians
+            ax.plot([0, theta], [0, 1], marker='o', color=self.colors[i])  # Plot the vector
+        
+        # Plot Thresholds and Peaks ----------------------------------------------
+        ax = self.figure.add_subplot(gs[params.SynergiesNumber, :])
+        x_positions = range(len(params.SensorStickers))
+        width = 0.35
+        
+        # Plot thresholds
+        ax.bar([x - width/2 for x in x_positions], params.Thresholds, width, 
+               label='Thresholds', color='blue', alpha=0.7)
+        
+        # Plot peaks
+        ax.bar([x + width/2 for x in x_positions], params.Peaks, width, 
+               label='Peaks', color='red', alpha=0.7)
+        
+        ax.set_xlabel('Muscles')
+        ax.set_ylabel('Muscle Activation (mV)')
+        ax.set_title('Thresholds and Peaks')
+        ax.set_xticks(x_positions)
+        ax.set_xticklabels(params.SensorStickers)
+        ax.legend()
+        
+        # Adjust the layout to expand subplots
+        self.figure.tight_layout()
+        self.figure.subplots_adjust(hspace=0.8, wspace=0.6)  # Adjust the spacing if needed
             
 
 if __name__ == '__main__':
