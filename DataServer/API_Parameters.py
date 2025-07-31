@@ -44,6 +44,7 @@ PlotPeaks = False
 PlotModels = False
 PlotAngles = False
 PlotUploadedConfig = False
+CalibrationJsonPath = 'Configuration.json'
 
 def set_plot_flag(flag_name, value):
     """Debug helper to track when plot flags are set"""

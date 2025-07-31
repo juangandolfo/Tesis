@@ -745,7 +745,7 @@ class CalibrationWindow(QMainWindow):
         self.canvas = FigureCanvas(self.figure)
         self.colors = ['Red', 'Blue', 'Yellow', 'Green', 'Orange', 'Purple', 'Grey', 'Brown']
         
-        params.PlotCalibrationSignal.signal.connect(self.update_plot)
+        params.PlotCalibrationSignal.signal.connect(self.update_plot_with_debug)
 
         # Angles selection window
         angles_layout = QVBoxLayout()
@@ -852,6 +852,33 @@ class CalibrationWindow(QMainWindow):
         
 
     def stage4_callback(self):
+        import DataServer.API_Parameters as params
+        from General.utils import check_calibration_json
+        from tkinter import Tk, filedialog
+        import pymsgbox
+
+        self.stage_message_label.setText("Select a calibration JSON file to upload.")
+
+        # Prompt user to select a file
+        while True:
+            root = Tk()
+            root.withdraw()
+            file_path = filedialog.askopenfilename(title="Select Calibration JSON", filetypes=[("JSON files", "*.json")])
+            root.destroy()
+            if not file_path:
+                pymsgbox.alert("No file selected. Calibration upload cancelled.")
+                return
+            # Check the file
+            if check_calibration_json(file_path, params.SensorStickers):
+                params.CalibrationJsonPath = file_path
+                self.stage_message_label.setText("Calibration file accepted successfully. Ready to load.")
+                break
+            else:
+                retry = pymsgbox.confirm("Selected file failed validation. Try another file?", "Calibration Error", ["Try Again", "Cancel"])
+                if retry != "Try Again":
+                    pymsgbox.alert("Calibration upload cancelled.")
+                    return
+        # Hide GUI elements as before
         for i in range(params.SynergiesNumber):
             self.angle_lineedits[i].hide()
             self.angle_labels[i].hide()
@@ -1012,41 +1039,81 @@ class CalibrationWindow(QMainWindow):
             try:
                 angles = [lineedit.text() for lineedit in self.angle_lineedits]
                 try:
-                    angles = [int(angle) for angle in angles if angle]
-                except ValueError:
-                    return  # Ignore invalid input
-                
-                gs = self.figure.add_gridspec(params.SynergiesNumber, 2)  
-                # Plot Synergy Base ----------------------------------------------
-                for i in range (1, params.SynergiesNumber+1):
-                    ax = self.figure.add_subplot(gs[i-1, 0])
-                    ax.bar(range(np.asarray(params.SynergyBase).shape[1]), params.SynergyBase[i-1], color=self.colors[i-1], alpha=0.6)
-                    ax.set_ylim(0, 1)  # Set y-axis limits to be between 0 and 0.5
-                    ax.set_xlim(-0.5, params.ChannelsNumber-0.5)  
-                    ax.set_xticks(range(params.ChannelsNumber))  # Ensure all ticks are visible
-                    ax.set_yticks([0, 0.5, 1])  # Ensure y-ticks are visible
+                    self.figure.clear()
+                    
+                    # Check if SynergyBase data exists
+                    synergy_base_available = False
+                    if params.SynergyBase is not None:
+                        if isinstance(params.SynergyBase, np.ndarray):
+                            synergy_base_available = params.SynergyBase.size > 0
+                        elif hasattr(params.SynergyBase, '__len__'):
+                            synergy_base_available = len(params.SynergyBase) > 0
+                        else:
+                            synergy_base_available = bool(params.SynergyBase)
+                    
+                    if not synergy_base_available:
+                        print("[ERROR] SynergyBase data is empty or None")
+                        msgbox.alert("Cannot plot uploaded config: No synergy base data available")
+                        return
+                        
+                    # Check if AnglesOutput data exists
+                    if self.is_data_empty(params.AnglesOutput):
+                        print("[ERROR] AnglesOutput data is empty or None")
+                        msgbox.alert("Cannot plot uploaded config: No angles data available")
+                        return
+                    
+                    gs = self.figure.add_gridspec(params.SynergiesNumber, 2)  
+                    
+                    # Plot Synergy Base ----------------------------------------------
+                    for i in range (1, params.SynergiesNumber+1):
+                        try:
+                            ax = self.figure.add_subplot(gs[i-1, 0])
+                            ax.bar(range(np.asarray(params.SynergyBase).shape[1]), params.SynergyBase[i-1], color=self.colors[i-1], alpha=0.6)
+                            ax.set_ylim(0, 1)  # Set y-axis limits to be between 0 and 0.5
+                            ax.set_xlim(-0.5, params.ChannelsNumber-0.5) 
+                            ax.set_xticks(range(params.ChannelsNumber))  # Ensure all ticks are visible
+                            ax.set_yticks([0, 0.5, 1])  # Ensure y-ticks are visible
 
-                    if i == 1:
-                        ax.set_title(f'Synergy Basis ({params.SynergiesNumber} Synergies)')
-                        ax.set_xlabel('Muscles')  # X-axis label
-                        ax.set_ylabel('Reltive Activation')  # Y-axis label
-                        ax.set_xticklabels(params.SensorStickers)
-                        ax.set_yticklabels([str(tick) for tick in [0, 0.5, 1]])
-                    else: 
-                        ax.set_xticklabels([''] * params.ChannelsNumber)  # Remove x-axis tick labels but keep the ticks
-                        ax.set_yticklabels([''] * 3)  # Remove y-axis tick labels but keep the ticks
+                            if i == 1:
+                                ax.set_title(f'Synergy Basis ({params.SynergiesNumber} Synergies)')
+                                ax.set_xlabel('Muscles')  # X-axis label
+                                ax.set_ylabel('Relative Activation')  # Y-axis label
+                                if params.SensorStickers:
+                                    ax.set_xticklabels(params.SensorStickers)
+                                ax.set_yticklabels([str(tick) for tick in [0, 0.5, 1]])
+                            else: 
+                                ax.set_xticklabels([''] * params.ChannelsNumber)  # Remove x-axis tick labels but keep the ticks
+                                ax.set_yticklabels([''] * 3)  # Remove y-axis tick labels but keep the ticks
+                        except Exception as subplot_error:
+                            print(f"[ERROR] Failed to create config subplot {i}: {subplot_error}")
+                            continue
+                        
+                    # Plot Projection Angles ----------------------------------------------
+                    try:
+                        ax = self.figure.add_subplot(gs[:, 1], polar=True)
+                        ax.set_title("Projection Angles")
+                        for i in range(len(params.AnglesOutput)):
+                            theta = np.radians(int(params.AnglesOutput[i]))  # Convert to radians
+                            ax.plot([0, theta], [0, 1], marker='o', color=self.colors[i])  # Plot the vector
+                    except Exception as angles_error:
+                        print(f"[ERROR] Failed to plot projection angles: {angles_error}")
+                    
+                    # Adjust the layout to expand subplots
+                    self.figure.tight_layout()
+                    self.figure.subplots_adjust(hspace=0.8, wspace=0.6)  # Adjust the spacing if needed
+                    self.canvas.draw()
+                    print("[DEBUG] Uploaded config plot completed successfully")
+                    params.PlotUploadedConfig = False
+                    
+                except Exception as e:
+                    print(f"[ERROR] Failed to plot uploaded config: {e}")
+                    msgbox.alert(f"Failed to plot uploaded config: {str(e)}")
+                    params.PlotUploadedConfig = False
+                    
             except Exception as e:
-                msgbox.alert(e)   
-            # Plot Projection Angles ----------------------------------------------
-            ax = self.figure.add_subplot(gs[:, 1], polar=True)
-            ax.set_title("Choose the projection angle of each synergy")
-            for i in range(len(angles)):
-                theta = np.radians(angles[i])  # Convert to radians
-                ax.plot([0, theta], [0, 1], marker='o', color=self.colors[i])  # Plot the vector
-            
-            # Adjust the layout to expand subplots
-            self.figure.tight_layout()
-            self.figure.subplots_adjust(hspace=0.8, wspace=0.6)  # Adjust the spacing if needed
+                print(f"[ERROR] Error in update_plot for angles: {e}")
+                msgbox.alert(f"Error updating plot for angles: {str(e)}")
+                params.PlotAngles = False
 
         elif params.PlotUploadedConfig:
             self.plot_config()
@@ -1056,6 +1123,18 @@ class CalibrationWindow(QMainWindow):
             print("Invalid Plot Mode")
 
         self.canvas.draw()
+    
+    def update_plot_with_debug(self):
+        """Debug wrapper for update_plot called by signal"""
+        print("[DEBUG] update_plot_with_debug() called via signal")
+        print(f"[DEBUG] Signal triggered - PlotThresholds: {params.PlotThresholds}")
+        print(f"[DEBUG] Signal triggered - PlotPeaks: {params.PlotPeaks}")
+        print(f"[DEBUG] Signal triggered - PlotModels: {params.PlotModels}")
+        try:
+            self.update_plot()
+        except Exception as e:
+            print(f"[ERROR] Error in signal-triggered update_plot: {e}")
+            msgbox.alert(f"Error updating plot via signal: {str(e)}")
     
     def set_model(self):
         self.SynergiesNumber = int(self.synergy_base_lineedit.text())

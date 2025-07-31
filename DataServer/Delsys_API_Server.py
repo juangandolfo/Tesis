@@ -9,8 +9,10 @@ import pymsgbox as msgbox
 import matplotlib.pyplot as plt
 import zlib
 
+from General.utils import check_calibration_json
+
 clr.AddReference("System")
-from System import Guid
+# from System import Guid
 import DataServer.API_Parameters as params
 
 HOST = "127.0.0.1"  # Standard adress (localhost)
@@ -253,19 +255,23 @@ def API_Server(AeroInstance,emgPositionVector):
                 
                 elif data == "UPLOAD /Configurations":
                     try:
-                        Thresholds, Peaks, AnglesOutput, SynergyBase, SensorStickers = params.UploadCalibrationFromJson()
-                        # Chequeo si cada uno es null, si no es mnull lo asigno y si es null vemos que hacemos 
-                        if Thresholds is not None:
-                            params.Thresholds = Thresholds
-                        if Peaks is not None:
-                            params.Peaks = Peaks
-                        if AnglesOutput is not None:
-                            params.AnglesOutput = AnglesOutput
-                        if SynergyBase is not None:
-                            params.SynergyBase = SynergyBase
-                        if SensorStickers is not None:
-                            params.SensorStickers = SensorStickers
-                        params.SynergiesNumber = len(AnglesOutput)
+                        #Check json file (again, because it can be changed on disk after selection)
+                        if check_calibration_json(params.CalibrationJsonPath):
+                            Thresholds, Peaks, AnglesOutput, SynergyBase, SensorStickers = params.UploadCalibrationFromJson(params.CalibrationJsonPath)
+                            # Chequeo si cada uno es null, si no es null lo asigno y si es null dejamos el valor anterior\
+                            if Thresholds is not None:
+                                params.Thresholds = Thresholds
+                            if Peaks is not None:
+                                params.Peaks = Peaks
+                            if AnglesOutput is not None:
+                                params.AnglesOutput = AnglesOutput
+                            if SynergyBase is not None:
+                                params.SynergyBase = SynergyBase
+                            if SensorStickers is not None:
+                                params.SensorStickers = SensorStickers
+                            params.SynergiesNumber = len(AnglesOutput)
+                        else:
+                           msgbox.alert("JSON file check failed, cannot upload configuration from JSON. The file may have changed from the moment of selection. Try again.")
                     except Exception as e:
                         msgbox.alert(f'[DAS-008] Error uploading configuration from JSON: {e}')                    
                     
