@@ -485,10 +485,11 @@ class SimulationWindow(QWidget):
         # Logic to handle experiment file upload and data processing
         self.plot_data()
 
-    def plot_data(self):
+    def plot_synergy_and_calibration_data(self):
+        """Plot synergy basis, projection angles, and thresholds/peaks data"""
         self.figure.clear()
         self.synergiesNumber = np.array(self.synergy_base).shape[0]
-        gs = self.figure.add_gridspec(self.synergiesNumber, 2)  
+        gs = self.figure.add_gridspec(self.synergiesNumber + 1, 2)  # Added +1 for the new plot
         
         # Plot Synergy Base ----------------------------------------------
         for i in range (1, self.synergiesNumber+1):
@@ -510,16 +511,39 @@ class SimulationWindow(QWidget):
                 ax.set_yticklabels([''] * 3)  # Remove y-axis tick labels but keep the ticks
             
         # Plot Projection Angles ----------------------------------------------
-        ax = self.figure.add_subplot(gs[:, 1], polar=True)
+        ax = self.figure.add_subplot(gs[:self.synergiesNumber, 1], polar=True)
         ax.set_title("Projection Angles")
         for i in range(len(self.angles)):
             theta = np.radians(int(self.angles[i]))  # Convert to radians
             ax.plot([0, theta], [0, 1], marker='o', color=self.colors[i])  # Plot the vector
         
+        # Plot Thresholds and Peaks ----------------------------------------------
+        ax = self.figure.add_subplot(gs[self.synergiesNumber, :])
+        x_positions = range(len(self.sensor_stickers))
+        width = 0.35
+        
+        # Plot thresholds
+        ax.bar([x - width/2 for x in x_positions], self.thresholds, width, 
+               label='Thresholds', color='blue', alpha=0.7)
+        
+        # Plot peaks
+        ax.bar([x + width/2 for x in x_positions], self.peaks, width, 
+               label='Peaks', color='red', alpha=0.7)
+        
+        ax.set_xlabel('Muscles')
+        ax.set_ylabel('Muscle Activation (mV)')
+        ax.set_title('Thresholds and Peaks')
+        ax.set_xticks(x_positions)
+        ax.set_xticklabels(self.sensor_stickers)
+        ax.legend()
+        
         # Adjust the layout to expand subplots
         self.figure.tight_layout()
         self.figure.subplots_adjust(hspace=0.8, wspace=0.6)  # Adjust the spacing if needed
         self.canvas.draw()
+
+    def plot_data(self):
+        self.plot_synergy_and_calibration_data()
 
     def home_callback(self):
         self.controller.showStartMenu()
@@ -659,6 +683,10 @@ class CalibrationWindow(QMainWindow):
         self.upload_calibration_button = QPushButton("Upload Last Calibration")
         self.upload_calibration_button.setFixedSize(240, 30)  # Set a fixed size for the button
         self.upload_calibration_button.setStyleSheet('QPushButton {color: #000066;}')
+
+        self.upload_configuration_button = QPushButton("Upload configuration")
+        self.upload_configuration_button.setFixedSize(240, 30)  # Set a fixed size for the button
+        self.upload_configuration_button.setStyleSheet('QPushButton {color: #000066;}')
 
         self.choose_projection_button = QPushButton("Choose Projection")
         self.choose_projection_button.setFixedSize(240, 30)  # Set a fixed size for the button
@@ -908,12 +936,11 @@ class CalibrationWindow(QMainWindow):
         self.update_plot()
 
     def update_plot(self):
-
         if params.PlotThresholds:
             self.figure.clear()
             ax = self.figure.add_subplot(111)
-            data = params.Thresholds 
-            ax.bar(params.SensorStickers, data, color = "#1A4207")
+            data = np.array(params.Thresholds) 
+            ax.bar(params.SensorStickers, data, color = '#00008B')
             # If any data values is more than .1, color it red
             for i, value in enumerate(data):
                 if value > 0.1:
@@ -925,13 +952,13 @@ class CalibrationWindow(QMainWindow):
             ax.set_ylabel('Muscle Activation (mV)')  # Y-axis label
             ax.set_title('Detected thresholds')  # Plot title
             params.PlotThresholds = False
-            
                 
         elif params.PlotPeaks:
             self.figure.clear()
             ax = self.figure.add_subplot(111)
-            data = params.Peaks 
-            ax.bar(params.SensorStickers, data, color = "#1A4207")
+            # data = params.Peaks
+            data = np.array(params.Peaks)  # Ensure data is in a suitable format for plotting 
+            ax.bar(params.SensorStickers, data, color = '#00008B')
             #If any data value is less than .5, color it red
             for i, value in enumerate(data):
                 if value < 0.3:

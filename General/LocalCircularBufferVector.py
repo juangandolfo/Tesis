@@ -20,7 +20,7 @@ class CircularBufferVector:
             try:
                 self.add_vector(row)
             except Exception as e:
-                raise Exception("Error: Could not add the matrix to the buffer")
+                raise Exception("Error: Could not add the matrix to the buffer, " + str(e))
 
     def add_vector(self, vector):
         try:
@@ -38,7 +38,7 @@ class CircularBufferVector:
             self.VisualizationEmpty = False
             self.CursorEmpty = False
         except:
-            raise Exception("Error: Could not add the vector to the buffer")
+            raise Exception("Error: Could not add the vector to the buffer, the vector might not match the buffer's column size, buffer size: {}, vector size: {}".format(self.num_cols, len(vector)))
 
     def get_vectors(self, identifier=0):
         Data = []

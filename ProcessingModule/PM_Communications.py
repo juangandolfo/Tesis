@@ -49,6 +49,23 @@ def Dictionary_to_matrix(dictionary):
 
     return matriz
 
+def Json_to_params():
+    try: 
+        configurationDictionary = Request("GET /JsonConfiguration")
+    except Exception as e:
+        msgbox.alert(f'[PMC-001] Error retrieving JSON configuration from server: {e}')
+    params.Threshold = np.asarray(configurationDictionary['Thresholds'])
+    params.PeakActivation = np.asarray(configurationDictionary['Peaks'])
+    params.SynergyBase = np.asarray(configurationDictionary['SynergyBase'])
+    params.SensorStickers = configurationDictionary['SensorStickers']
+    synergy_CursorMap = np.asarray(configurationDictionary['synergy_CursorMap'])
+    angles = []
+    for element in synergy_CursorMap:
+        angles.append(int(element))
+    params.synergy_CursorMap = angles
+    params.synergiesNumber = len(angles)
+    params.SynergyBaseInverse = np.linalg.pinv(params.SynergyBase) 
+
 # Function to send the request and receive the data from API Server
 def Request(request):
     response_data = []
@@ -99,7 +116,13 @@ def Request(request):
                 break
             elif b"CS6" in chunk:
                 params.CalibrationStage = 6
-                msgbox.alert("Calibration CS6")
+                msgbox.alert("[PMS-008] Calibration stage CS6 reached")
+                chunk = chunk[:-3]
+                data += chunk
+                break
+            elif b"CS7" in chunk:
+                params.CalibrationStage = 7
+                # msgbox.alert("Calibration CS7")
                 chunk = chunk[:-3]
                 data += chunk
                 break
@@ -122,7 +145,7 @@ def Request(request):
     except socket.error as e:
         print("PM Client socket error", e)
     except Exception as e:
-        msgbox.alert(e)
+        msgbox.alert(f"[PMC-021] Unexpected error in Request function: {e}")
     
     try:
         if data == b'\x90': 
@@ -130,8 +153,7 @@ def Request(request):
         else:
             response_data = pack.unpackb(data, max_array_len = len(data), raw=False)
     except Exception as e:
-        # msgbox.alert(f"PM Client: {e}")
-        params.logHandler.LogError(f"PM_Client: {e}")
+        msgbox.alert(f"[PMC-002] Error unpacking received data: {e}")
         pass
         
     return response_data
@@ -249,17 +271,17 @@ def Handle_Client(conn,addr):
 
                         #print(response_data)
                         try:
-                            serialized_data = pack.packb(response_data,use_bin_type=True) 
+                            serialized_data = pack.packb(response_data, use_bin_type=True) 
                         except Exception as e:
-                            msgbox.alert(f'Muscles pack {e}')
+                            msgbox.alert(f'[PMS-001] Error packing muscle data for transmission: {e}')
                         serialized_data  += b'END' # Add a delimiter at the end
                         if serialized_data[-3:] == b'END':
                             try:    
                                 conn.sendall(serialized_data)
                             except Exception as e:
-                                msgbox.alert("PM comms sending", e) 
+                                msgbox.alert(f"[PMS-002] Error sending muscle data to client: {e}") 
                         else: 
-                            msgbox.alert('fail')
+                            msgbox.alert('[PMS-009] Data transmission failed - END delimiter missing for muscle data')
                     #msgbox.alert(serialized_data)
                     # Convert the dictionary to JSON and enconde intio bytes
                     
@@ -279,13 +301,13 @@ def Handle_Client(conn,addr):
                         try:
                             serialized_data = pack.packb(response_data, use_bin_type=True) 
                         except Exception as e:  
-                            msgbox.alert(f'Synergies pack {e}')
+                            msgbox.alert(f'[PMS-003] Error packing synergies data for transmission: {e}')
                         serialized_data  += b'END' # Add a delimiter at the end
                         # Convert the dictionary to JSON and enconde intio bytes
                         if serialized_data[-3:] == b'END':
                             conn.sendall(serialized_data)
                         else: 
-                            msgbox.alert('fail')         
+                            msgbox.alert('[PMS-010] Data transmission failed - END delimiter missing for synergies data')         
 
                 elif data.decode().strip() == "GET /Parameters":
                         # response_data = [params.MusclesNumber,params.synergiesNumber,params.SubSamplingRate,params.SensorStickers] #PM_DS.PM_DataStruct.circular_stack.get_vectors(3)
@@ -304,7 +326,7 @@ def Handle_Client(conn,addr):
                         try:
                             serialized_data = pack.packb(response_data, use_bin_type=True) 
                         except Exception as e:  
-                            msgbox.alert(e)
+                            msgbox.alert(f'[PMS-004] Error packing parameters data for transmission: {e}')
                         serialized_data  += b'END' # Add a delimiter at the end
                         conn.sendall(serialized_data)
 
@@ -314,7 +336,7 @@ def Handle_Client(conn,addr):
                     try:
                         serialized_data = pack.packb(response_data, use_bin_type=True) 
                     except Exception as e:  
-                        msgbox.alert(e)
+                        msgbox.alert(f'[PMS-005] Error packing ping response data for transmission: {e}')
                     serialized_data  += b'END'
 
                     conn.sendall(serialized_data)
@@ -325,7 +347,7 @@ def Handle_Client(conn,addr):
                     try:
                         serialized_data = pack.packb(response_data, use_bin_type=True) 
                     except Exception as e:  
-                        msgbox.alert(e)
+                        msgbox.alert(f'[PMS-006] Error packing ping update response data for transmission: {e}')
                     serialized_data  += b'END'
 
                     conn.sendall(serialized_data)
@@ -347,7 +369,7 @@ def Handle_Client(conn,addr):
         params.logHandler.LogError(f"PM Server: {e.with_traceback()}")
     finally:
         conn.close()
-        msgbox.alert(f"Connection with {addr} closed")
+        msgbox.alert(f"[PMS-007] Connection with client {addr} has been closed")
         params.logHandler.LogMessage(f"Connection with {addr} closed")
     
 
@@ -372,10 +394,10 @@ def Processing_Module_Client():
         params.Subsampling_NumberOfSamples = params.sampleRate/params.SubSamplingRate
         params.ExperimentTimestamp = Request("GET /ExperimentTimestamp")
         try:
+            Json_to_params()
             params.Initialize()
         except Exception as e:
-            msgbox.alert("FALLO EL INITIALIZE")
-            msgbox.alert(e)
+            msgbox.alert(f"[PMC-003] Failed to initialize Processing Module parameters: {e}")
             return
         PM_DS.PM_DataStruct.InitializeRawDataBuffer()
 
@@ -387,7 +409,7 @@ def Processing_Module_Client():
             try:
                 try:
                     if params.RequestAngles == True:
-                        msgbox.alert("Requesting angles")
+                        msgbox.alert("[PMC-022] Requesting synergy angles from server")
                         data = Request("GET /Angles")
                         angles = []
                         if data != []:
@@ -404,16 +426,16 @@ def Processing_Module_Client():
                             try:
                                 params.SynergyBase = params.modelsList[params.synergiesNumber-2][1]
                                 params.SynergyBaseInverse = params.modelsList[params.synergiesNumber-2][2]
-                                msgbox.alert(params.SynergyBaseInverse)
+                                msgbox.alert(f"[PMC-023] Synergy base inverse matrix loaded: {params.SynergyBaseInverse}")
                             except Exception as e:
-                                msgbox.alert(f"SynergyBase {e}")
+                                msgbox.alert(f"[PMC-004] Error setting synergy base from models list: {e}")
                            
                     
                     elif params.RequestCalibrationTime == True:
                         try: 
                             response = Request("GET /CalibrationTime")
                         except Exception as e:
-                            msgbox.alert(e)
+                            msgbox.alert(f'[PMC-005] Error requesting calibration time from server: {e}')
                         params.TimeCalibStage3 = response
                         params.RequestCalibrationTime = False
                         
@@ -421,13 +443,13 @@ def Processing_Module_Client():
                         try: 
                             response = Request("PLOT /Thresholds")
                         except Exception as e:
-                            msgbox.alert(f'PMC: Thresholds {e}')
+                            msgbox.alert(f'[PMC-006] Error requesting threshold plot from server: {e}')
                         if response[0] == 1:
                             try:
                                 serialized_data = pack.packb(params.Threshold.tolist(), use_bin_type=True) 
                                 client_socket.sendall(serialized_data)
                             except Exception as e:
-                                msgbox.alert(e)  
+                                msgbox.alert(f'[PMC-007] Error packing/sending threshold data to server: {e}')  
                             if response[0] == 1:
                                 params.PlotThresholds = False
                     
@@ -435,13 +457,13 @@ def Processing_Module_Client():
                         try: 
                             response = Request("PLOT /Peaks")
                         except Exception as e:
-                            msgbox.alert(f'PMC: Peaks {e}')
+                            msgbox.alert(f'[PMC-008] Error requesting peaks plot from server: {e}')
                         if response[0] == 1:
                             try:
                                 serialized_data = pack.packb(params.PeakActivation.tolist(), use_bin_type=True) 
                                 client_socket.sendall(serialized_data)
                             except Exception as e:
-                                msgbox.alert(e)  
+                                msgbox.alert(f'[PMC-009] Error packing/sending peak activation data to server: {e}')  
                             if response[0] == 1:
                                 params.PlotPeaks = False
                     
@@ -449,7 +471,7 @@ def Processing_Module_Client():
                         try: 
                             response = Request("PLOT /Detection")
                         except Exception as e:
-                            msgbox.alert(f'PMC: Detection {e}')
+                            msgbox.alert(f'[PMC-010] Error requesting detection plot from server: {e}')
                         if response[0] == 1:
                             DetectionModels = {}
                             for i in range(len(params.modelsList)):
@@ -463,7 +485,7 @@ def Processing_Module_Client():
                                 serialized_data  = serialized_data + b'END'
                                 client_socket.sendall(serialized_data)
                             except Exception as e:
-                                msgbox.alert(e)  
+                                msgbox.alert(f'[PMC-011] Error packing/sending detection models data to server: {e}')  
                             
                             if response[0] == 1:
                                 params.PlotSynergiesDetected = False
@@ -474,7 +496,50 @@ def Processing_Module_Client():
                         try: 
                             response = Request("UPLOAD /Configurations")
                         except Exception as e:
-                            msgbox.alert(f'PMC: Configurations {e}')
+                            msgbox.alert(f'[PMC-012] Error uploading configurations to server: {e}')
+                        if response[0] == 1:
+                            configurationDictionary = Request("GET /JsonConfiguration")
+                            try:
+                                params.Threshold = np.asarray(configurationDictionary['Thresholds'])
+                                params.PeakActivation = np.asarray(configurationDictionary['Peaks'])
+                                params.SynergyBase = np.asarray(configurationDictionary['SynergyBase'])
+                                params.SensorStickers = configurationDictionary['SensorStickers']
+                                synergy_CursorMap = np.asarray(configurationDictionary['synergy_CursorMap'])
+                                angles = []
+                                for element in synergy_CursorMap:
+                                    angles.append(int(element))
+                                params.synergy_CursorMap = angles
+                                params.synergiesNumber = len(angles)
+                                params.JsonReceived = True
+                            except Exception as e:
+                                msgbox.alert(f'[PMC-013] Error processing configuration data from JSON: {e}')
+                    
+                    elif params.UploadSimulationConfig == True:
+                        params.UploadSimulationConfig = False
+                        # try: 
+                        #     configurationDictionary = Request("GET /JsonConfiguration")
+                        # except Exception as e:
+                        #     msgbox.alert(f'PMC: Simulation Configuration {e}')
+                        # params.Threshold = np.asarray(configurationDictionary['Thresholds'])
+                        # params.PeakActivation = np.asarray(configurationDictionary['Peaks'])
+                        # params.SynergyBase = np.asarray(configurationDictionary['SynergyBase'])
+                        # params.SensorStickers = configurationDictionary['SensorStickers']
+                        # synergy_CursorMap = np.asarray(configurationDictionary['synergy_CursorMap'])
+                        # angles = []
+                        # for element in synergy_CursorMap:
+                        #     angles.append(int(element))
+                        # params.synergy_CursorMap = angles
+                        # params.synergiesNumber = len(angles)
+                        # params.SynergyBaseInverse = np.linalg.pinv(params.SynergyBase)
+                        Json_to_params()
+                        params.TerminateCalibration = True
+
+                    elif params.UploadProjection == True:
+                        params.UploadProjection = False
+                        try: 
+                            response = Request("UPLOAD /Projections")
+                        except Exception as e:
+                            msgbox.alert(f'[PMC-014] Error uploading projections to server: {e}')
                         if response[0] == 1:
                             configurationDictionary = Request("GET /JsonConfiguration")
                             params.Threshold = np.asarray(configurationDictionary['Thresholds'])
@@ -489,30 +554,11 @@ def Processing_Module_Client():
                             params.synergiesNumber = len(angles)
                             params.JsonReceived = True
                     
-                    elif params.UploadSimulationConfig == True:
-                        params.UploadSimulationConfig = False
-                        try: 
-                            configurationDictionary = Request("GET /JsonConfiguration")
-                        except Exception as e:
-                            msgbox.alert(f'PMC: Simulation Configuration {e}')
-                        params.Threshold = np.asarray(configurationDictionary['Thresholds'])
-                        params.PeakActivation = np.asarray(configurationDictionary['Peaks'])
-                        params.SynergyBase = np.asarray(configurationDictionary['SynergyBase'])
-                        params.SensorStickers = configurationDictionary['SensorStickers']
-                        synergy_CursorMap = np.asarray(configurationDictionary['synergy_CursorMap'])
-                        angles = []
-                        for element in synergy_CursorMap:
-                            angles.append(int(element))
-                        params.synergy_CursorMap = angles
-                        params.synergiesNumber = len(angles)
-                        params.SynergyBaseInverse = np.linalg.pinv(params.SynergyBase)
-                        params.TerminateCalibration = True
-                    
                     elif params.PingRequested == True:
                         try: 
                             response = Request("GET /Ping")
                         except Exception as e:
-                            msgbox.alert(f'PMC: Ping {e}')
+                            msgbox.alert(f'[PMC-015] Error sending ping request to server: {e}')
                         if response[0] == 1:
                             params.PingResponse = 1
                             params.PingTimeFromDataServer = response[1]
@@ -527,7 +573,10 @@ def Processing_Module_Client():
                     else:
                         try:
                             t1 = time.time()
-                            data = Request("GET /data")
+                            try:
+                                data = Request("GET /data")
+                            except Exception as e:
+                                msgbox.alert(f"[PMC-016A] Error requesting/processing data from server: {e}")
                             #RequestTimes.append(time.time()-t1)
                             # counter3 += 1
                             # if counter3>3000:
@@ -541,27 +590,30 @@ def Processing_Module_Client():
                             formated_data = np.asarray(data)
                             if params.DetectingSynergies == False:
                                 PM_DS.stack_lock.acquire()  # Acquire lock before accessing the stack
-                                PM_DS.PM_DataStruct.circular_stack.add_matrix(formated_data)
+                                try:
+                                    PM_DS.PM_DataStruct.circular_stack.add_matrix(formated_data)
+                                except Exception as e:
+                                    msgbox.alert(f"[PMC-016B] Error adding matrix to circular stack: {e}")
                                 PM_DS.stack_lock.release()  # Release lock after reading the stack
                                 time.sleep(0.025)            
                             else:
                                 #print("Detecting synergies")
                                 pass
                         except Exception as e:
-                            msgbox.alert(f"PMC: Data {e}")
+                            msgbox.alert(f"[PMC-016] Error requesting/processing data from server: {e}, data: {data}")
                             pass
                 except Exception as e:
-                    msgbox.alert(f"PM Client {e}")
+                    msgbox.alert(f"[PMC-017] Unexpected error in Processing Module Client: {e}")
                     #print(data)
             except socket.error as e:
-                msgbox.alert(f"Connection error:{e}")
+                msgbox.alert(f"[PMC-018] Socket connection error in Processing Module Client: {e}")
                 continue
             except Exception as e:
-                msgbox.alert(f"PM Client {e}")
+                msgbox.alert(f"[PMC-019] General error in Processing Module Client loop: {e}")
                 # Manage a connection error
             #time.sleep(0.001)
     except Exception as e:
-        msgbox.alert(e)
+        msgbox.alert(f"[PMC-020] Fatal error in Processing Module Client initialization: {e}")
 
 
 def Processing_Module_Server():

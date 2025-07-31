@@ -257,6 +257,7 @@ def CalibrationProcessing():
                 PM_DS.stack_lock.release()
                 if RawData != []:
                     RectifiedData = DataProcessing.Rectify(RawData)
+                    print("pm_parameters", PM_Parameters.PeakActivation, PM_Parameters.MusclesNumber, PM_Parameters.Threshold)
                     NormalizedData = DataProcessing.Normalize(RectifiedData, PM_Parameters.PeakActivation, PM_Parameters.MusclesNumber, PM_Parameters.Threshold)
                     ProcessedData = DataProcessing.DummyLowPassFilter(NormalizedData, LastData)
                     #ProcessedData = DataProcessing.LowPassFilter(NormalizedData)

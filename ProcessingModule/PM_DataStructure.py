@@ -4,12 +4,17 @@ import ProcessingModule.PM_Parameters as params
 import numpy as np
 
 class PM_DataStructure:
+    numCols = 8  # Default value, will be updated in __init__
     def __init__(self) -> None:
-        self.circular_stack = Buffer.CircularBufferVector(1, params.MusclesNumber)
+        if params.MusclesNumber is not None:
+            self.numCols = params.MusclesNumber
+        self.circular_stack = Buffer.CircularBufferVector(1,self.numCols)
         self.positionOutput = np.zeros(2)
 
     def InitializeRawDataBuffer(self):
-        self.circular_stack = Buffer.CircularBufferVector(params.RawData_BufferSize, params.MusclesNumber)
+        if params.MusclesNumber is not None:
+            self.numCols = params.MusclesNumber
+        self.circular_stack = Buffer.CircularBufferVector(params.RawData_BufferSize, self.numCols)
 
 PM_DataStruct = PM_DataStructure()
 
