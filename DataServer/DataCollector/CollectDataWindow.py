@@ -19,6 +19,9 @@ import pymsgbox as msgbox
 import os 
 import json
 import ExportData
+import csv
+import numpy as np
+import time
 
 
 
@@ -38,6 +41,38 @@ class CollectDataWindow(QWidget):
         #---- Connect the controller to the GUI
         self.CallbackConnector = PlottingManagement()
     
+    def is_data_empty(self, data):
+        """Safely check if data is empty, handling both lists and numpy arrays"""
+        if data is None:
+            return True
+        
+        try:
+            if isinstance(data, np.ndarray):
+                return data.size == 0
+            elif hasattr(data, '__len__'):
+                return len(data) == 0
+            else:
+                return not bool(data)
+        except Exception as e:
+            print(f"[WARNING] Error checking data emptiness: {e}")
+            return True
+    
+    def get_data_length(self, data):
+        """Safely get the length of data, handling both lists and numpy arrays"""
+        if data is None:
+            return 0
+        
+        try:
+            if isinstance(data, np.ndarray):
+                return data.size
+            elif hasattr(data, '__len__'):
+                return len(data)
+            else:
+                return 1 if data else 0
+        except Exception as e:
+            print(f"[WARNING] Error getting data length: {e}")
+            return 0
+    
     #-----------------------------------------------------------------------
     #---- GUI Components
     def ButtonPanel(self):
@@ -54,15 +89,28 @@ class CollectDataWindow(QWidget):
         self.pipelinestatelabel.setStyleSheet("color:#000066")
         buttonLayout.addWidget(self.pipelinestatelabel)
 
-        #---- Connect Button
-        self.read_button = QPushButton('Connect', self)
-        self.read_button.setToolTip('Connect Base')
-        self.read_button.setSizePolicy(QSizePolicy.Preferred,QSizePolicy.Expanding)
-        self.read_button.objectName = 'Connect'
-        self.read_button.clicked.connect(self.connect_callback)
-        self.read_button.setStyleSheet('QPushButton {background-color: #4CAF50; color: #FFFFFF;}')
-        self.read_button.setEnabled(True)
-        buttonLayout.addWidget(self.read_button)
+        connect_layout = QHBoxLayout()
+        
+        #---- Connect Base Button
+        self.connect_base_button = QPushButton('Connect Base', self)
+        self.connect_base_button.setToolTip('Connect to Delsys Base')
+        self.connect_base_button.setSizePolicy(QSizePolicy.Preferred,QSizePolicy.Expanding)
+        self.connect_base_button.objectName = 'Connect Base'
+        self.connect_base_button.clicked.connect(self.connect_base_callback)
+        self.connect_base_button.setStyleSheet('QPushButton {background-color: #4CAF50; color: #FFFFFF;}')
+        self.connect_base_button.setEnabled(True)
+        connect_layout.addWidget(self.connect_base_button)
+
+        #---- Connect From File Button
+        self.connect_file_button = QPushButton('Connect From File', self)
+        self.connect_file_button.setToolTip('Connect using CSV file')
+        self.connect_file_button.setSizePolicy(QSizePolicy.Preferred,QSizePolicy.Expanding)
+        self.connect_file_button.objectName = 'Connect From File'
+        self.connect_file_button.clicked.connect(self.connect_file_callback)
+        self.connect_file_button.setStyleSheet('QPushButton {color: #000066;}')
+        connect_layout.addWidget(self.connect_file_button)
+
+        buttonLayout.addLayout(connect_layout)
 
         findSensor_layout = QHBoxLayout()
         
@@ -87,36 +135,6 @@ class CollectDataWindow(QWidget):
         findSensor_layout.addWidget(self.scan_button)
 
         buttonLayout.addLayout(findSensor_layout)
-
-        ''' #---- Start Button
-        self.start_button = QPushButton('Start', self)
-        self.start_button.setToolTip('Start Sensor Stream')
-        self.start_button.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
-        self.start_button.objectName = 'Start'
-        self.start_button.clicked.connect(self.start_callback)
-        self.start_button.setStyleSheet('QPushButton {color: #000066;}')
-        self.start_button.setEnabled(False)
-        buttonLayout.addWidget(self.start_button)'''
-
-        '''#---- Stop Button
-        self.stop_button = QPushButton('Stop', self)
-        self.stop_button.setToolTip('Stop Sensor Stream')
-        self.stop_button.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
-        self.stop_button.objectName = 'Stop'
-        self.stop_button.clicked.connect(self.stop_callback)
-        self.stop_button.setStyleSheet('QPushButton {color: #000066;}')
-        self.stop_button.setEnabled(False)
-        buttonLayout.addWidget(self.stop_button)'''
-
-        '''#---- Reset Button
-        self.reset_button = QPushButton('Reset Pipeline', self)
-        self.reset_button.setToolTip('Disarm Pipeline')
-        self.reset_button.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
-        self.reset_button.objectName = 'Reset'
-        self.reset_button.clicked.connect(self.reset_callback)
-        self.reset_button.setStyleSheet('QPushButton {color: #000066;}')
-        self.reset_button.setEnabled(False)
-        buttonLayout.addWidget(self.reset_button)'''
 
         #---- Configure Sensors Button
         self.configure_button = QPushButton('Configure Sensors', self)
@@ -200,18 +218,146 @@ class CollectDataWindow(QWidget):
     #---- Callback Functions
     def getpipelinestate(self):
         self.pipelinetext = self.CallbackConnector.PipelineState_Callback()
-        self.pipelinestatelabel.setText(self.pipelinetext)
+        # Always append connection type if connected
+        if hasattr(params, 'DelsysMode'):
+            if params.DelsysMode is True:
+                self.pipelinestatelabel.setText(self.pipelinetext + " (Base)")
+            elif params.DelsysMode is False:
+                self.pipelinestatelabel.setText(self.pipelinetext + " (File)")
+        else:
+            self.pipelinestatelabel.setText(self.pipelinetext)
+
+    def connect_base_callback(self):
+        params.DelsysMode = True
+        try:
+            self.CallbackConnector.Connect_Callback()
+            # If connection successful, disable both buttons and enable scan
+            self.connect_base_button.setEnabled(False)
+            self.connect_file_button.setEnabled(False)
+            self.scan_button.setEnabled(True)
+            self.getpipelinestate()
+            self.pipelinestatelabel.setText(self.pipelinetext + " (Base Connected)")
+        except Exception as e:
+            # Handle connection error gracefully
+            msgbox.alert(f"Failed to connect to Delsys base:\n{str(e)}\n\nPlease check that:\n"
+                        "- The base is powered on and connected\n"
+                        "- Drivers are properly installed\n"
+                        "- No other application is using the base")
+            
+            # Reset the connection state to allow user to try again
+            self.reset_connection_state()
+
+    def connect_file_callback(self):
+        # Create a hidden tkinter root to prevent blank window
+        root = tk.Tk()
+        root.withdraw()  # Hide the main tkinter window
+        
+        # Open file dialog to select CSV file
+        file_path = filedialog.askopenfilename(
+            title="Select a CSV file containing muscle data to simulate connection",
+            filetypes=[("CSV Files", "*.csv"), ("All Files", "*.*")]
+        )
+        
+        # Destroy the tkinter root to clean up
+        root.destroy()
+        
+        if file_path:
+            # Validate the CSV file
+            if self.validate_csv_file(file_path):
+                params.DelsysMode = False
+                params.csvFile = file_path
+                try:
+                    self.CallbackConnector.Connect_Callback()
+                    # If connection successful, disable both buttons and enable scan
+                    self.connect_base_button.setEnabled(False)
+                    self.connect_file_button.setEnabled(False)
+                    self.scan_button.setEnabled(True)
+                    self.getpipelinestate()
+                    self.pipelinestatelabel.setText(self.pipelinetext + " (File Connected)")
+                except Exception as e:
+                    # Handle connection error gracefully
+                    msgbox.alert(f"Failed to connect using CSV file:\n{str(e)}\n\nPlease try selecting a different file.")
+                    self.reset_connection_state()
+            # Note: Error details are now provided by validate_csv_file method
+
+    def validate_csv_file(self, file_path):
+        """Validate that the CSV file has the expected format"""
+        try:
+            import csv
+            with open(file_path, 'r') as file:
+                csv_reader = csv.reader(file, delimiter=',')
+                
+                # Read header row
+                try:
+                    header = next(csv_reader)
+                    if len(header) < 2:  # At least timestamp + one data column
+                        msgbox.alert(f"CSV file error: Header row has only {len(header)} column(s).\n"
+                                   f"Expected at least 2 columns (timestamp + data columns).\n"
+                                   f"Header found: {header}")
+                        return False
+                    header_col_count = len(header)
+                except StopIteration:
+                    msgbox.alert("CSV file error: File appears to be empty (no header row found).")
+                    return False
+                
+                # Check data rows
+                row_count = 0
+                for row_num, row in enumerate(csv_reader, start=2):  # Start at 2 since header is row 1
+                    if len(row) != header_col_count:
+                        msgbox.alert(f"CSV file error: Row {row_num} has {len(row)} columns, "
+                                   f"but header has {header_col_count} columns.\n"
+                                   f"All rows must have the same number of columns.\n"
+                                   f"Problem row: {row[:5]}{'...' if len(row) > 5 else ''}")
+                        return False
+                    
+                    # Skip first column (timestamp), check remaining are numeric
+                    for col_idx, value in enumerate(row[1:], start=1):
+                        try:
+                            float(value)
+                        except ValueError:
+                            col_name = header[col_idx] if col_idx < len(header) else f"Column {col_idx + 1}"
+                            msgbox.alert(f"CSV file error: Non-numeric value found in row {row_num}, column '{col_name}'.\n"
+                                       f"Value: '{value}'\n"
+                                       f"All data columns (except the first one) must contain numeric values.\n"
+                                       f"First column (timestamp) can be any value and will be ignored.")
+                            return False
+                    
+                    row_count += 1
+                    if row_count > 10:  # Check first 10 rows for performance
+                        break
+                
+                if row_count == 0:
+                    msgbox.alert("CSV file error: No data rows found after the header.\n"
+                               "File must contain at least one row of data.")
+                    return False
+                
+                return True
+                
+        except FileNotFoundError:
+            msgbox.alert(f"CSV file error: Could not find file at path:\n{file_path}")
+            return False
+        except PermissionError:
+            msgbox.alert(f"CSV file error: Permission denied when trying to read file:\n{file_path}\n"
+                       "Please check that the file is not open in another application.")
+            return False
+        except Exception as e:
+            msgbox.alert(f"CSV file error: Unexpected error while reading file:\n{str(e)}")
+            return False
+
+    def reset_connection_state(self):
+        """Reset the UI to allow user to try connecting again"""
+        self.connect_base_button.setEnabled(True)
+        self.connect_file_button.setEnabled(True)
+        self.scan_button.setEnabled(False)
+        self.calibration_button.setEnabled(False)
+        self.cursor_button.setEnabled(False)
+        self.visualization_button.setEnabled(False)
+        self.getpipelinestate()
+        self.pipelinestatelabel.setText("Connection Failed - Ready to Retry")
 
     def connect_callback(self):
-        self.CallbackConnector.Connect_Callback()
-        self.read_button.setEnabled(False)
-        self.read_button.setStyleSheet('QPushButton {color: #000066;}')
-        self.scan_button.setStyleSheet('QPushButton {background-color: #4CAF50; color: #FFFFFF;}')
-        self.scan_button.setEnabled(True)
-
-        self.scan_button.setEnabled(True)
-        self.getpipelinestate()
-        self.pipelinestatelabel.setText(self.pipelinetext + " (Base Connected)")
+        # Legacy method for backward compatibility
+        self.connect_base_callback()
 
     def pair_callback(self):
         self.CallbackConnector.Pair_Callback()
@@ -232,19 +378,6 @@ class CollectDataWindow(QWidget):
         self.configure_button.setStyleSheet('QPushButton {background-color: #4CAF50; color: #FFFFFF;}')
         self.calibration_button.setEnabled(False)
         self.calibration_button.setStyleSheet('QPushButton {color: #000066;}')
-
-    '''def start_callback(self):
-        self.CallbackConnector.Start_Callback()'''
-
-    '''def stop_callback(self):
-        self.CallbackConnector.Stop_Callback()
-        self.reset_button.setEnabled(True)
-        self.getpipelinestate()'''
-
-    '''def reset_callback(self):
-        self.CallbackConnector.Reset_Callback()
-        self.getpipelinestate()
-        self.reset_button.setEnabled(False)'''
 
     def home_callback(self):
         self.controller.showStartMenu()
@@ -881,14 +1014,10 @@ class CalibrationWindow(QMainWindow):
         self.synergy_base_lineedit.hide()
         self.set_synergy_base.hide()
         self.sensors_dropdown.hide()
-
         self.stage_message_label.show()
+        self.start_stage_button.text = "Load Calibration"
         self.start_stage_button.show()
-        
-        self.stage_message_label.setText("Press Start to upload the calibration from the Configuration.json file located in the root of the project.")
-        
         self.CalibrationStage = 4
-        
 
     def start_countdown(self):
         print("timer")
@@ -896,6 +1025,8 @@ class CalibrationWindow(QMainWindow):
         params.CalibrationStage = self.CalibrationStage
         params.CalibrationStageInitialized = True
         if self.CalibrationStage == 4:
+            self.start_stage_button.hide()
+            self.timer_widget.timer_label.hide()
             pass
         else:
             self.timer_widget.timer_label.show()
@@ -942,12 +1073,12 @@ class CalibrationWindow(QMainWindow):
 
         params.PlotModels = True
         try:
+            print("[DEBUG] Calling update_plot from show_select_model")
             self.update_plot()
         except Exception as e:
-            msgbox.alert(e)
+            print(f"[ERROR] Error in show_select_model: {e}")
+            msgbox.alert(f"Error displaying synergy models: {str(e)}")
 
-        
-        
     def show_angle_window(self):
         self.save_button.show()
         params.AnglesOutput = []
@@ -956,7 +1087,12 @@ class CalibrationWindow(QMainWindow):
             self.angle_lineedits[i].show()
             self.angle_labels[i].show()
         params.PlotAngles = True
-        self.update_plot()
+        try:
+            print("[DEBUG] Calling update_plot from show_angle_window")
+            self.update_plot()
+        except Exception as e:
+            print(f"[ERROR] Error in show_angle_window: {e}")
+            msgbox.alert(f"Error displaying angle selection: {str(e)}")
 
     def update_plot(self):
         if params.PlotThresholds:

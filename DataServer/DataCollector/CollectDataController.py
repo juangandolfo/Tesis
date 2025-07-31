@@ -24,11 +24,17 @@ clr.AddReference("System.Collections")
 from System.Collections.Generic import List
 from System import Int32
 
-if params.DelsysMode:
-    base = TrignoBase()
-    TrigBase = base.BaseInstance
-else:
-    TrigBase = AeroPyNuevo()
+# Initialize TrigBase as None, will be set during connection
+TrigBase = None
+
+def initialize_trigbase():
+    """Initialize TrigBase based on current DelsysMode setting"""
+    global TrigBase
+    if params.DelsysMode:
+        base = TrignoBase()
+        TrigBase = base.BaseInstance
+    else:
+        TrigBase = AeroPyNuevo()
 
 app.use_app('PySide2')
 
@@ -38,10 +44,11 @@ class PlottingManagement():
         self.packetCount = 0                        # Number of packets received from base
         self.pauseFlag = False                      # Flag to start/stop collection and plotting
         self.numSamples = 10000                     # Default number of samples to visualize at a time
-        self.DataHandler = DataKernel(TrigBase)     # Data handler for receiving data from base
+        self.DataHandler = None                     # Data handler for receiving data from base (initialized during connection)
         self.outData = [[0]]
         self.Index = None
         self.newTransform = None
+        self.dataStreamIdx = []                     # Initialize dataStreamIdx as empty list
 
         self.VisualizationProcess = 0
         self.CursorProcess = 0
@@ -82,10 +89,16 @@ class PlottingManagement():
     #---------------------------------------------------------------------------------
     #---- Callback Functions
     def PipelineState_Callback(self):
+        if TrigBase is None:
+            return "Not Connected"
         return TrigBase.GetPipelineState()
 
     def Connect_Callback(self):
         """Callback to connect to the base"""
+        # Initialize TrigBase based on current DelsysMode setting
+        initialize_trigbase()
+        # Initialize DataHandler with the new TrigBase
+        self.DataHandler = DataKernel(TrigBase)
         TrigBase.ValidateBase(key, license)
         
 
